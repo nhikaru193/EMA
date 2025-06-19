@@ -62,26 +62,6 @@ def convert_to_decimal(coord, direction):
         decimal *= -1
     return decimal
 
-# === GPS位置取得関数 (修正済み) ===
-"""
-def get_current_gps_location():
-    (count, data) = pi.bb_serial_read(RX_PIN)
-        if count and data:
-            try:
-                text = data.decode("ascii", errors="ignore")
-                if "$GNRMC" in text:
-                    lines = text.split("\n")
-                    for line in lines:
-                        if "$GNRMC" in line:
-                            parts = line.strip().split(",")
-                            if len(parts) > 6 and parts[2] == "A":
-                                lat = convert_to_decimal(parts[3], parts[4])
-                                lon = convert_to_decimal(parts[5], parts[6])
-                                return lat, lon
-            except Exception as e:
-                print("デコードエラー:", e)
-        time.sleep(0.1)
-"""
 # === 2点間の方位角の計算 (可読性向上) ===
 def get_bearing_to_goal(current, goal):
     if current is None or goal is None:
