@@ -31,14 +31,26 @@ def get_current_location():
             time.sleep(0.1)
         return None
 
+def convert_to_decimal(coord, direction):
+    if direction in ['N', 'S']:
+        degrees = int(coord[:2])
+        minutes = float(coord[2:])
+    else:
+        degrees = int(coord[:3])
+        minutes = float(coord[3:])
+    decimal = degrees + minutes / 60.0
+    if direction in ['S', 'W']:
+        decimal *= -1
+    return decimal
+
 #2地点間の距離計測
 def get_distance_ll(a, b):
     lat1, lon1 = a[0], a[1]
     lat2, lon2 = b[0], b[1]
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    s = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(s), math.sqrt(1 - s))
     return EARTH_RADIUS * c
 
 #モータの初期設定
@@ -56,7 +68,7 @@ def speed_test(duty):
     print("距離計測終了 + 減速を開始します")
     Arrival_point = get_current_location()
     driver.changing_forward(duty, 0)
-    dist = get_distance_ll()
+    dist = get_distance_ll(Departure_point, Arrival_point)
     average = dist / 10
     print(f"計測終了です。デューティ比{duty}において")
     print(f"移動距離は{dist} m です")
@@ -80,6 +92,6 @@ if err != 0:
 
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
 
-for i in range 9:
+for i in range (9):
     i = i + 1
     speed_test(10 * i)
