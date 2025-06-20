@@ -7,6 +7,7 @@ import smbus
 import struct
 import serial
 import pynmea2
+import pigpio
 
 #緯度経度の取得
 def get_current_location():
