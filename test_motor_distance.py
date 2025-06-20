@@ -55,9 +55,9 @@ def get_distance_ll(a, b):
     return EARTH_RADIUS * c
 
 def speed_test(duty):
-    print("デューティ比10まで加速中です..")
+    print(f"デューティ比{duty}まで加速中です..")
     driver.changing_forward(0, duty)
-    print("デューティ比10まで加速完了 + 距離計測を開始します")
+    print(f"デューティ比{duty}まで加速完了 + 距離計測を開始します")
     Departure_point = get_current_location()
     time.sleep(10)
     print("距離計測終了 + 減速を開始します")
