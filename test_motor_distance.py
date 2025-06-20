@@ -54,12 +54,6 @@ def get_distance_ll(a, b):
     c = 2 * math.atan2(math.sqrt(s), math.sqrt(1 - s))
     return EARTH_RADIUS * c
 
-#モータの初期設定
-driver = MotorDriver(
-    PWMA=12, AIN1=23, AIN2=18,    # 左モーター
-    PWMB=19, BIN1=16, BIN2=26,    # 右モーター
-    STBY=21
-)
 def speed_test(duty):
     print("デューティ比10まで加速中です..")
     driver.changing_forward(0, duty)
@@ -74,6 +68,13 @@ def speed_test(duty):
     print(f"計測終了です。デューティ比{duty}において")
     print(f"移動距離は{dist} m です")
     print(f"平均速度は{average} m/s です")
+
+#モータの初期設定
+driver = MotorDriver(
+    PWMA=12, AIN1=23, AIN2=18,    # 左モーター
+    PWMB=19, BIN1=16, BIN2=26,    # 右モーター
+    STBY=21
+)
 
 # === GPSデータ取得（仮の実装）===
 TX_PIN = 17
