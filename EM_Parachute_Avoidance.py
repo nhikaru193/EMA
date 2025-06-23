@@ -49,7 +49,6 @@ except KeyboardInterrupt:
 
 finally:
     # --- GPIOの設定リセット ---
-    GPIO.cleanup()
     print("GPIO25のクリーンアップを実行しました。")
     
 # GPIO モーター制御設定
