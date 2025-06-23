@@ -73,7 +73,7 @@ try:
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
         if number == 3:
-            if percentage > 40:
+            if percentage > 50:
                 break
 
             elif percentage > 20:
@@ -98,22 +98,37 @@ try:
                 Vb1 = Vb2
 
         elif number == 1:
-            driver.changing_left(0, 40)
-            driver.changing_left(40, 0)
+            Va2 = 0
+            Vb2 = 70
+            driver.changing_Lforward(Va1, Va2)
+            driver.changing_Rforward(Vb1, Vb2)
+            Va1 = Va2
+            Vb1 = Vb2
 
         elif number == 2:
-            driver.changing_left(0, 25)
-            driver.changing_left(25, 0)
+            Va2 = 0
+            Vb2 = 50
+            driver.changing_Lforward(Va1, Va2)
+            driver.changing_Rforward(Vb1, Vb2)
+            Va1 = Va2
+            Vb1 = Vb2
         
         elif number == 4:
-            driver.changing_right(0, 25)
-            driver.changing_right(25, 0)
+            Va2 = 50
+            Vb2 = 0
+            driver.changing_Lforward(Va1, Va2)
+            driver.changing_Rforward(Vb1, Vb2)
+            Va1 = Va2
+            Vb1 = Vb2
             
         elif number == 5:
-            driver.changing_right(0, 40)
-            driver.changing_right(40, 0)
+            Va2 = 70
+            Vb2 = 0
+            driver.changing_Lforward(Va1, Va2)
+            driver.changing_Rforward(Vb1, Vb2)
+            Va1 = Va2
+            Vb1 = Vb2
                 
-
 finally:
     picam2.close()
     print("カメラを閉じました。")
