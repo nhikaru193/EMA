@@ -101,7 +101,7 @@ class MotorDriver():
 	 GPIO.output(self.A2, GPIO.HIGH)
 	 self.pwma.ChangeDutyCycle(speed) 
 	     
-     def motor_Rforward(self, speed)
+     def motor_Rforward(self, speed):
 	 GPIO.output(self.B1, GPIO.HIGH)
 	 GPIO.output(self.B2, GPIO.LOW)
 	 self.pwmb.ChangeDutyCycle(speed)
@@ -110,11 +110,11 @@ class MotorDriver():
      def changing_forward(self, before, after):
 	 global speed
 	 for i in range(1, 200):
-		 delta_speed = (after - before) / 200
-		 speed = before + i * delta_speed
-		 self.motor_forward(speed)
-		 time.sleep(0.01)
-		 
+	 delta_speed = (after - before) / 200
+	 speed = before + i * delta_speed
+	 self.motor_forward(speed)
+	 time.sleep(0.01)
+	 
      def changing_Lforward(self, before, after):
 	 	 global speed
 		 for i in range(1, 200):
