@@ -103,7 +103,11 @@ class MotorDriver():
              delta_speed = (after - before) / 200
              speed = before + i * delta_speed
              self.motor_forward(speed)
-             time.sleep(0.015)
+             time.sleep(0.01)
+			 
+     #def changing_left_forward(self, before, after):
+		 
+      
 
  #右折：回転数制御(基本は停止してから使いましょう)
      def changing_right(self, before, after):
