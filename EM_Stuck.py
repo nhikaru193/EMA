@@ -111,6 +111,18 @@ try:
             time.sleep(3)
             driver.changing_retreat(90, 25)
             time.sleep(4)
+            driver.changing_retreat(25, 90)
+            time.sleep(4)
+            driver.changing_right(90, 90)
+            time.sleep(3)
+            driver.changing_retreat(90, 25)
+            time.sleep(4)
+             driver.changing_retreat(25, 90)
+            time.sleep(4)
+            driver.changing_right(90, 90)
+            time.sleep(3)
+            driver.changing_retreat(90, 25)
+            time.sleep(4)
             driver.stop()
 
             stack_check_start_time = time.time()  # 再監視開始
