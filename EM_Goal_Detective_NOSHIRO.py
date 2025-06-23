@@ -18,6 +18,10 @@ color.init_camera()
 #速度定義
 Va = 0
 Vb = 0
+Va1 = 0
+Va2 = 0
+Vb1 = 0
+Vb2 = 0
 
 try:
     
@@ -73,19 +77,25 @@ try:
                 break
 
             elif percentage > 20:
-                Vb = 40
-                driver.changing_forward(Va, Vb)
-                Va = Vb
-
+                Va2 = 40
+                Vb2 = 40
+                driver.changing_forward(Vb1, Vb2)
+                Va1 = Va2
+                Vb1 = Vb2
+                
             elif percentage > 10:
-                Vb = 60
-                driver.changing_forward(Va, Vb)
-                Va = Vb
+                Va2 = 60
+                Vb2 = 60
+                driver.changing_forward(Vb1, Vb2)
+                Va1 = Va2
+                Vb1 = Vb2
 
             else:
-                Vb = 80
-                driver.changing_forward(Va, Vb)
-                Va = Vb
+                Va2 = 80
+                Vb2 = 80
+                driver.changing_forward(Vb1, Vb2)
+                Va1 = Va2
+                Vb1 = Vb2
 
         elif number == 1:
             driver.changing_left(0, 40)
