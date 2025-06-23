@@ -63,6 +63,7 @@ try:
             driver.changing_right(40, 0)
     
 
+    print("ゴール誘導を開始します")
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while true:
         #画面割合、場所検知
