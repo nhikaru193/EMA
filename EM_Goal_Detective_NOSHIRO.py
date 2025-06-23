@@ -78,3 +78,4 @@ try:
 finally:
     picam2.close()
     print("カメラを閉じました。プログラム終了。")
+    print("ゴール判定")
