@@ -111,9 +111,9 @@ def save_image_before_detection(picam2):
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     
     # 撮影した画像を保存
-    image_path = "/home/mark1/Pictures/parakaihi_image.jpg"
+    image_path = "/home/mark1/Pictures/paravo_image.jpg"
     cv2.imwrite(image_path, frame_bgr)                            #メモリ上の画像データをファイルとして保存する
-    print(f"初期画像保存成功: {image_path}")                   #出力          
+    print(f"画像保存成功: {image_path}")                   #出力          
     
     return frame
 
