@@ -95,7 +95,7 @@ class MotorDriver():
          GPIO.output(self.B2, GPIO.LOW)
          self.pwma.ChangeDutyCycle(speed) 
          self.pwmb.ChangeDutyCycle(speed)
-
+		 
 	 def motor_Lforward(self, speed):
 		 GPIO.output(self.A1, GPIO.LOW)
 		 GPIO.output(self.A2, GPIO.HIGH)
