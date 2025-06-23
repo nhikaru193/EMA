@@ -38,8 +38,8 @@ class MotorDriver():
 
 #右回頭
      def motor_right(self, speed):
-         GPIO.output(self.A1, GPIO.HIGH)
-         GPIO.output(self.A2, GPIO.LOW)
+         GPIO.output(self.A1, GPIO.LOW)
+         GPIO.output(self.A2, GPIO.HIGH)
          GPIO.output(self.B1, GPIO.LOW)
          GPIO.output(self.B2, GPIO.HIGH)
          self.pwma.ChangeDutyCycle(speed)
@@ -47,8 +47,8 @@ class MotorDriver():
 
 #左回頭
      def motor_left(self, speed):
-         GPIO.output(self.A1, GPIO.LOW)
-         GPIO.output(self.A2, GPIO.HIGH)
+         GPIO.output(self.A1, GPIO.HIGH)
+         GPIO.output(self.A2, GPIO.LOW)
          GPIO.output(self.B1, GPIO.HIGH)
          GPIO.output(self.B2, GPIO.LOW)
          self.pwma.ChangeDutyCycle(speed)
@@ -56,8 +56,8 @@ class MotorDriver():
 
  #後退
      def motor_retreat(self, speed):
-         GPIO.output(self.A1, GPIO.LOW)
-         GPIO.output(self.A2, GPIO.HIGH)
+         GPIO.output(self.A1, GPIO.HIGH)
+         GPIO.output(self.A2, GPIO.LOW)
          GPIO.output(self.B1, GPIO.LOW)
          GPIO.output(self.B2, GPIO.HIGH)
          self.pwma.ChangeDutyCycle(speed)
@@ -89,8 +89,8 @@ class MotorDriver():
  
     #前進：任意
      def motor_forward(self, speed):
-         GPIO.output(self.A1, GPIO.HIGH)
-         GPIO.output(self.A2, GPIO.LOW)
+         GPIO.output(self.A1, GPIO.LOW)
+         GPIO.output(self.A2, GPIO.HIGH)
          GPIO.output(self.B1, GPIO.HIGH)
          GPIO.output(self.B2, GPIO.LOW)
          self.pwma.ChangeDutyCycle(speed) 
@@ -99,11 +99,11 @@ class MotorDriver():
     #前進：回転数制御(異なる回転数へ変化するときに滑らかに遷移するようにする)
      def changing_forward(self, before, after):
          global speed
-         for i in range(50):
-             delta_speed = (after - before) / 50
+         for i in range(1, 200):
+             delta_speed = (after - before) / 200
              speed = before + i * delta_speed
              self.motor_forward(speed)
-             time.sleep(0.02)
+             time.sleep(0.015)
 
  #右折：回転数制御(基本は停止してから使いましょう)
      def changing_right(self, before, after):
