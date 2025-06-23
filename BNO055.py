@@ -118,7 +118,7 @@ class BNO055:
 	BNO055_SYS_ERR_ADDR 				= 0X3A        #p75　システムエラーを表す　1byteすべて使用　0;no error, 1;周辺機器の初期化エラー, 2;システム初期化エラー, 3;self-test失敗, 4;レジスタ値が範囲外, 5;無効なレジスタアドレスにアクセス, 6;レジスタへの書き込み失敗, 7;セルフテスト設定が正しくない, 8無効または不適切なモード設定, 9;センサ設定のエラー, A;電源モードとセンサ設定が矛盾している
 	# Unit selection register 
 	BNO055_UNIT_SEL_ADDR 				= 0X3B        #p75　(動作モード1bit(0;windows, 1;android), 予約済み2bit, 温度の単位1bit(0;セルシウス温度℃, 1;ファーレンヘイト℉), オイラー角の単位1bit(0;度, 1;rad), 角速度の単位1bit(0;dps. 1;rps), 加速度の単位1bit(0;m/s^2, 1;mil_gravity))
-	BNO055_DATA_SELECT_ADDR 			= 0X3C        #
+	BNO055_DATA_SELECT_ADDR 			= 0X3C        
 
 	# Mode registers 
 	BNO055_OPR_MODE_ADDR 				= 0X3D        #p76　動作モードレジスタ　構成は(予約済み4bit, オペレーションモード4bit)　多分使わないので自分で見ましょう(使いました)
