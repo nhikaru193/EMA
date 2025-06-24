@@ -37,7 +37,7 @@ driver = MotorDriver(
 #BNO055のインスタンス作成
 bno = BNO055()
 while True:
-    sys, gyro, accel, mag = bno.get_calibration()
+    sys, gyro, accel, mag = bno.getCalibration()
     if gyro == 3:
         break
 if bno.begin() is not True:
