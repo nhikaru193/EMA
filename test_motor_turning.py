@@ -45,4 +45,4 @@ bno.setExternalCrystalUse(True)
 time.sleep(1)
 for i in range (1, 10):
   test_turning(10 * i)
-  
+driver.cleanup()
