@@ -42,6 +42,10 @@ if bno.begin() is not True:
 time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 bno.setExternalCrystalUse(True)
+while true:
+    sys, gyro, accel, mag = bno.getcalibration()
+    if gyro == 3:
+        break
 time.sleep(1)
 for i in range (1, 10):
   test_turning(10 * i)
