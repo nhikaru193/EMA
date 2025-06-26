@@ -36,6 +36,7 @@ driver = MotorDriver(
 
 #BNO055のインスタンス作成
 bno = BNO055()
+time.sleep(2)
 bno.begin()
 
 """
