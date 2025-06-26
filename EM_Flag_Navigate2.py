@@ -3,7 +3,7 @@ import numpy as np
 from picamera2 import Picamera2
 from time import sleep
 import RPi.GPIO as GPIO
-from motor import MotorDriver
+import time # MotorDriver内でtime.sleepが使われているため、念のためインポート
 
 # --- 図形分類関数 (変更なし) ---
 def classify_by_vertex_count(contour):
@@ -58,8 +58,8 @@ def detect_shapes_by_region(show_debug=False):
         mask_roi = np.zeros((height, width), dtype=np.uint8)
         cv2.drawContours(mask_roi, [region], -1, 255, thickness=cv2.FILLED)
         x, y, w, h = cv2.boundingRect(region)
-        roi_mask = mask_roi[:y + h, x:x + w]
-        roi_img = img[:y + h, x:x + w]
+        roi_mask = mask_roi[y:y+h, x:x+w] # 修正: ROIの範囲を正しく設定
+        roi_img = img[y:y+h, x:x+w]       # 修正: ROIの範囲を正しく設定
         gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
         masked_gray = cv2.bitwise_and(gray_roi, gray_roi, mask=roi_mask)
         _, binary_roi = cv2.threshold(masked_gray, 50, 255, cv2.THRESH_BINARY)
@@ -75,19 +75,21 @@ def detect_shapes_by_region(show_debug=False):
             cx = int(M["m10"] / M["m00"])
             global_cx = x + cx
             block_idx = min(global_cx // block_w, grid_cols - 1)
+            # setdefaultを使って、リストが存在しない場合に作成
             blocks_shapes.setdefault(block_idx, []).append(shape_name)
 
     result = {}
     for i in range(grid_cols):
         region_name = block_names.get(i, "不明")
+        # getを使って、キーが存在しない場合にデフォルト値（空リスト）を返す
         shapes = blocks_shapes.get(i, [])
         if not shapes:
-            result.setdefault(region_name, {})
+            result[region_name] = {}
         else:
             counts = {}
             for s in shapes:
-                counts.setdefault(s, 0) + 1
-            result.setdefault(region_name, counts)
+                counts[s] = counts.get(s, 0) + 1 # count += 1 の代わりにget(s, 0)を使う
+            result[region_name] = counts
 
     if show_debug:
         for region, shapes in result.items():
@@ -112,17 +114,27 @@ if __name__ == '__main__':
     motor = MotorDriver(LEFT_MOTOR_PWMA, LEFT_MOTOR_AIN1, LEFT_MOTOR_AIN2,
                         RIGHT_MOTOR_PWMB, RIGHT_MOTOR_BIN1, RIGHT_MOTOR_BIN2, STBY_PIN)
 
+    # モーターの初期速度（停止状態）
+    current_speed = 0
+
     try:
         while True:
             print("--- 新しい探索サイクル ---")
             found_on_right = False
 
             while not found_on_right:
-                print("左に少し回転します。")
-                motor.motor_left(speed=40)
-                sleep(0.1)  # 小さな角度で回転
-                motor.motor_stop_free()
-                sleep(0.5)  # 停止してカメラを安定させる
+                print("左に滑らかに回転します。")
+                # 速度0から目標速度40まで滑らかに加速しながら左回転
+                motor.changing_left(current_speed, 40)
+                current_speed = 40 # 現在の速度を更新
+                sleep(0.5) # 回転が完了するのを待つ (changing_left内でsleepがあるが、念のため)
+
+                print("モーターを滑らかに停止します。")
+                # 速度40から0まで滑らかに減速して停止
+                motor.changing_left(current_speed, 0)
+                current_speed = 0 # 現在の速度を更新
+                motor.motor_stop_free() # 念のため停止コマンドも実行
+                sleep(0.5) # 停止してカメラを安定させる
 
                 print("写真を撮って図形を検出します。")
                 detected_results = detect_shapes_by_region(show_debug=True)
@@ -130,22 +142,26 @@ if __name__ == '__main__':
                 if "すごく右" in detected_results and detected_results["すごく右"]:
                     print("「すごく右」に図形が見つかりました！")
                     found_on_right = True
-                    break  # 内側のループを抜けて前進
+                    break # 内側のループを抜けて前進
 
-                print("「すごく右」に図形が見つかりませんでした。")
-                # 必要であれば、ここで回転回数や最大回転角度の制限などを追加できます
+                print("「すごく右」に図形が見つかりませんでした。再度左回転します。")
+                # ループが続くので、ここで特にアクションは不要
 
             if found_on_right:
                 print("前進します。")
-                motor.motor_forward(speed=50)
-                sleep(1.0)
-                motor.motor_stop_free()
-                sleep(2)  # 前進後、次の探索サイクルの準備
-            else:
-                # ここに来ることは通常ないはずですが、無限回転を避けるための安全策として
-                print("「すごく右」に図形が見つからず、探索を中断します。")
-                motor.motor_stop_free()
-                break
+                # 速度0から目標速度50まで滑らかに加速しながら前進
+                motor.changing_forward(current_speed, 50)
+                current_speed = 50 # 現在の速度を更新
+                sleep(1.0) # 前進が完了するのを待つ (changing_forward内でsleepがあるが、念のため)
+
+                print("モーターを滑らかに停止します。")
+                # 速度50から0まで滑らかに減速して停止
+                motor.changing_forward(current_speed, 0)
+                current_speed = 0 # 現在の速度を更新
+                motor.motor_stop_free() # 念のため停止コマンドも実行
+                sleep(2) # 前進後、次の探索サイクルの準備
+            # elseブロックは、今回はfound_on_rightが必ずTrueになるため不要
+            # （内側のwhileループを抜ける条件がfound_on_right=Trueのみのため）
 
     except KeyboardInterrupt:
         print("プログラムを終了します。")
