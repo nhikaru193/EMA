@@ -37,6 +37,7 @@ driver = MotorDriver(
 #BNO055のインスタンス作成
 bno = BNO055()
 bno.begin()
+
 """
 driver.changing_left(0, 70)
 driver.changing_left(70, 0)
@@ -45,6 +46,7 @@ driver.changing_right(0, 70)
 driver.changing_right(70, 0)
 time.sleep(1)
 """
+
 time.sleep(5)
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
