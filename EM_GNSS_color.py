@@ -26,11 +26,11 @@ RX_PIN = 17
 BAUD = 9600
 
 bno = BNO055()
-    if bno.begin() is not True:
-        print("Error initializing device")
-        exit()
-    time.sleep(1)
-    bno.setMode(BNO055.OPERATION_MODE_NDOF)
+if bno.begin() is not True:
+    print("Error initializing device")
+    exit()
+time.sleep(1)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
 
 # === pigpio 初期化 ===
 pi = pigpio.pi()
