@@ -65,7 +65,7 @@ while True:
     time.sleep(1.0)
 
 driver.changing_Lforward(0, 60)
-dirver.changing_Rforward(0, 45)
+driver.changing_Rforward(0, 45)
 
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
@@ -75,7 +75,7 @@ while True:
         break
 
 driver.changing_Rforward(45, 0)
-dirver.changing_Lforward(60, 0)
+driver.changing_Lforward(60, 0)
 # === 度分→10進変換関数 ===
 def convert_to_decimal(coord, direction):
     if direction in ['N', 'S']:
@@ -117,7 +117,7 @@ def navigate_to_goal():
     try:
         while True:
             # 1. 状態把握
-            current_location = 0, 0
+            current_location = None
             (count, data) = pi.bb_serial_read(RX_PIN)
             time.sleep(1.0)
             if count and data:
@@ -200,9 +200,6 @@ def navigate_to_goal():
     except Exception as e:
         print(f"\n[FATAL] 予期せぬエラーが発生しました: {e}")
     finally:
-        print("クリーンアップ処理を実行します。")
-        ### 元のモーター定義文を使用 ###
-        print("プログラムを終了しました。")
 
 def goal_detective_color():
     # カメラ初期化と設定
