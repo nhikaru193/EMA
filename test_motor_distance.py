@@ -6,7 +6,6 @@ from BNO055 import BNO055
 import smbus
 import struct
 import serial
-import pynmea2
 import pigpio
 
 #緯度経度の取得
