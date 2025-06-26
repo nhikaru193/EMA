@@ -39,6 +39,12 @@ bno = BNO055()
 bno.begin()
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
+    driver.changing_left(0, 70)
+    driver.changing_left(70, 0)
+    time.sleep(1)
+    driver.changing_right(0, 70)
+    driver.changing_right(70, 0)
+    time.sleep(1)
     if gyro == 3:
         break
 if bno.begin() is not True:
@@ -48,6 +54,6 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 bno.setExternalCrystalUse(True)
 time.sleep(1)
-for i in range (1, 10):
+for i in range (5, 10):
   test_turning(10 * i)
 driver.cleanup()
