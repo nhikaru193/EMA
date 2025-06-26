@@ -11,21 +11,28 @@ import numpy as np
 from picamera2 import Picamera2
 import color
 
-# === モーター初期化 (変更なし) ===
+# === モーター初期化  ===
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,    # 左モーター
     PWMB=19, BIN1=16, BIN2=26,    # 右モーター
     STBY=21
 )
 
-# === 目標地点設定 (変更なし) ===
+# === 目標地点設定 ===
 GOAL_LOCATION = [35.6586, 139.7454]  # 例：東京タワー
 
-# === GPSピン設定 (変更なし) ===
+# === GPSピン設定  ===
 RX_PIN = 17
 BAUD = 9600
 
-# === pigpio 初期化 (変更なし) ===
+bno = BNO055()
+    if bno.begin() is not True:
+        print("Error initializing device")
+        exit()
+    time.sleep(1)
+    bno.setMode(BNO055.OPERATION_MODE_NDOF)
+
+# === pigpio 初期化 ===
 pi = pigpio.pi()
 if not pi.connected:
     print("pigpio デーモンに接続できません。sudo pigpiod を実行してください。")
@@ -36,7 +43,7 @@ if pi.bb_serial_read_open(RX_PIN, BAUD, 8) != 0:
     pi.stop()
     exit(1)
 
-# === BNO055 初期化 (変更なし) ===
+# === BNO055 初期化 ===
 bno = BNO055()
 #if not bno.begin():
     #print("BNO055の初期化に失敗しました。センサーの接続を確認してください。")
@@ -45,11 +52,18 @@ bno.begin()
 time.sleep(1)
 bno.setExternalCrystalUse(True)      #外部水晶振動子使用(クロック)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)  #NDOFモードに設定
-time.sleep(1)
+time.sleep(10)
 print("センサー類の初期化完了。ナビゲーションを開始します。")
+print("キャリブレーション中... センサをいろんな向きにゆっくり回してください")
+while True:
+    sys, gyro, accel, mag = bno.getCalibration()
+    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r')
+    if gyro == 3 and :
+        print("\n✅ キャリブレーション完了！")
+        break
+    time.sleep(1.0)
 
-
-# === 度分→10進変換関数 (変更なし) ===
+# === 度分→10進変換関数 ===
 def convert_to_decimal(coord, direction):
     if direction in ['N', 'S']:
         degrees = int(coord[:2])
