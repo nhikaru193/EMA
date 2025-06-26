@@ -55,14 +55,27 @@ bno.setMode(BNO055.OPERATION_MODE_NDOF)  #NDOFモードに設定
 time.sleep(10)
 print("センサー類の初期化完了。ナビゲーションを開始します。")
 print("キャリブレーション中... センサをいろんな向きにゆっくり回してください")
+
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r')
-    if gyro == 3 and :
-        print("\n✅ キャリブレーション完了！")
+    if gyro == 3:
+        print("\n✅ gyroキャリブレーション完了！")
         break
     time.sleep(1.0)
 
+driver.changing_Lforward(0, 60)
+dirver.changing_Rforward(0, 45)
+
+while True:
+    sys, gyro, accel, mag = bno.getCalibration()
+    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r')
+    if mag == 3:
+        print("\n✅ magキャリブレーション完了！")
+        break
+
+driver.changing_Rforward(45, 0)
+dirver.changing_Lforward(60, 0)
 # === 度分→10進変換関数 ===
 def convert_to_decimal(coord, direction):
     if direction in ['N', 'S']:
