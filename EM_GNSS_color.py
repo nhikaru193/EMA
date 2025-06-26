@@ -202,9 +202,6 @@ def navigate_to_goal():
     finally:
         print("クリーンアップ処理を実行します。")
         ### 元のモーター定義文を使用 ###
-        driver.cleanup()
-        pi.bb_serial_read_close(RX_PIN)
-        pi.stop()
         print("プログラムを終了しました。")
 
 def goal_detective_color():
@@ -273,6 +270,9 @@ def goal_detective_color():
                       
     finally:
         picam2.close()
+        driver.cleanup()
+        pi.bb_serial_read_close(RX_PIN)
+        pi.stop()
         print("カメラを閉じました。プログラム終了。")
   
 # === プログラム実行 ===
