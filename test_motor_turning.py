@@ -45,6 +45,7 @@ driver.changing_right(0, 70)
 driver.changing_right(70, 0)
 time.sleep(1)
 """
+time.sleep(5)
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     if gyro == 3:
