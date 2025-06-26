@@ -37,19 +37,19 @@ driver = MotorDriver(
 #BNO055のインスタンス作成
 bno = BNO055()
 bno.begin()
+"""
+driver.changing_left(0, 70)
+driver.changing_left(70, 0)
+time.sleep(1)
+driver.changing_right(0, 70)
+driver.changing_right(70, 0)
+time.sleep(1)
+"""
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
-    driver.changing_left(0, 70)
-    driver.changing_left(70, 0)
-    time.sleep(1)
-    driver.changing_right(0, 70)
-    driver.changing_right(70, 0)
-    time.sleep(1)
     if gyro == 3:
         break
-if bno.begin() is not True:
-        print("Error initializing device")
-        exit()
+print("Calibration完了！")
 time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 bno.setExternalCrystalUse(True)
