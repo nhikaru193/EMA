@@ -113,7 +113,7 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              self.motor_forward(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
 
      def changing_Lforward(self, before, after):
          global speed
@@ -121,7 +121,7 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              self.motor_Lforward(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
 			 
      def changing_Rforward(self, before, after):
          global speed 
@@ -129,7 +129,7 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              self.motor_Rforward(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
 			 
      #def changing_left_forward(self, before, after):
 
@@ -140,7 +140,7 @@ class MotorDriver():
              delta_speed = (after - before) / 50
              speed = before + i * delta_speed
              self.motor_right(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
  
  #左折（同様）
      def changing_left(self, before, after):
@@ -149,7 +149,7 @@ class MotorDriver():
              delta_speed = (after - before) / 50
              speed = before + i * delta_speed
              self.motor_left(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
 
  #後退：回転数制御(異なる回転数へ変化するときに滑らかに遷移するようにする)
      def changing_retreat(self, before, after):
@@ -158,7 +158,7 @@ class MotorDriver():
              delta_speed = (after - before) / 50
              speed = before + i * delta_speed
              self.motor_retreat(speed)
-             time.sleep(0.02)
+             time.sleep(0.03)
           
      def quick_right(self, before, after):
          global speed
