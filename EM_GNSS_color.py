@@ -62,7 +62,7 @@ def convert_to_decimal(coord, direction):
         decimal *= -1
     return decimal
 
-# === 2点間の方位角の計算 (可読性向上) ===
+# === 2点間の方位角の計算 ===
 def get_bearing_to_goal(current, goal):
     if current is None or goal is None:
         return None
