@@ -74,7 +74,7 @@ def get_bearing_to_goal(current, goal):
     bearing_rad = math.atan2(y, x)
     return (math.degrees(bearing_rad) + 360) % 360
 
-# === 2点間の距離の計算 (バグ修正済み) ===
+# === 2点間の距離の計算 ===
 def get_distance_to_goal(current, goal):
     if current is None or goal is None:
         return float('inf')
