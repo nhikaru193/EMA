@@ -6,6 +6,7 @@ from BNO055 import BNO055
 import smbus
 import struct
 import serial
+import pigpio
 
 def measurement_turning(a, b):
     dturn = b - a
