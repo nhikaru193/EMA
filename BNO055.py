@@ -3,12 +3,7 @@ import time
 import struct
 
 class BNO055:
-	# BNO055.py ファイル内
-
-class BNO055:
-    # ... (既存の定数定義) ...
-
-    def begin(self, mode=None):
+	def begin(self, mode=None):
         if mode is None: mode = BNO055.OPERATION_MODE_NDOF
         self._bus = smbus.SMBus(1)
 
@@ -29,10 +24,13 @@ class BNO055:
 
         if actual_chip_id != BNO055.BNO055_ID: # この行は元々あるはずです。
             return False # 失敗！！
-
-        # Switch to config mode
+	
+	# Switch to config mode
         self.setMode(BNO055.OPERATION_MODE_CONFIG)
-        # ... (以降の処理はそのまま) ...
+
+	# BNO055.py ファイル内
+
+class BNO055:
 	BNO055_ADDRESS_A 				= 0x28        #代替i2cアドレス
 	BNO055_ADDRESS_B 				= 0x29        #デフォルトi2cアドレス, 先のアドレスも含め二つのアドレスがあることでハードウェア的な余裕がある(2つのハードを接続できる？)
 	BNO055_ID 		 			= 0xA0        #chipIDであり、BNO055に固有の値
