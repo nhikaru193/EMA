@@ -67,6 +67,9 @@ while True:
 		print("－－－－－－－－着地判定－－－－－－－－－")
 		break
 
+#テグス溶断
+
+
 #方位測定
 print("BNO055の動作終了中")
 time.sleep(1)
