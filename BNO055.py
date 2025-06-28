@@ -65,9 +65,9 @@ class BNO055:
 
         self.setMode(BNO055.OPERATION_MODE_CONFIG)
         self.writeBytes(BNO055.BNO055_SYS_TRIGGER_ADDR, [0x20])
-        time.sleep(1)
+        time.sleep(2)
         while self.readBytes(BNO055.BNO055_CHIP_ID_ADDR)[0] != BNO055.BNO055_ID:
-            time.sleep(0.01)
+            time.sleep(0.1)
         time.sleep(0.05)
 
         self.writeBytes(BNO055.BNO055_PWR_MODE_ADDR, [BNO055.POWER_MODE_NORMAL])
