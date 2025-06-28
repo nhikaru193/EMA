@@ -171,7 +171,7 @@ if __name__ == '__main__':
         pressure_threshold=890.0,
         acc_threshold=2.5,
         consecutive_checks=3,
-        timeout=120
+        timeout=30
     )
 
     if is_released:
