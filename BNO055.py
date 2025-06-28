@@ -3,6 +3,36 @@ import time
 import struct
 
 class BNO055:
+	# BNO055.py ファイル内
+
+class BNO055:
+    # ... (既存の定数定義) ...
+
+    def begin(self, mode=None):
+        if mode is None: mode = BNO055.OPERATION_MODE_NDOF
+        self._bus = smbus.SMBus(1)
+
+        # ★★★ ここにデバッグ用のprint文を追加 ★★★
+        try:
+            actual_chip_id = self.readBytes(BNO055.BNO055_CHIP_ID_ADDR)[0]
+            print(f"DEBUG: BNO055のアドレス {hex(self._address)} から読み取ったチップID: {hex(actual_chip_id)}")
+            print(f"DEBUG: 期待するチップID: {hex(BNO055.BNO055_ID)}")
+            if actual_chip_id != BNO055.BNO055_ID:
+                print("DEBUG: 期待するチップIDと異なります。1秒待機して再試行します。")
+                time.sleep(1) # Wait for the device to boot up
+                actual_chip_id = self.readBytes(BNO055.BNO055_CHIP_ID_ADDR)[0]
+                print(f"DEBUG: 1秒後、再度読み取ったチップID: {hex(actual_chip_id)}")
+        except Exception as e:
+            print(f"DEBUG: チップID読み取り中にエラーが発生しました: {e}")
+            return False
+        # ★★★ 追加ここまで ★★★
+
+        if actual_chip_id != BNO055.BNO055_ID: # この行は元々あるはずです。
+            return False # 失敗！！
+
+        # Switch to config mode
+        self.setMode(BNO055.OPERATION_MODE_CONFIG)
+        # ... (以降の処理はそのまま) ...
 	BNO055_ADDRESS_A 				= 0x28        #代替i2cアドレス
 	BNO055_ADDRESS_B 				= 0x29        #デフォルトi2cアドレス, 先のアドレスも含め二つのアドレスがあることでハードウェア的な余裕がある(2つのハードを接続できる？)
 	BNO055_ID 		 			= 0xA0        #chipIDであり、BNO055に固有の値
