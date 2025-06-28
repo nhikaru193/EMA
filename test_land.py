@@ -99,7 +99,7 @@ def check_landing(pressure_diff_threshold=1.0, acc_diff_threshold=0.1, gyro_diff
         calibrate_bno055 (bool): Trueの場合、BNO055の完全キャリブレーションを待機する。
     """
     # BME280初期化
-    init_bme280()
+    init_bme280(address=0x29)
     read_compensate()
 
     # BNO055初期化
