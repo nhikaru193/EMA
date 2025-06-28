@@ -173,6 +173,26 @@ print("GPS取得の動作終了中")
 time.sleep(1)
 print("GPS取得の動作終了中")
 
+print("IM920sLの動作確認中")
+time.sleep(1)
+print("IM920sLの動作確認中")
+
+port = serial.Serial("/dev/ttyS0", baudrate=9600, timeout=1)
+for i in range (1, 10):
+	msg = f"{i}\r\n"
+	port.write(msg.encode("ascii"))
+	print(f"{i}番目のデータを送信")
+
+GPIO.cleanup()
+
+print("IM920sLの動作終了中")
+time.sleep(1)
+print("IM920sLの動作終了中")
+
+	
+
+
+
 
 
 
