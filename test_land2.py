@@ -119,7 +119,7 @@ def check_landing(pressure_diff_threshold=1.0, acc_diff_threshold=0.1, gyro_diff
             sys, gyro, accel, mag = bno.getCalibration()
             # `\r` を使うことで同じ行を上書きし、コンソールをきれいに保つ
             print(f"   現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
-            if gyro == 3 and mag == 3 and accel == 3:
+            if gyro == 3 and mag == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
             time.sleep(0.5) # 0.5秒ごとに状態を確認
