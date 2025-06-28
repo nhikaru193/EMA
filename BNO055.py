@@ -119,18 +119,34 @@ class BNO055:
 
     def getVector(self, vectorType):
         buf = self.readBytes(vectorType, 6)
-        xyz = struct.unpack('hhh', struct.pack('BBBBBB', *buf))
+        xyz = struct.unpack('hhh', struct.pack('BBBBBB', *buf)) # 'hhh'で3つのshort integer (2バイト) に変換
+
+        scalingFactor = 1.0 # デフォルト値
+
         if vectorType == BNO055.VECTOR_MAGNETOMETER:
-            scalingFactor = 16.0
+            scalingFactor = 16.0 # 1 LSB = 0.0625 uT
         elif vectorType == BNO055.VECTOR_GYROSCOPE:
-            scalingFactor = 900.0
+            scalingFactor = 900.0 # 1 LSB = 1/16 dps (degrees per second) -> 16 LSB/dps -> 1 LSB = 0.0055 dps
+                                  # データシートp.60: Gyro (dps) 1LSB = 16 dps.  16 LSB/dps
+                                  # これは1LSB = 1/16 dpsなので、900.0 (50dpsレンジの900 LSB) ではなく16.0が正しいことが多い
+                                  # 元のコードの900.0がどういう意図か不明だが、一般的な実装は16.0を使う
+                                  # もし、getVectorがraw値を返しているなら、16.0 で割るとdpsになる
         elif vectorType == BNO055.VECTOR_EULER:
-            scalingFactor = 16.0
+            scalingFactor = 16.0 # 1 LSB = 0.0625 degrees
         elif vectorType == BNO055.VECTOR_GRAVITY:
-            scalingFactor = 100.0
-        else:
-            scalingFactor = 1.0
+            scalingFactor = 100.0 # 1 LSB = 0.01 m/s^2 (データシートp.60, gravity vector default m/s^2)
+        # ★★★ここを修正します★★★
+        elif vectorType == BNO055.VECTOR_ACCELEROMETER or \
+             vectorType == BNO055.VECTOR_LINEARACCEL:
+            scalingFactor = 100.0 # BNO055のデフォルト設定で1 LSB = 1 mg = 0.00980665 m/s^2
+                                  # または 1 LSB = 1 cm/s^2 (0.01 m/s^2)
+                                  # 一般的にm/s^2で返す場合は 100.0 で割ることが多い
+                                  # これにより、950は9.5m/s^2に近くなる
+        else: # 未定義のvectorTypeの場合のフォールバック
+            scalingFactor = 1.0 # 念のため残しておく
+
         return tuple([i / scalingFactor for i in xyz])
+
 
     def getQuat(self):
         buf = self.readBytes(BNO055.BNO055_QUATERNION_DATA_W_LSB_ADDR, 8)
