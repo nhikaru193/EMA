@@ -103,7 +103,7 @@ def check_landing(pressure_diff_threshold=1.0, acc_diff_threshold=0.1, gyro_diff
     read_compensate()
 
     # BNO055初期化
-    bno = BNO055(address=0x29)
+    bno = BNO055(address=0x28)
     if not bno.begin():
         print("🔴 BNO055 初期化失敗。プログラムを終了します。")
         return False # 失敗を明確に返す
