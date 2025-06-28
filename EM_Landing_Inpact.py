@@ -12,13 +12,13 @@ import serial
 import pigpio
 
 def convert_to_decimal(coord, direction):
-    # 度分（ddmm.mmmm）形式を10進数に変換
-    degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
-    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
-    decimal = degrees + minutes / 60
-    if direction in ['S', 'W']:
-        decimal *= -1
-    return decimal
+	# 度分（ddmm.mmmm）形式を10進数に変換
+	degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
+	minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
+	decimal = degrees + minutes / 60
+	if direction in ['S', 'W']:
+		decimal *= -1
+	return decimal
 
 #BNO055の初期設定
 bno = BNO055()
