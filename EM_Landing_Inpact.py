@@ -8,6 +8,17 @@ import math
 import BME280
 import BNO055
 from motor import MotorDriver
+import serial
+import pigpio
+
+def convert_to_decimal(coord, direction):
+    # 度分（ddmm.mmmm）形式を10進数に変換
+    degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
+    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
+    decimal = degrees + minutes / 60
+    if direction in ['S', 'W']:
+        decimal *= -1
+    return decimal
 
 #BNO055の初期設定
 bno = BNO055()
@@ -108,8 +119,45 @@ for i in range(2):
 	driver.changing_retreat(0, 100)
 	driver.changing_retreat(100, 0)
 
+#モータークリーンアップ
+driver.motor_stop_brake()
+driver.cleanup()
+
 print("モーターの動作終了中")
 time.sleep(1)
 print("モーターの動作終了中")
+
+#GPS動作確認
+print("GPS取得の動作確認中")
+time.sleep(1)
+print("GPS取得の動作確認中")
+
+TX_PIN = 27
+RX_PIN = 17
+BAUD = 9600
+
+pi = pigpio.pi()
+if not pi.connected:
+	print("pigpio デーモンに接続できません。")
+	exit(1)
+
+err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
+if err != 0:
+	print(f"ソフトUART RX の設定に失敗：GPIO={RX_PIN}, {BAUD}bps")
+	pi.stop()
+	exit(1)
+
+print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
+
+for i in range(50):
+	(count, data) = pi.bb_serial_read(RX_PIN)
+	if count and data:
+		text = data.decode("ascii", errors="ignore")
+		if "$GNRMC" in text:
+			lines = text.split("\n")
+			for line in lines:
+				parts = line.strip().split(",")
+				if len(parts) > 6 and parts[2] == "A":
+					lat = convert_to_decimal(parts[3], parts[4])
 
 
