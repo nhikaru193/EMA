@@ -156,8 +156,23 @@ for i in range(50):
 		if "$GNRMC" in text:
 			lines = text.split("\n")
 			for line in lines:
-				parts = line.strip().split(",")
-				if len(parts) > 6 and parts[2] == "A":
-					lat = convert_to_decimal(parts[3], parts[4])
+				if "$GNRMC" in line:
+					parts = line.strip().split(",")
+					if len(parts) > 6 and parts[2] == "A":
+						lat = convert_to_decimal(parts[3], parts[4])
+						lon = convert_to_decimal(parts[5], parts[6])
+						print(lat, lon)
+
+pi.bb_serial_read_close(RX_PIN)
+pi.stop()
+
+print("GPS取得の動作終了中")
+time.sleep(1)
+print("GPS取得の動作終了中")
+
+
+
+
+				
 
 
