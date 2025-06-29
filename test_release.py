@@ -81,7 +81,6 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
----
 ## 放出判定ロジック (キャリブレーションなし)
 
 ```python
