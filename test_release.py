@@ -81,10 +81,8 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
----
 ## 着地判定ロジック (X, Y軸除外バージョン)
 
-```python
 def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_z_threshold_abs=0.5, gyro_z_threshold_abs=0.5, consecutive_checks=3, timeout=60):
     """
     気圧、Z軸加速度、Z軸角速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
