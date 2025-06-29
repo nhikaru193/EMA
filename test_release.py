@@ -81,19 +81,21 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
-## 着地判定ロジック (X, Y軸除外バージョン)
+---
+## 着地判定ロジック (角速度測定なしバージョン)
 
-def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_z_threshold_abs=0.5, gyro_z_threshold_abs=0.5, consecutive_checks=3, timeout=60):
+```python
+def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_z_threshold_abs=0.5, consecutive_checks=3, timeout=60):
     """
-    気圧、Z軸加速度、Z軸角速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
+    気圧とZ軸加速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
     タイムアウトした場合、条件成立回数に関わらず着地成功とみなす。
     BNO055のキャリブレーションは行わないため、精度は低下する可能性がある。
+    角速度は測定・使用しない。
 
     Args:
         min_pressure_threshold (float): 着地判定のための最小気圧閾値 (hPa)。
         max_pressure_threshold (float): 着地判定のための最大気圧閾値 (hPa)。
         acc_z_threshold_abs (float): 着地判定のためのZ軸線形加速度の絶対値閾値 (m/s²)。
-        gyro_z_threshold_abs (float): 着地判定のためのZ軸角速度の絶対値閾値 (°/s)。
         consecutive_checks (int): 着地判定が連続して成立する必要のある回数。
         timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
     """
@@ -110,13 +112,12 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     bno.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードを明示的に設定
 
     # --- BNO055 キャリブレーション待機部分は削除 ---
-    print("\n⚠️ BNO055 キャリブレーションはスキップされました。線形加速度・角速度の精度が低下する可能性があります。")
+    print("\n⚠️ BNO055 キャリブレーションはスキップされました。線形加速度の精度が低下する可能性があります。")
 
 
     print("\n🛬 着地判定開始...")
     print(f"   気圧範囲: {min_pressure_threshold:.2f} hPa 〜 {max_pressure_threshold:.2f} hPa")
     print(f"   Z軸加速度絶対値閾値: < {acc_z_threshold_abs:.2f} m/s²")
-    print(f"   Z軸角速度絶対値閾値: < {gyro_z_threshold_abs:.2f} °/s")
     print(f"   連続成立回数: {consecutive_checks}回")
     print(f"   タイムアウト: {timeout}秒\n")
 
@@ -125,9 +126,9 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     last_check_time = time.time() # 前回のチェック時刻
 
     try:
-        # ヘッダーを一度だけ出力
-        print(f"{'Timestamp(s)':<15}{'Elapsed(s)':<12}{'Pressure(hPa)':<15}{'Acc_Z(m/s2)':<12}{'Gyro_Z(dps)':<12}")
-        print("-" * 75) # 区切り線
+        # ヘッダーを一度だけ出力 (角速度項目を削除)
+        print(f"{'Timestamp(s)':<15}{'Elapsed(s)':<12}{'Pressure(hPa)':<15}{'Acc_Z(m/s2)':<12}")
+        print("-" * 60) # 区切り線も短く
 
         while True:
             current_time = time.time()
@@ -135,6 +136,8 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
 
             # タイムアウト判定
             if elapsed_total > timeout:
+                # タイムアウト時の最終行表示を調整
+                print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{'TIMEOUT':<15}{'':<12}") # 最終のデータ行の後ろに改行
                 print(f"\n⏰ タイムアウト ({timeout}秒経過)。条件成立回数 {landing_count} 回でしたが、強制的に着地判定を成功とします。")
                 return True # タイムアウトしたら無条件で成功
             
@@ -149,17 +152,15 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
             pressure, _ = get_pressure_and_temperature() # 温度はここでは使わないので_で受け取る
             # X, Y軸の加速度は取得するが、使用しないので変数名_に代入
             _, _, acc_z = bno.getVector(BNO055.VECTOR_LINEARACCEL) # 線形加速度 (Z軸のみ使用)
-            # X, Y軸の角速度は取得するが、使用しないので変数名_に代入
-            _, _, gyro_z = bno.getVector(BNO055.VECTOR_GYROSCOPE) # 角速度 (Z軸のみ使用)
+            # gyro_x, gyro_y, gyro_z = bno.getVector(BNO055.VECTOR_GYROSCOPE) # 角速度の取得は不要になったため削除
 
             # データをコンソールに整形して出力 (Z軸のみ)
-            print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{pressure:<15.2f}{acc_z:<12.2f}{gyro_z:<12.2f}", end='\r')
+            print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{pressure:<15.2f}{acc_z:<12.2f}")
 
-            # 着地条件の判定 (Z軸のみを使用)
+            # 着地条件の判定 (角速度条件を削除)
             is_landing_condition_met = (
                 min_pressure_threshold <= pressure <= max_pressure_threshold and  # 気圧が範囲内
-                abs(acc_z) < acc_z_threshold_abs and                            # Z軸の加速度絶対値が閾値以下
-                abs(gyro_z) < gyro_z_threshold_abs                              # Z軸の角速度絶対値が閾値以下
+                abs(acc_z) < acc_z_threshold_abs                                # Z軸の加速度絶対値が閾値以下
             )
 
             if is_landing_condition_met:
@@ -178,9 +179,13 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
                 return True # 着地判定成功で関数を終了
 
     except KeyboardInterrupt:
+        # プログラムが中断された際の最終行表示を調整
+        print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{'INTERRUPTED':<15}{'':<12}")
         print("\n\nプログラムがユーザーによって中断されました。")
         return False
     except Exception as e:
+        # エラー発生時の最終行表示を調整
+        print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{'ERROR':<15}{'':<12}")
         print(f"\n\n🚨 エラーが発生しました: {e}")
         return False
     finally:
@@ -195,7 +200,7 @@ if __name__ == '__main__':
         min_pressure_threshold=1029.0, # 気圧の最小閾値
         max_pressure_threshold=1030.0, # 気圧の最大閾値
         acc_z_threshold_abs=0.5,       # Z軸線形加速度の絶対値閾値 (m/s²)
-        gyro_z_threshold_abs=0.5,      # Z軸角速度の絶対値閾値 (°/s)
+        # gyro_z_threshold_abs は不要になったため削除
         consecutive_checks=3,          # 3回連続で条件が満たされたら着地とみなす
         timeout=30                    # 2分以内に判定が行われなければタイムアウトで強制成功
     )
