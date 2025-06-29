@@ -12,7 +12,7 @@ digH = []
 i2c = smbus.SMBus(1)
 address = 0x76 # BME280のアドレス
 
-# ----------- BME280 初期化と補正関数群（変更なし） -----------
+# --- BME280 初期化と補正関数群（変更なし） ---
 
 def init_bme280():
     i2c.write_byte_data(address, 0xF2, 0x01)
@@ -77,21 +77,23 @@ def get_pressure_and_temperature():
     adc_p = (dat[0] << 16 | dat[1] << 8 | dat[2]) >> 4
     adc_t = (dat[3] << 16 | dat[4] << 8 | dat[5]) >> 4
     
-    # 温度補正を先に行い、t_fineを更新する必要がある
     temperature = bme280_compensate_t(adc_t)
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
-# ----------- 放出判定処理の簡略化 (タイムアウト時の動作を変更) -----------
+---
+## 放出判定ロジック (キャリブレーションなし)
 
-def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_checks=3, timeout=30):
+```python
+def check_release(pressure_threshold=1030.0, acc_threshold=3.0, consecutive_checks=3, timeout=30):
     """
-    気圧と加速度の変化を監視し、放出条件が連続で満たされた場合に放出判定を行う。
+    気圧と線形加速度の変化を監視し、放出条件が連続で満たされた場合に放出判定を行う。
+    キャリブレーションは行わないため、線形加速度の精度は低下する可能性がある。
     タイムアウトした場合、条件成立回数に関わらず放出成功とみなす。
 
     Args:
         pressure_threshold (float): 放出判定のための気圧閾値 (hPa)。
-        acc_threshold (float): 放出判定のためのZ軸加速度絶対値閾値 (m/s²)。
+        acc_threshold (float): 放出判定のためのZ軸線形加速度絶対値閾値 (m/s²)。
         consecutive_checks (int): 放出判定が連続して成立する必要のある回数。
         timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
     """
@@ -106,10 +108,14 @@ def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_chec
 
     bno.setExternalCrystalUse(True)
     bno.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードを明示的に設定
+    
+    # --- BNO055 キャリブレーション待機部分は削除 ---
+    print("\n⚠️ BNO055 キャリブレーションはスキップされました。線形加速度の精度が低下する可能性があります。")
+
 
     print("\n🚀 放出判定開始...")
     print(f"   気圧閾値: < {pressure_threshold:.2f} hPa")
-    print(f"   加速度Z閾値: |Z| > {acc_threshold:.2f} m/s²")
+    print(f"   Z軸線形加速度絶対値閾値: |Z| > {acc_threshold:.2f} m/s² (重力除去済み)")
     print(f"   連続成立回数: {consecutive_checks}回")
     print(f"   タイムアウト: {timeout}秒\n")
 
@@ -124,7 +130,6 @@ def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_chec
 
             # タイムアウト判定
             if elapsed_total > timeout:
-                # ★★★ 変更点: タイムアウトしたら無条件で成功とみなす ★★★
                 print(f"\n⏰ タイムアウト ({timeout}秒経過)。条件成立回数 {release_count} 回でしたが、強制的に放出判定を成功とします。")
                 return True # タイムアウトしたら無条件で成功
 
@@ -137,9 +142,9 @@ def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_chec
 
             # センサーデータの取得
             pressure, _ = get_pressure_and_temperature()
-            acc_x, acc_y, acc_z = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
+            acc_x, acc_y, acc_z = bno.getVector(BNO055.VECTOR_LINEARACCEL)
 
-            print(f"経過: {elapsed_total:.1f}s | 気圧: {pressure:.2f} hPa | 加速度Z: {acc_z:.2f} m/s² ", end='\r')
+            print(f"経過: {elapsed_total:.1f}s | 気圧: {pressure:.2f} hPa | 線形加速度Z: {acc_z:.2f} m/s² ", end='\r')
 
             # 放出条件の判定
             if pressure < pressure_threshold and abs(acc_z) > acc_threshold:
@@ -164,14 +169,18 @@ def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_chec
     finally:
         print("\n--- 判定処理終了 ---")
 
+---
+## 実行例
 
-# 🔧 実行例
+```python
 if __name__ == '__main__':
+    # BNO055.py が同じディレクトリにあることを確認してください。
+    # 閾値とタイムアウトを設定して判定を開始
     is_released = check_release(
-        pressure_threshold=890.0,
-        acc_threshold=2.5,
+        pressure_threshold=1029.0, # 例: 高度上昇による気圧低下を検出 (約1000mの高度に相当)
+        acc_threshold=2.5,        # 例: ロケット分離時の衝撃や加速を検出 (重力除去済み)
         consecutive_checks=3,
-        timeout=30
+        timeout=30 # テスト期間を短めに設定
     )
 
     if is_released:
