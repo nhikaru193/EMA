@@ -83,7 +83,6 @@ def get_pressure_and_temperature():
 
 ## 放出判定ロジック (キャリブレーションなし)
 
-```python
 def check_release(pressure_threshold=1030.0, acc_threshold=3.0, consecutive_checks=3, timeout=30):
     """
     気圧と線形加速度の変化を監視し、放出条件が連続で満たされた場合に放出判定を行う。
