@@ -167,10 +167,8 @@ def check_release(pressure_threshold=1030.0, acc_threshold=3.0, consecutive_chec
     finally:
         print("\n--- 判定処理終了 ---")
 
----
 ## 実行例
 
-```python
 if __name__ == '__main__':
     # BNO055.py が同じディレクトリにあることを確認してください。
     # 閾値とタイムアウトを設定して判定を開始
