@@ -1,6 +1,6 @@
 import smbus
 import time
-from BNO055 import BNO055 # BNO055をインポート
+from BNO055 import BNO055  # BNO055をインポート
 
 # BME280関連のグローバル変数
 t_fine = 0.0
@@ -55,7 +55,7 @@ def bme280_compensate_t(adc_T):
 
 def bme280_compensate_p(adc_P):
     global t_fine
-    p = 0.0 # BME280の元のコードではpの初期化がなかったため追加
+    p = 0.0
     var1 = t_fine - 128000.0
     var2 = var1 * var1 * digP[5]
     var2 += (var1 * digP[4]) * 131072.0
@@ -81,15 +81,13 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
----
-## 着地判定ロジック (キャリブレーションなしバージョン)
+# --- 着地判定処理 ---
 
-```python
-def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60):
+def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
     """
     気圧、加速度、角速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
     タイムアウトした場合、条件成立回数に関わらず着地成功とみなす。
-    BNO055のキャリブレーションは行わないため、線形加速度/角速度の精度は低下する可能性がある。
+    オプションでBNO055のキャリブレーション待機機能を含む。
 
     Args:
         min_pressure_threshold (float): 着地判定のための最小気圧閾値 (hPa)。
@@ -98,6 +96,7 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
         gyro_threshold_abs (float): 着地判定のための角速度の絶対値閾値 (°/s)。
         consecutive_checks (int): 着地判定が連続して成立する必要のある回数。
         timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
+        calibrate_bno055 (bool): Trueの場合、BNO055の完全キャリブレーションを待機する。
     """
     # センサーの初期化
     init_bme280()
@@ -111,11 +110,26 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     bno.setExternalCrystalUse(True)
     bno.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードを明示的に設定
 
-    # --- BNO055 キャリブレーション待機部分は完全に削除 ---
-    print("\n⚠️ BNO055 キャリブレーションはスキップされました。線形加速度・角速度の精度が低下する可能性があります。")
+    # --- BNO055 キャリブレーション待機 ---
+    if calibrate_bno055:
+        print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
+        print("   (システム、ジャイロ、加速度、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+        calibration_start_time = time.time()
+        while True:
+            sys, gyro, accel, mag = bno.getCalibration()
+            print(f"   現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
+            
+            # 加速度計もレベル3になるまで待つように条件を強化
+            if sys == 3 and gyro == 3 and accel == 3 and mag == 3:
+                print("\n✅ BNO055 キャリブレーション完了！")
+                break
+            time.sleep(0.5) # 0.5秒ごとに状態を確認
+        print(f"   キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
+    else:
+        print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
 
 
-    print("\n🛬 着地判定開始...")
+    print("🛬 着地判定開始...")
     print(f"   気圧範囲: {min_pressure_threshold:.2f} hPa 〜 {max_pressure_threshold:.2f} hPa")
     print(f"   加速度絶対値閾値: < {acc_threshold_abs:.2f} m/s² (X, Y, Z軸)")
     print(f"   角速度絶対値閾値: < {gyro_threshold_abs:.2f} °/s (X, Y, Z軸)")
@@ -126,12 +140,12 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     start_time = time.time()
     last_check_time = time.time() # 前回のチェック時刻
 
-    try:
-        # ヘッダーを一度だけ出力
-        # タイムスタンプ,経過時間,気圧,線形加速度X,線形加速度Y,線形加速度Z,角速度X,角速度Y,角速度Z
-        print(f"{'Timestamp(s)':<15}{'Elapsed(s)':<12}{'Pressure(hPa)':<15}{'Acc_X(m/s2)':<12}{'Acc_Y(m/s2)':<12}{'Acc_Z(m/s2)':<12}{'Gyro_X(dps)':<12}{'Gyro_Y(dps)':<12}{'Gyro_Z(dps)':<12}")
-        print("-" * 120) # 区切り線
+    # stable_変数は不要になったため削除
+    # stable_pressure = None
+    # stable_acc_x, stable_acc_y, stable_acc_z = None, None, None
+    # stable_gyro_x, stable_gyro_y, stable_gyro_z = None, None, None
 
+    try:
         while True:
             current_time = time.time()
             elapsed_total = current_time - start_time
@@ -153,10 +167,14 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
             acc_x, acc_y, acc_z = bno.getVector(BNO055.VECTOR_LINEARACCEL) # 線形加速度
             gyro_x, gyro_y, gyro_z = bno.getVector(BNO055.VECTOR_GYROSCOPE) # 角速度
 
-            # データをコンソールに整形して出力
-            print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{pressure:<15.2f}{acc_x:<12.2f}{acc_y:<12.2f}{acc_z:<12.2f}{gyro_x:<12.2f}{gyro_y:<12.2f}{gyro_z:<12.2f}", end='\r')
+            # 初回のデータで安定時の基準値を設定 (絶対値判定になったため不要)
+            # if stable_pressure is None:
+            #     print("--- 初期安定値設定完了。着地条件監視中... ---")
+            #     continue # 初回は基準値設定のみで判定はスキップ
 
-            # 着地条件の判定 (絶対値での判定)
+            print(f"経過: {elapsed_total:.1f}s | 気圧: {pressure:.2f} hPa | 加速度(X,Y,Z): ({acc_x:.2f}, {acc_y:.2f}, {acc_z:.2f}) m/s² | 角速度(X,Y,Z): ({gyro_x:.2f}, {gyro_y:.2f}, {gyro_z:.2f}) °/s ", end='\r')
+
+            # 着地条件の判定 (絶対値での判定に変更)
             is_landing_condition_met = (
                 min_pressure_threshold <= pressure <= max_pressure_threshold and  # 気圧が範囲内
                 abs(acc_x) < acc_threshold_abs and                              # 各軸の加速度絶対値が閾値以下
@@ -169,11 +187,9 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
 
             if is_landing_condition_met:
                 landing_count += 1
-                # 画面表示が上書きされる前にメッセージを確実に出力するために改行
                 print(f"\n💡 条件成立！連続判定中: {landing_count}/{consecutive_checks} 回")
             else:
                 if landing_count > 0:
-                    # 画面表示が上書きされる前にメッセージを確実に出力するために改行
                     print(f"\n--- 条件不成立。カウントリセット ({landing_count} -> 0) ---")
                 landing_count = 0
 
@@ -202,8 +218,8 @@ if __name__ == '__main__':
         acc_threshold_abs=0.5,         # 線形加速度の各軸の絶対値閾値 (m/s²)
         gyro_threshold_abs=0.5,        # 角速度の各軸の絶対値閾値 (°/s)
         consecutive_checks=3,          # 3回連続で条件が満たされたら着地とみなす
-        timeout=120                    # 2分以内に判定が行われなければタイムアウトで強制成功
-        # calibrate_bno055=True は削除 (キャリブレーションなしバージョンなので)
+        timeout=120,                   # 2分以内に判定が行われなければタイムアウトで強制成功
+        calibrate_bno055=True          # BNO055のキャリブレーション待機を有効にする (強く推奨)
     )
 
     if is_landed:
