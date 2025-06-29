@@ -113,14 +113,14 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     # --- BNO055 キャリブレーション待機 ---
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("   (システム、ジャイロ、加速度、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("   (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
         calibration_start_time = time.time()
         while True:
             sys, gyro, accel, mag = bno.getCalibration()
             print(f"   現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
             
             # 加速度計もレベル3になるまで待つように条件を強化
-            if sys == 3 and gyro == 3 and accel == 3 and mag == 3:
+            if gyro == 3 and mag == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
             time.sleep(0.5) # 0.5秒ごとに状態を確認
