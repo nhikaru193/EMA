@@ -84,7 +84,7 @@ def get_pressure_and_temperature():
 
 # ----------- 放出判定処理の簡略化 (タイムアウト時の動作を変更) -----------
 
-def check_release(pressure_threshold=900.0, acc_threshold=3.0, consecutive_checks=3, timeout=60):
+def check_release(pressure_threshold=1029.0, acc_threshold=3.0, consecutive_checks=3, timeout=30):
     """
     気圧と加速度の変化を監視し、放出条件が連続で満たされた場合に放出判定を行う。
     タイムアウトした場合、条件成立回数に関わらず放出成功とみなす。
