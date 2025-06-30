@@ -7,7 +7,7 @@ import smbus
 import struct
 import serial
 import pigpio
-"""
+
 def measurement_turning(a, b):
     dturn = b - a
     return dturn
@@ -27,7 +27,7 @@ def test_turning(duty):
     print(f"総回転角度は{dturn} 度 です")
     print(f"平均角速度は{average} 度/s です")
     time.sleep(2)
-"""
+
 
 #モータの初期化
 driver = MotorDriver(
@@ -35,7 +35,7 @@ driver = MotorDriver(
     PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
     STBY=21                      # STBYピン
 )
-"""
+
 #BNO055のインスタンス作成
 bno = BNO055()
 time.sleep(2)
@@ -61,10 +61,4 @@ bno.setExternalCrystalUse(True)
 time.sleep(1)
 for i in range (5, 10):
   test_turning(10 * i)
-driver.cleanup()
-"""
-
-driver.changing_left(0, 100)
-driver.changing_left(100, 0)
-
 driver.cleanup()
