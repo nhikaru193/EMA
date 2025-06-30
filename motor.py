@@ -182,7 +182,7 @@ class MotorDriver():
 		     delta_speed_R = (Rmotor_b - Rmotor_a) / 100
 		     speed_L = Lmotor_b - i * delta_speed_L
 		     speed_R = Rmotor_b - i * delta_speed_R
-		     self.motor_left(speed_L)
-		     self.motor_right(speed_R)
+		     self.motor_Lforward(speed_L)
+		     self.motor_Rforward(speed_R)
 		     time.sleep(0.02)
 			 
