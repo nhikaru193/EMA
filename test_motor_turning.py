@@ -28,13 +28,14 @@ def test_turning(duty):
     print(f"平均角速度は{average} 度/s です")
     time.sleep(2)
 
+
 #モータの初期化
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
     PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
     STBY=21                      # STBYピン
 )
-
+"""
 #BNO055のインスタンス作成
 bno = BNO055()
 time.sleep(2)
@@ -61,4 +62,10 @@ bno.setExternalCrystalUse(True)
 time.sleep(1)
 for i in range (5, 10):
   test_turning(10 * i)
+driver.cleanup()
+"""
+
+driver.changing_left(0, 100)
+driver.changing_left(100, 0)
+
 driver.cleanup()
