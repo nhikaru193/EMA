@@ -7,7 +7,7 @@ import smbus
 import struct
 import serial
 import pigpio
-
+"""
 def measurement_turning(a, b):
     dturn = b - a
     return dturn
@@ -27,7 +27,7 @@ def test_turning(duty):
     print(f"総回転角度は{dturn} 度 です")
     print(f"平均角速度は{average} 度/s です")
     time.sleep(2)
-
+"""
 
 #モータの初期化
 driver = MotorDriver(
@@ -41,14 +41,13 @@ bno = BNO055()
 time.sleep(2)
 bno.begin()
 
-"""
 driver.changing_left(0, 70)
 driver.changing_left(70, 0)
 time.sleep(1)
 driver.changing_right(0, 70)
 driver.changing_right(70, 0)
 time.sleep(1)
-"""
+
 
 time.sleep(5)
 while True:
