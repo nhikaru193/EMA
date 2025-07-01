@@ -26,24 +26,33 @@ def correction_heading(before_heading, Lspeed, Rspeed):
         after_heading = bno.get_heading()
         delta = (after_heading - before_heading + 180) % 360 -180
         
-        if delta == 0:
-            break
-        elif delta < 20:
+        if delta < -40:
+            Rspeed = Rspeed - 2
+            driver.motor_Rforward(Rspeed)
+        elif delta < -20:
             Rspeed = Rspeed - 1
             driver.motor_Rforward(Rspeed)
-        elif delta < 0:
+        elif delta < -5:
             Rspeed = Rspeed - 0.5
             driver.motor_Rforward(Rspeed)
-        elif delta > -20:
+        elif delta > 40:
+            Lspeed = Lspeed - 2
+            driver.motor_Lforward(Lspeed)
+        elif delta > 20:
             Lspeed = Lspeed - 1
             driver.motor_Lforward(Lspeed)
-        elif delta > 0:
+        elif delta > 5:
             Lspeed = Lspeed - 0.5
             driver.motor_Lforward(Lspeed)
+        time.sleep(0.1)
 
 before_heading = bno.get_heading()
 driver.changing_forward(0, 100)
 correction_heading(before_heading, 100, 100)
+driver.changing_forward(100, 0)
+driver.cleanup()
+
+
         
                 
                 
