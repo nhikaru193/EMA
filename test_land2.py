@@ -81,12 +81,7 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
----
-## 着地判定処理の変更点
 
-`check_landing` 関数を修正し、気圧の変化量で判定するようにしました。
-
-```python
 def check_landing(pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
     """
     気圧の変化量、加速度、角速度が閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
@@ -220,12 +215,9 @@ def check_landing(pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_thr
     finally:
         print("\n--- 判定処理終了 ---")
 
----
-## 実行例と設定
 
-`if __name__ == '__main__':` ブロックで `check_landing` 関数を呼び出す際に、新しい `pressure_change_threshold` を設定します。
 
-```python
+
 # --- 実行例 ---
 if __name__ == '__main__':
     # BNO055.py が test_land2.py と同じディレクトリにあることを確認してください。
