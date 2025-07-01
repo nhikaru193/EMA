@@ -10,6 +10,7 @@ from BNO055 import BNO055
 from motor import MotorDriver
 import serial
 import pigpio
+import RPi.GPIO as GPIO
 
 def convert_to_decimal(coord, direction):
 	# 度分（ddmm.mmmm）形式を10進数に変換
@@ -20,6 +21,27 @@ def convert_to_decimal(coord, direction):
 		decimal *= -1
 	return decimal
 
+def fusing_circuit()
+	try:
+		NICHROME_PIN = 25
+		HEATING_DURATION_SECONDS = 3.0
+		GPIO.setmode(GPIO.BCM)
+		GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+		print("ニクロム線溶断シーケンスを開始します。")
+		print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+		GPIO.output(NICHROME_PIN, GPIO.HIGH)
+		print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+		time.sleep(HEATING_DURATION_SECONDS)
+		print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+		GPIO.output(NICHROME_PIN, GPIO.LOW)
+		print("シーケンスが正常に完了しました。")
+	except KeyboardInterrupt:
+		print("プログラムが中断されました。")
+		GPIO.output(NICHROME_PIN, GPIO.LOW)
+	finally:
+		GPIO.cleanup()
+		print("GPIOのクリーンアップを実行しました。")
+	
 #BNO055の初期設定
 bno = BNO055()
 time.sleep(1)
@@ -69,7 +91,7 @@ while True:
 		break
 
 #テグス溶断
-
+fusing_circuit()
 
 #方位測定
 print("BNO055の動作終了中")
