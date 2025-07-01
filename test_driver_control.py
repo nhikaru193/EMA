@@ -23,12 +23,8 @@ try:
     """
     driver.changing_forward(0, 100)
     time.sleep(3)
-    driver.changing_forward(100, 70)
-    time.sleep(3)
-    driver.changing_forward(70, 50)
-    time.sleep(3)
-    driver.changing_forward(50, 0)
-    time.sleep(3)
+    driver.changing_forward(100, 0)
+
     
 finally:
     driver.cleanup()
