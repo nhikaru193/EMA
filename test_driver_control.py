@@ -9,14 +9,16 @@ driver = MotorDriver(
 )
 
 try:
-    for i in range (30):
-        k = 100 - i
+    for i in range (15):
+        L = 95
+        k = L - i
         print(f"duty比{k}です")
-        driver.changing_moving_forward(0, 100, 0, k)
+        driver.changing_moving_forward(0, L, 0, k)
         print("準備完了です")
         time.sleep(4)
         print("減速を開始します")
-        driver.changing_moving_forward(100, 0, k, 0)
+        driver.changing_moving_forward(L, 0, k, 0)
+        time.sleep(0.2)
 
 finally:
     driver.cleanup()
