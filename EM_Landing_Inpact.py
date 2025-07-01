@@ -92,9 +92,9 @@ BME280.init_bme280()
 BME280.read_compensate()
 
 #測定データの出力
-for i in range (100):
+for i in range (20):
 	BME280.read_data()
-	time.sleep(0.02)
+	time.sleep(0.1)
 
 print("bme280の動作終了中")
 time.sleep(1)
