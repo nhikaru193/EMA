@@ -117,7 +117,7 @@ class MotorDriver():
                  self.motor_Lforward(speed)
                  self.motor_Rforward(R_speed)
              else:
-                 R_speed = speed - 2
+                 R_speed = speed + 4
                  self.motor_Lforward(speed)
                  self.motor_Rforward(R_speed)
                  time.sleep(0.03)
