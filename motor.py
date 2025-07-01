@@ -113,7 +113,7 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              print(f"{speed}です")
-             L_speed = speed * 0.93
+             L_speed = speed * 0.87
              self.motor_Rforward(speed)
              self.motor_Lforward(L_speed)
              time.sleep(0.02)
