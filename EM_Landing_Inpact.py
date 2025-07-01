@@ -32,7 +32,7 @@ time.sleep(1)
 #BNO055のキャリブレーション
 while True:
 	a, b, gyro, d = bno.getCalibration()
-	if gyro == 3
+	if gyro == 3:
 		print(BNO055センサのgyroキャリブレーションが終了しました)
 		break
 
