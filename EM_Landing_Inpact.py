@@ -21,7 +21,7 @@ def convert_to_decimal(coord, direction):
 		decimal *= -1
 	return decimal
 
-def fusing_circuit()
+def fusing_circuit():
 	try:
 		NICHROME_PIN = 25
 		HEATING_DURATION_SECONDS = 1.0
