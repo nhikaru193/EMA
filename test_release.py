@@ -193,12 +193,11 @@ if __name__ == '__main__':
     # BNO055.py が test_land.py と同じディレクトリにあることを確認してください。
     # 閾値とタイムアウトを設定して判定を開始
     is_landed = check_landing(
-        min_pressure_threshold=1027.0, # 気圧の最小閾値
-        max_pressure_threshold=1040.0, # 気圧の最大閾値
+        pressure_change_threshold=0.3, #気圧の変化量
         acc_z_threshold_abs=4.0,       # Z軸線形加速度の絶対値閾値 (m/s²)
         # gyro_z_threshold_abs は不要になったため削除
         consecutive_checks=3,          # 3回連続で条件が満たされたら着地とみなす
-        timeout=30                    # 2分以内に判定が行われなければタイムアウトで強制成功
+        timeout=60                    # 1分以内に判定が行われなければタイムアウトで強制成功
     )
 
     if is_landed:
