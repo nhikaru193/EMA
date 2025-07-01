@@ -115,18 +115,7 @@ class MotorDriver():
          for i in range(1, 100):
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
-             if speed < 56:
-                 L_speed = speed * 0.85
-                 self.motor_Rforward(speed)
-                 self.motor_Lforward(L_speed)
-                 time.sleep(0.05)
-             if speed >= 56:
-                 L_speed = speed * 0.90
-                 self.motor_Rforward(speed)
-                 self.motor_Lforward(L_speed)
-                 time.sleep(0.05)
-             
-	
+             self.motor_forward(speed)
 
      def changing_Lforward(self, before, after):
          global speed
