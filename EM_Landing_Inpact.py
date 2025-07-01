@@ -25,7 +25,7 @@ bno = BNO055()
 time.sleep(1)
 bno.begin()
 time.sleep(1)
-bno.setmode(BNO055.OPERATION_MODE_NDOF)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
 bno.setExternalCrystalUse(True)
 time.sleep(1)
 
