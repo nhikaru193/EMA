@@ -32,8 +32,9 @@ time.sleep(1)
 #BNO055のキャリブレーション
 while True:
 	a, gyro, c, d = bno.getCalibration()
+	print(f"gyro = {gyro}")
 	if gyro == 3:
-		print(BNO055センサのgyroキャリブレーションが終了しました)
+		print("BNO055センサのgyroキャリブレーションが終了しました")
 		break
 
 #高度調整の時間設け
