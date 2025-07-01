@@ -113,10 +113,11 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              if speed < 80:
+                 R_speed = 0.90 * speed
                  self.motor_Lforward(speed)
-                 self.motor_Rforward(speed)
+                 self.motor_Rforward(R_speed)
              else:
-                 R_speed = speed - 4
+                 R_speed = speed - 10
                  self.motor_Lforward(speed)
                  self.motor_Rforward(R_speed)
                  time.sleep(0.03)
