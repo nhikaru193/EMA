@@ -81,12 +81,7 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
----
-## 着地判定処理の変更点
 
-`check_landing` 関数を修正し、**最初の気圧測定値**からの変化量で判定するようにしました。
-
-```python
 def check_landing(pressure_change_threshold=0.3, acc_z_threshold_abs=0.5, consecutive_checks=3, timeout=60):
     """
     最初に測定した気圧からの変化量とZ軸加速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
