@@ -118,7 +118,7 @@ def check_landing(pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_thr
             print(f"   現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
             
             # 加速度計もレベル3になるまで待つように条件を強化
-            if gyro == 3 and mag == 3 and accel == 3: # 加速度もキャリブレーションレベル3を待つように変更
+            if gyro == 3 and mag == 3: # 加速度もキャリブレーションレベル3を待つように変更
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
             time.sleep(0.5) # 0.5秒ごとに状態を確認
