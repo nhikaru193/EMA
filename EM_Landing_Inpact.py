@@ -6,7 +6,7 @@ import struct
 from BNO055 import BNO055
 import math
 import BME280
-import BNO055
+from BNO055 import BNO055
 from motor import MotorDriver
 import serial
 import pigpio
