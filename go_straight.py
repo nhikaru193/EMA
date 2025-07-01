@@ -3,6 +3,7 @@ import time
 from motor import MotorDriver
 import smbus
 import struct
+import BNO055
 
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
