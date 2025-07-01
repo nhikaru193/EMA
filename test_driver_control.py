@@ -10,7 +10,7 @@ driver = MotorDriver(
 
 try:
     for i in range (15):
-        L = 95
+        L = 90
         k = L - i
         print(f"duty比{k}です")
         driver.changing_moving_forward(0, L, 0, k)
