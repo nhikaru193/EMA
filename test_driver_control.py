@@ -9,6 +9,7 @@ driver = MotorDriver(
 )
 
 try:
+    """
     for i in range (15):
         L = 85
         k = L - i
@@ -19,6 +20,15 @@ try:
         print("減速を開始します")
         driver.changing_moving_forward(L, 0, k, 0)
         time.sleep(0.2)
-
+    """
+    motor.changing_forward(0, 100)
+    time.sleep(3)
+    motor.changing_forward(100, 70)
+    time.sleep(3)
+    motor.changing_forward(70, 50)
+    time.sleep(3)
+    motor.changing_forward(50, 0)
+    time.sleep(3)
+    
 finally:
     driver.cleanup()
