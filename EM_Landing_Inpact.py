@@ -24,7 +24,7 @@ def convert_to_decimal(coord, direction):
 def fusing_circuit():
 	try:
 		NICHROME_PIN = 25
-		HEATING_DURATION_SECONDS = 3.0
+		HEATING_DURATION_SECONDS = 5.0
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 		print("ニクロム線溶断シーケンスを開始します。")
