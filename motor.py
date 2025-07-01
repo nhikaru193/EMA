@@ -116,6 +116,7 @@ class MotorDriver():
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
              self.motor_forward(speed)
+             time.sleep(0.02)
 
      def changing_Lforward(self, before, after):
          global speed
