@@ -1,5 +1,8 @@
 import RPi.GPIO as GPIO
 import time
+import BNO055
+import smbus 
+import struct
 
 class MotorDriver():
  #初期設定関数の定義
@@ -112,7 +115,6 @@ class MotorDriver():
          for i in range(1, 100):
              delta_speed = (after - before) / 100
              speed = before + i * delta_speed
-             print(f"{speed}です")
              if speed < 56:
                  L_speed = speed * 0.85
                  self.motor_Rforward(speed)
