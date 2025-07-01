@@ -81,17 +81,20 @@ def get_pressure_and_temperature():
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
 
-# --- 着地判定処理 ---
+---
+## 着地判定処理の変更点
 
-def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
+`check_landing` 関数を修正し、気圧の変化量で判定するようにしました。
+
+```python
+def check_landing(pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
     """
-    気圧、加速度、角速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
+    気圧の変化量、加速度、角速度が閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
     タイムアウトした場合、条件成立回数に関わらず着地成功とみなす。
     オプションでBNO055のキャリブレーション待機機能を含む。
 
     Args:
-        min_pressure_threshold (float): 着地判定のための最小気圧閾値 (hPa)。
-        max_pressure_threshold (float): 着地判定のための最大気圧閾値 (hPa)。
+        pressure_change_threshold (float): 着地判定のための気圧の変化量閾値 (hPa)。この値以下になったら条件成立。
         acc_threshold_abs (float): 着地判定のための線形加速度の絶対値閾値 (m/s²)。
         gyro_threshold_abs (float): 着地判定のための角速度の絶対値閾値 (°/s)。
         consecutive_checks (int): 着地判定が連続して成立する必要のある回数。
@@ -120,7 +123,7 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
             print(f"   現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
             
             # 加速度計もレベル3になるまで待つように条件を強化
-            if gyro == 3 and mag == 3:
+            if gyro == 3 and mag == 3 and accel == 3: # 加速度もキャリブレーションレベル3を待つように変更
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
             time.sleep(0.5) # 0.5秒ごとに状態を確認
@@ -130,7 +133,7 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
 
 
     print("🛬 着地判定開始...")
-    print(f"   気圧範囲: {min_pressure_threshold:.2f} hPa 〜 {max_pressure_threshold:.2f} hPa")
+    print(f"   気圧変化量閾値: < {pressure_change_threshold:.2f} hPa") # 表示メッセージを変更
     print(f"   加速度絶対値閾値: < {acc_threshold_abs:.2f} m/s² (X, Y, Z軸)")
     print(f"   角速度絶対値閾値: < {gyro_threshold_abs:.2f} °/s (X, Y, Z軸)")
     print(f"   連続成立回数: {consecutive_checks}回")
@@ -140,18 +143,21 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     start_time = time.time()
     last_check_time = time.time() # 前回のチェック時刻
 
-    # stable_変数は不要になったため削除
-    # stable_pressure = None
-    # stable_acc_x, stable_acc_y, stable_acc_z = None, None, None
-    # stable_gyro_x, stable_gyro_y, stable_gyro_z = None, None, None
+    # ★ 気圧変化量を追跡するための変数
+    previous_pressure = None 
 
     try:
+        # ヘッダーを一度だけ出力
+        print(f"{'Timestamp(s)':<15}{'Elapsed(s)':<12}{'Pressure(hPa)':<15}{'Pressure_Chg(hPa)':<18}{'Acc_X':<8}{'Acc_Y':<8}{'Acc_Z':<8}{'Gyro_X':<8}{'Gyro_Y':<8}{'Gyro_Z':<8}")
+        print("-" * 120) # 区切り線を長く
+
         while True:
             current_time = time.time()
             elapsed_total = current_time - start_time
 
             # タイムアウト判定
             if elapsed_total > timeout:
+                # タイムアウト時の最終行表示を調整
                 print(f"\n⏰ タイムアウト ({timeout}秒経過)。条件成立回数 {landing_count} 回でしたが、強制的に着地判定を成功とします。")
                 return True # タイムアウトしたら無条件で成功
             
@@ -163,33 +169,40 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
             last_check_time = current_time
 
             # センサーデータの取得
-            pressure, _ = get_pressure_and_temperature() # 温度はここでは使わないので_で受け取る
+            current_pressure, _ = get_pressure_and_temperature() # 温度はここでは使わないので_で受け取る
             acc_x, acc_y, acc_z = bno.getVector(BNO055.VECTOR_LINEARACCEL) # 線形加速度
             gyro_x, gyro_y, gyro_z = bno.getVector(BNO055.VECTOR_GYROSCOPE) # 角速度
 
-            # 初回のデータで安定時の基準値を設定 (絶対値判定になったため不要)
-            # if stable_pressure is None:
-            #     print("--- 初期安定値設定完了。着地条件監視中... ---")
-            #     continue # 初回は基準値設定のみで判定はスキップ
+            # ★ 気圧変化量の計算
+            pressure_delta = float('inf') # 初回は非常に大きな値にして条件を満たさないようにする
+            if previous_pressure is not None:
+                pressure_delta = abs(current_pressure - previous_pressure)
+            
+            # データをコンソールに整形して出力
+            print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{pressure_delta:<18.2f}{acc_x:<8.2f}{acc_y:<8.2f}{acc_z:<8.2f}{gyro_x:<8.2f}{gyro_y:<8.2f}{gyro_z:<8.2f}", end='\r')
 
-            print(f"経過: {elapsed_total:.1f}s | 気圧: {pressure:.2f} hPa | 加速度(X,Y,Z): ({acc_x:.2f}, {acc_y:.2f}, {acc_z:.2f}) m/s² | 角速度(X,Y,Z): ({gyro_x:.2f}, {gyro_y:.2f}, {gyro_z:.2f}) °/s ", end='\r')
 
-            # 着地条件の判定 (絶対値での判定に変更)
+            # ★ 着地条件の判定 (気圧変化量を使用)
             is_landing_condition_met = (
-                min_pressure_threshold <= pressure <= max_pressure_threshold and  # 気圧が範囲内
-                abs(acc_x) < acc_threshold_abs and                              # 各軸の加速度絶対値が閾値以下
+                pressure_delta <= pressure_change_threshold and  # 気圧の変化量が閾値以下
+                abs(acc_x) < acc_threshold_abs and               # 各軸の加速度絶対値が閾値以下
                 abs(acc_y) < acc_threshold_abs and
                 abs(acc_z) < acc_threshold_abs and
-                abs(gyro_x) < gyro_threshold_abs and                            # 各軸の角速度絶対値が閾値以下
+                abs(gyro_x) < gyro_threshold_abs and             # 各軸の角速度絶対値が閾値以下
                 abs(gyro_y) < gyro_threshold_abs and
                 abs(gyro_z) < gyro_threshold_abs
             )
 
+            # 次のループのために現在の気圧を保存
+            previous_pressure = current_pressure
+
             if is_landing_condition_met:
                 landing_count += 1
+                # 画面表示が上書きされる前にメッセージを確実に出力するために改行
                 print(f"\n💡 条件成立！連続判定中: {landing_count}/{consecutive_checks} 回")
             else:
                 if landing_count > 0:
+                    # 画面表示が上書きされる前にメッセージを確実に出力するために改行
                     print(f"\n--- 条件不成立。カウントリセット ({landing_count} -> 0) ---")
                 landing_count = 0
 
@@ -207,22 +220,26 @@ def check_landing(min_pressure_threshold=1029.0, max_pressure_threshold=1030.0, 
     finally:
         print("\n--- 判定処理終了 ---")
 
+---
+## 実行例と設定
 
+`if __name__ == '__main__':` ブロックで `check_landing` 関数を呼び出す際に、新しい `pressure_change_threshold` を設定します。
+
+```python
 # --- 実行例 ---
 if __name__ == '__main__':
     # BNO055.py が test_land2.py と同じディレクトリにあることを確認してください。
     # 閾値とタイムアウトを設定して判定を開始
     is_landed = check_landing(
-        min_pressure_threshold=1029.0, # 気圧の最小閾値
-        max_pressure_threshold=1030.0, # 気圧の最大閾値
+        pressure_change_threshold=0.1, # 気圧の変化量閾値 (hPa)。0.1hPa以下の変化になったら条件成立
         acc_threshold_abs=0.5,         # 線形加速度の各軸の絶対値閾値 (m/s²)
         gyro_threshold_abs=0.5,        # 角速度の各軸の絶対値閾値 (°/s)
         consecutive_checks=3,          # 3回連続で条件が満たされたら着地とみなす
-        timeout=120,                   # 2分以内に判定が行われなければタイムアウトで強制成功
+        timeout=60,                   # 2分以内に判定が行われなければタイムアウトで強制成功
         calibrate_bno055=True          # BNO055のキャリブレーション待機を有効にする (強く推奨)
     )
 
     if is_landed:
-        print("\n=== ロケットの着地を確認しました！ ===")
+        print("\n=== ローバーの着地を確認しました！ ===")
     else:
-        print("\n=== ロケットの着地は確認できませんでした。 ===")
+        print("\n=== ローバーの着地は確認できませんでした。 ===")
