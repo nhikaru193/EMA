@@ -159,7 +159,7 @@ def get_pressure():
     temp = bme280_compensate_t(dat_t)                     #ここでt_fineが更新
     
     return pres
-
+"""
 #BME280の初期化
 init_bme280()
 
@@ -170,3 +170,4 @@ read_compensate()
 while True:
         read_data()
         time.sleep(0.01)  # 0.01秒待機
+"""
