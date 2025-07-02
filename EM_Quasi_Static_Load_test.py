@@ -37,7 +37,7 @@ while True:
         break
 
 #加速度測定
-while true:
+while True:
     ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
     squ_a = ax ** 2 + ay ** 2 + az ** 2
     size_a = math.sqrt(squ_a)
