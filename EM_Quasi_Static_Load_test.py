@@ -2,6 +2,8 @@ import smbus
 import time
 import struct
 import math
+import BME280
+
 
 #BNO055の初期設定
 bno = BNO055()
@@ -12,6 +14,19 @@ if not bno.begin():
 time.sleep(0.5)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(0.5)
+
+#補正用
+t_fine = 0.0
+
+digT = []
+digP = []
+digH = []
+
+#I2C設定
+i2c = smbus.SMBus(1)
+address = 0x76
+
+BME280.init_bme280()
 
 #キャリブレーション
 while True:
@@ -27,7 +42,8 @@ while true:
     squ_a = ax ** 2 + ay ** 2 + az ** 2
     size_a = math.sqrt(squ_a)
     print(f"総加速度の大きさ：{size_a}m/s^2")
-
+    BME280.read_data()
+    
 
 
 
