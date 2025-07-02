@@ -15,6 +15,7 @@ time.sleep(0.5)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(0.5)
 
+"""
 #補正用
 t_fine = 0.0
 
@@ -28,6 +29,7 @@ address = 0x76
 
 BME280.init_bme280()
 BME280.read_compensate()
+"""
 
 #キャリブレーション
 while True:
@@ -44,7 +46,8 @@ while True:
     size_a = math.sqrt(squ_a)
     print(f"総加速度の大きさ：{size_a}m/s^2")
     time.sleep(0.2)
-    BME280.read_data()
+    print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
+    #BME280.read_data()
     time.sleep(0.2)
 
 
