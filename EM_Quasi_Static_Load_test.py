@@ -27,6 +27,7 @@ i2c = smbus.SMBus(1)
 address = 0x76
 
 BME280.init_bme280()
+BME280.read_compensate()
 
 #キャリブレーション
 while True:
@@ -44,7 +45,7 @@ while True:
     print(f"総加速度の大きさ：{size_a}m/s^2")
     time.sleep(0.2)
     BME280.read_data()
-    time.sleep(0.5)
+    time.sleep(0.2)
 
 
 
