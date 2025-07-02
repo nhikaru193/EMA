@@ -18,14 +18,15 @@ while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r')
     if gyro == 3 and accel == 3:
-        print(キャリブレーション完了)
+        print("キャリブレーション完了")
         break
 
 #加速度測定
-ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
-squ_a = ax ** 2 + ay ** 2 + az ** 2
-size_a = math.sqrt(squ_a)
-print(f"総加速度の大きさ：{size_a}")
+while true:
+    ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
+    squ_a = ax ** 2 + ay ** 2 + az ** 2
+    size_a = math.sqrt(squ_a)
+    print(f"総加速度の大きさ：{size_a}")
 
 
 
