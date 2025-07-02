@@ -42,8 +42,9 @@ while True:
     squ_a = ax ** 2 + ay ** 2 + az ** 2
     size_a = math.sqrt(squ_a)
     print(f"総加速度の大きさ：{size_a}m/s^2")
+    time.sleep(0.2)
     BME280.read_data()
-    
+    time.sleep(0.5)
 
 
 
