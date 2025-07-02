@@ -4,6 +4,17 @@ import struct
 import math
 import BME280
 from BNO055 import BNO055
+import pigpio
+import serial
+
+def convert_to_decimal(coord, direction):
+    # 度分（ddmm.mmmm）形式を10進数に変換
+    degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
+    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
+    decimal = degrees + minutes / 60
+    if direction in ['S', 'W']:
+        decimal *= -1
+    return decimal
 
 #BNO055の初期設定
 bno = BNO055()
@@ -39,6 +50,24 @@ while True:
         print("キャリブレーション完了")
         break
 
+#GPS
+TX_PIN = 27
+RX_PIN = 17
+BAUD = 9600
+
+pi = pigpio.pi()
+if not pi.connected:
+    print("pigpio デーモンに接続できません。")
+    exit(1)
+
+err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
+if err != 0:
+    print(f"ソフトUART RX の設定に失敗：GPIO={RX_PIN}, {BAUD}bps")
+    pi.stop()
+    exit(1)
+
+print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
+
 #加速度測定
 while True:
     ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
@@ -46,7 +75,19 @@ while True:
     size_a = math.sqrt(squ_a)
     print(f"総加速度の大きさ：{size_a}m/s^2")
     time.sleep(0.2)
-    print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
+    (count, data) = pi.bb_serial_read(RX_PIN)
+    if count and data:
+        text = data.decode("ascii", errors="ignore")
+        if "$GNRMC" in text:
+            lines = text.split("\n")
+            for line in lines:
+                if "$GNRMC" in line:
+                    parts = line.strip().split(",")
+                    if len(parts) > 6 and parts[2] == "A":
+                        lat = convert_to_decimal(parts[3], parts[4])
+                        lon = convert_to_decimal(parts[5], parts[6])
+                        print(f"緯度{lat}°, 経度{lon}°")      
+    #print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
     #BME280.read_data()
     time.sleep(0.2)
 
