@@ -3,7 +3,7 @@ import time
 import struct
 import math
 import BME280
-
+from BNO055 import BNO055
 
 #BNO055の初期設定
 bno = BNO055()
