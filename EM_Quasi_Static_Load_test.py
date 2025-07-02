@@ -6,7 +6,7 @@ import math
 #BNO055の初期設定
 bno = BNO055()
 time.sleep(0.5)
-if bno begin in not true:    
+if not bno.begin():    
     print("bnoが始まりませんでした")
     exit()
 time.sleep(0.5)
