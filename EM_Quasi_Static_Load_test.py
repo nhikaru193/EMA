@@ -26,7 +26,7 @@ time.sleep(0.5)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(0.5)
 
-"""
+
 #補正用
 t_fine = 0.0
 
@@ -40,7 +40,7 @@ address = 0x76
 
 BME280.init_bme280()
 BME280.read_compensate()
-"""
+
 
 #キャリブレーション
 while True:
@@ -87,8 +87,8 @@ while True:
                         lat = convert_to_decimal(parts[3], parts[4])
                         lon = convert_to_decimal(parts[5], parts[6])
                         print(f"緯度{lat}°, 経度{lon}°")      
-    #print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
-    #BME280.read_data()
+    print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
+    BME280.read_data()
     time.sleep(0.2)
 
 
