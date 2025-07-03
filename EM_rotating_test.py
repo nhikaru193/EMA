@@ -11,6 +11,7 @@ driver = MotorDriver(
     STBY=21                      # STBYピン
 )
 
+print("機体回転を開始します")
 driver.changing_right(0, 100)
 time.sleep(5)
 driver.changing_right(100, 0)
