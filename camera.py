@@ -4,7 +4,6 @@ import time
 from picamera2 import Picamera2
 import numpy as np
 
-#カメラ初期設定関数
 def init_camera():
     global picam2
     picam2 = Picamera2()
