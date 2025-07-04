@@ -157,8 +157,8 @@ def navigate_to_goal():
             # 4. 方向調整フェーズ
             ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
             if angle_error > ANGLE_THRESHOLD_DEG and angle_error < (360 - ANGLE_THRESHOLD_DEG):
-                turn_speed = 45 # 回転速度は固定 (0-100)
-                turn_duration = 0.30 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 
+                turn_speed = 40 # 回転速度は固定 (0-100)
+                turn_duration = 0.2 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 
 
                 if angle_error > 180: # 反時計回り（左）に回る方が近い
                     print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
