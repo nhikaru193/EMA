@@ -13,7 +13,12 @@ driver = MotorDriver(
 )
 
 # カメラ初期化と設定
-color.init_camera()
+#color.init_camera()
+picam2 = Picamera2()
+config = picam2.create_still_configuration(main={"size": (320, 240)})
+picam2.configure(config)
+picam2.start()
+time.sleep(1)
 
 #速度定義
 Va = 0
