@@ -19,7 +19,7 @@ driver = MotorDriver(
 )
 
 # === 目標地点設定 ===
-GOAL_LOCATION = [35.9189775, 139.9082423]  # 駐禁前
+GOAL_LOCATION = [35.9240385, 139.9112652]  # 駐禁前
 
 # === GPSピン設定 ===
 RX_PIN = 17
