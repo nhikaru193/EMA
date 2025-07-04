@@ -6,6 +6,7 @@ import numpy as np
 
 #カメラ初期設定関数
 def init_camera():
+    global picam2
     picam2 = Picamera2()
     config = picam2.create_still_configuration(main={"size": (320, 240)})
     picam2.configure(config)
