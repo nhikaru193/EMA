@@ -33,7 +33,7 @@ try:
         if percentage > 5:
             break
 
-        elif:
+        else:
             driver.changing_right(0, 60)
             driver.changing_right(60, 0)
 
