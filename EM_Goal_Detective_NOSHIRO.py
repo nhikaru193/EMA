@@ -40,7 +40,7 @@ try:
     
     print("対象物を画面中央に収める")
     #画面中央(横に五分割した中央)に収める
-    while true:
+    while True:
         number = color.get_block_number()
         
         if number == 1:
@@ -65,7 +65,7 @@ try:
 
     print("ゴール誘導を開始します")
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
-    while true:
+    while True:
         #画面割合、場所検知
         percentage = color.get_percentage()
         number = color.get_block_number()
