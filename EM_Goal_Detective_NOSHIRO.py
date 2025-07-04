@@ -86,7 +86,7 @@ try:
     print("対象物を画面内に収める")
     #画面内に映っていない場合に探す
     while True:
-        percentage = color.get_percentage()
+        percentage = get_percentage()
 
         if percentage > 5:
             break
@@ -99,7 +99,7 @@ try:
     print("対象物を画面中央に収める")
     #画面中央(横に五分割した中央)に収める
     while True:
-        number = color.get_block_number()
+        number = get_block_number()
         
         if number == 1:
             driver.changing_left(0, 40)
@@ -125,8 +125,8 @@ try:
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
         #画面割合、場所検知
-        percentage = color.get_percentage()
-        number = color.get_block_number()
+        percentage = get_percentage()
+        number = get_block_number()
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
