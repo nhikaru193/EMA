@@ -73,7 +73,7 @@ while True:
     ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
     squ_a = ax ** 2 + ay ** 2 + az ** 2
     size_a = math.sqrt(squ_a)
-    print(f"総加速度の大きさ：{size_a}m/s^2")
+    #print(f"総加速度の大きさ：{size_a}m/s^2")
     time.sleep(0.2)
     (count, data) = pi.bb_serial_read(RX_PIN)
     if count and data:
@@ -86,9 +86,10 @@ while True:
                     if len(parts) > 6 and parts[2] == "A":
                         lat = convert_to_decimal(parts[3], parts[4])
                         lon = convert_to_decimal(parts[5], parts[6])
-                        print(f"緯度{lat}°, 経度{lon}°")      
-    print(f"{bno.getVector(BNO055.VECTOR_EULER)}")
+                        #print(f"緯度{lat}°, 経度{lon}°")      
+    s = bno.getVector(BNO055.VECTOR_EULER)
     BME280.read_data()
+    print(f"a:{size_a:04d}, t:{tmp:04d}, p:{prs:04d}, h:{hum:04d}, lat:{lat:06.2f}, lon:{lon:06.2f}, 9軸:{s}")
     time.sleep(0.2)
 
 
