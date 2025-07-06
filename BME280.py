@@ -73,7 +73,7 @@ def read_compensate():
 
 #測定データ読み込み
 def read_data():
-    
+    global tmp, prs, hum
     #データ読み込み
     dat = i2c.read_i2c_block_data(address, 0xF7, 0x08)
     
@@ -88,10 +88,11 @@ def read_data():
     hum = bme280_compensate_h(dat_h)
     
     #表示
-    print('t = ' + str(tmp))
-    print('p = ' + str(prs))
-    print('h = ' + str(hum))
-
+    
+    #print('t = ' + str(tmp))
+    #print('p = ' + str(prs))
+    #print('h = ' + str(hum))
+    
 #温度補正
 def bme280_compensate_t(adc_T):
     
