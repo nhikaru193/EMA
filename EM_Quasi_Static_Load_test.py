@@ -89,7 +89,7 @@ while True:
                         #print(f"緯度{lat}°, 経度{lon}°")      
     s = bno.getVector(BNO055.VECTOR_EULER)
     BME280.read_data()
-    print(f"a:{size_a:04d}, t:{tmp:04d}, p:{prs:04d}, h:{hum:04d}, lat:{lat:06.2f}, lon:{lon:06.2f}, 9軸:{s}")
+    print(f"a:{size_a}, t:{tmp}, p:{prs}, h:{hum}, lat:{lat}, lon:{lon}, 9軸:{s}")
     time.sleep(0.2)
 
 
