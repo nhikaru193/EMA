@@ -67,7 +67,8 @@ if err != 0:
     exit(1)
 
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
-
+lat = 0
+lon = 0
 #加速度測定
 while True:
     ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
@@ -89,9 +90,9 @@ while True:
                         #print(f"緯度{lat}°, 経度{lon}°")      
     s = bno.getVector(BNO055.VECTOR_EULER)
     q, w, e = BME280.read_data()
-    if lat = None:
+    if lat == None:
         lat = 0
-    if lon = None:
+    if lon == None:
         lon = 0
     print(f"a:{size_a}, t:{q}, p:{w}, h:{e}, lat:{lat}, lon:{lon}, 9軸:{s}")
     time.sleep(0.2)
