@@ -88,8 +88,9 @@ while True:
                         lon = convert_to_decimal(parts[5], parts[6])
                         #print(f"緯度{lat}°, 経度{lon}°")      
     s = bno.getVector(BNO055.VECTOR_EULER)
-    BME280.read_data()
-    print(f"a:{size_a}, t:{tmp}, p:{prs}, h:{hum}, lat:{lat}, lon:{lon}, 9軸:{s}")
+    q, w, e = BME280.read_data()
+    
+    print(f"a:{size_a}, t:{q}, p:{w}, h:{e}, lat:{lat}, lon:{lon}, 9軸:{s}")
     time.sleep(0.2)
 
 
