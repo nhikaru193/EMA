@@ -45,7 +45,7 @@ BME280.read_compensate()
 #キャリブレーション
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
-    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r')
+    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r\n')
     if gyro == 3 and accel == 3:
         print("キャリブレーション完了")
         break
@@ -89,12 +89,15 @@ while True:
                         lon = convert_to_decimal(parts[5], parts[6])
                         #print(f"緯度{lat}°, 経度{lon}°")      
     s = bno.getVector(BNO055.VECTOR_EULER)
+    s1 = s[0]
+    s2 = s[1]
+    s3 = s[2]
     q, w, e = BME280.read_data()
     if lat == None:
         lat = 0
     if lon == None:
         lon = 0
-    print(f"a:{size_a}, t:{q}, p:{w}, h:{e}, lat:{lat}, lon:{lon}, 9軸:{s}")
+    print(f"a:{str(size_a)[:4]}, t:{str(q)[:4]}, p:{str(w)[:4]}, h:{str(e)[:4]}, lat:{str(lat)[:4]}, lon:{str(lon)[:4]}, 9軸:{str(s1)[:3]}, {str(s2)[:3]}, {str(s3)[:3]}")
     time.sleep(0.2)
 
 
