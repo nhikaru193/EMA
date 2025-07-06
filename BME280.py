@@ -86,7 +86,8 @@ def read_data():
     tmp = bme280_compensate_t(dat_t)
     prs = bme280_compensate_p(dat_p)
     hum = bme280_compensate_h(dat_h)
-    
+
+    return tmp, prs, hum
     #表示
     
     #print('t = ' + str(tmp))
