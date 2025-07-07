@@ -23,14 +23,20 @@ print(f"目標方位: {target_heading:.2f}°")
 # --- 制御パラメータ ---
 base_speed = 50      # ベースとなるPWMデューティ（0～100）
 Kp = 1.08             # 比例ゲイン（要チューニング）
+kd = 0.5
 loop_interval = 0.08  # 制御周期[s]
+
+prev_err = 0.0
 
 try:
     while True:
         current = bno.get_heading()
         err = (current - target_heading + 180) % 360 - 180
 
-        correction = Kp * err
+        der = (err - prev_err) / loop_interval
+
+        correction = Kp * err + kd * der
+        
         ls = max(0, min(100, base_speed - correction))
         rs = max(0, min(100, base_speed + correction))
 
