@@ -30,10 +30,13 @@ loop_interval = 0.02  # 制御周期[s]
 prev_err = 0.0
 
 try:
+    ls = 0
+    rs = 0
     while True:
         current = bno.get_heading()
         err = (current - target_heading + 180) % 360 - 180
-
+        if err < 5:
+            break
         der = (err - prev_err) / loop_interval
 
         correction = Kp * err + kd * der
@@ -48,6 +51,12 @@ try:
         print(f"現在: {current:.2f}°  誤差: {err:.2f}°  L:{ls:.1f}  R:{rs:.1f}")
 
         time.sleep(loop_interval)
+
+    time.sleep(5)
+    s = (ls + rs) / 2
+    motor.motor_forward(s)
+    motor.changing_forward(s, 0)
+    
 
 except KeyboardInterrupt:
     motor.cleanup()
