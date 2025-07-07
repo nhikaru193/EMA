@@ -8,6 +8,7 @@ import adafruit_bno055
 import numpy as np
 import cv2
 from picamera2 import Picamera2
+from libcamera import Transform 
 
 # カスタムモジュールのインポート
 from motor import MotorDriver   # motor.py から MotorDriver クラスをインポート
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus) # BNO055センサーオブジェクト
 
     picam2_instance = Picamera2()
-    picam2_instance.configure(picam2_instance.create_preview_configuration(main={"size": (640, 480)}, controls={"FrameRate": 30, "Rotate": 90}))
+    picam2_instance.configure(picam2_instance.create_preview_configuration(main={"size": (640, 480)}, controls={"FrameRate": 30}, transform=Transform(rotation=90)))
     picam2_instance.start()
     time.sleep(2) # カメラ起動待ち
 
