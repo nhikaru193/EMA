@@ -6,7 +6,7 @@ import struct
 import RPi.GPIO as GPIO
 
 #100付近にはしないこと。制御ができなくはならないけど、追従が遅くなる。
-def follow_forward(base_speed, duration_time):
+def follow_forward(driver, bno, base_speed, duration_time):
     target = bno.get_heading()
     
     #パラメータ
