@@ -23,3 +23,4 @@ bno.setExternalCrystalUse(True)
 
 following.follow_forward(driver, bno, 70, 5)
 following.follow_forward(driver, bno, 50, 5)
+driver.cleanup()
