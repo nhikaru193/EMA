@@ -155,28 +155,27 @@ def navigate_to_goal():
                 driver.motor_stop_free()
                 break
 
-            # 4. 方向調整フェーズ 
+            # 4. 方向調整フェーズ
+            ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
             if angle_error > ANGLE_THRESHOLD_DEG and angle_error < (360 - ANGLE_THRESHOLD_DEG):
-                print(f"[TURN] 目標方位 ({bearing_to_goal:.1f}°) に回頭します。")
-                # 短い方へ回転
-                if angle_error > 180:
-                    driver.changing_left(0, TURN_SPEED)
+                turn_speed = 45 # 回転速度は固定 (0-100)
+                turn_duration = 0.28 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 
+
+                if angle_error > 180: # 反時計回り（左）に回る方が近い
+                    print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
+                    driver.changing_left(0, turn_speed) 
                     driver.motor_stop_free()
-                else:
-                    driver.changing_right(0, TURN_SPEED)
+                    time.sleep(turn_duration)
+                else: # 時計回り（右）に回る方が近い
+                    print(f"[TURN] 右に回頭します ({turn_duration:.2f}秒)")
+                    driver.changing_right(0, turn_speed) 
                     driver.motor_stop_free()
-                # 向きが合うまで回頭
-                while True:
-                    current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-                    if current_heading is None: continue
-                    err = (bearing_to_goal - current_heading + 360) % 360
-                    if err <= ANGLE_THRESHOLD_DEG or err >= (360 - ANGLE_THRESHOLD_DEG):
-                        driver.motor_stop_free()
-                        print("[TURN] 回頭完了。")
-                        time.sleep(0.5) # 安定待ち
-                        break
-                    time.sleep(0.05)
-                continue # 再度、状態を評価するためにループの先頭へ
+                    time.sleep(turn_duration)
+                
+                driver.motor_stop_brake() # 確実な停止
+                time.sleep(0.5) # 回転後の安定待ち
+                continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
+
 
             # 5. 前進フェーズ (PD制御による直進維持)
             print(f"[MOVE] 方向OK。PD制御で {MOVE_DURATION_S}秒間 前進します。")
