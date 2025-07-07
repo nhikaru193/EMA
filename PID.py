@@ -19,6 +19,7 @@ motor = MotorDriver(PWMA=12, AIN1=23, AIN2=18,
 # --- 目標方位を取得 ---
 target_heading = bno.get_heading()
 print(f"目標方位: {target_heading:.2f}°")
+start_time = time.time()
 
 # --- 制御パラメータ ---
 base_speed = 50      # ベースとなるPWMデューティ（0～100）
@@ -35,8 +36,7 @@ try:
     while True:
         current = bno.get_heading()
         err = (current - target_heading + 180) % 360 - 180
-        if err < 5:
-            break
+        
         der = (err - prev_err) / loop_interval
 
         correction = Kp * err + kd * der
@@ -51,6 +51,11 @@ try:
         print(f"現在: {current:.2f}°  誤差: {err:.2f}°  L:{ls:.1f}  R:{rs:.1f}")
 
         time.sleep(loop_interval)
+
+        d = time.time() - start_time
+        if d > 5:
+            if err < 5:
+                break
 
     time.sleep(5)
     s = (ls + rs) / 2
