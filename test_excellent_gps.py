@@ -208,13 +208,13 @@ def navigate_to_goal():
             print("[MOVE] 前進完了。")
             time.sleep(0.5) # 停止後の安定待ち
             """
-            if dist to goal > 30:
+            if dist_to_goal > 30:
                 following.follow_forward(driver, bno, 70, 10)
-            elif dist to goal > 10:
+            elif dist_to_goal > 10:
                 following.follow_forward(driver, bno, 70, 3)
-            elif dist to goal > 5:
+            elif dist_to_goal > 5:
                 following.follow_forward(driver, bno, 70, 1)
-            elif dist to goal > 2:
+            elif dist_to_goal > 2:
                 following.follow_forward(driver, bno, 70, 0.5)
             else:
                 print("GPS誘導を終了します。")
