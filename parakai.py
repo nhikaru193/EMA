@@ -140,7 +140,8 @@ if __name__ == "__main__":
     bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus) # BNO055センサーオブジェクト
 
     picam2_instance = Picamera2()
-    picam2_instance.configure(picam2_instance.create_preview_configuration(main={"size": (640, 480)}, controls={"FrameRate": 30}), rotation=90) picam2_instance.start()
+    picam2_instance.configure(picam2_instance.create_preview_configuration(main={"size": (640, 480)}, controls={"FrameRate": 30}), rotation=90)
+    picam2_instance.start()
     time.sleep(2) # カメラ起動待ち
 
     # --- 自律移動と回避ロジック ---
