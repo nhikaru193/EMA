@@ -177,13 +177,13 @@ if __name__ == "__main__":
         if 10 < diff_heading < 180:
             print("方位調整: 右旋回")
             driver.changing_right(0, 40)
-            time.sleep(2)
+            time.sleep(0.5)
             driver.motor_stop_brake()
             time.sleep(0.5)
         elif diff_heading >= 180 or diff_heading < -10:
             print("方位調整: 左旋回")
             driver.changing_left(0, 40)
-            time.sleep(2)
+            time.sleep(0.5)
             driver.motor_stop_brake()
             time.sleep(0.5)
         else:
