@@ -11,9 +11,9 @@ def follow_forward(driver, bno, base_speed, duration_time):
     
     #パラメータ
     base_speed = base_speed
-    Kp = 0.70
+    Kp = 0.80
     Kd = 0
-    loop_interval = 0.80
+    loop_interval = 0.10
     prev_err = 0.0
     derr = 0
     ls = 0
