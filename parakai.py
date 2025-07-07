@@ -9,9 +9,7 @@ import adafruit_bno055
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-from libcamera import Transform # Transform をインポート
-
-# カスタムモジュールのインポート
+from libcamera import Transform 
 from motor import MotorDriver
 import following
 
@@ -29,6 +27,13 @@ class BNO055Wrapper:
 # --- 定数設定 ---
 #NICHROME_PIN = 25
 #HEATING_DURATION_SECONDS = 3.0
+#キャリブレーション
+while True:
+    sys, gyro, accel, mag = bno.getCalibration()
+    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r\n')
+    if gyro == 3 and accel == 3:
+        print("キャリブレーション完了")
+        break
 
 # 目標GPS座標
 destination_lat = 40.47
