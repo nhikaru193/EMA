@@ -1,5 +1,5 @@
 import time
-import motor
+from motor import MotorDriver
 import RPi.GPIO as GPIO
 
 # === モーターインスタンス作成===
