@@ -158,8 +158,8 @@ def navigate_to_goal():
             # 4. 方向調整フェーズ
             ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
             if angle_error > ANGLE_THRESHOLD_DEG and angle_error < (360 - ANGLE_THRESHOLD_DEG):
-                turn_speed = 45 # 回転速度は固定 (0-100)
-                turn_duration = 0.28 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 
+                turn_speed = 25 # 回転速度は固定 (0-100)
+                turn_duration = 0.15 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 #場所によって変える！！！
 
                 if angle_error > 180: # 反時計回り（左）に回る方が近い
                     print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
@@ -172,7 +172,7 @@ def navigate_to_goal():
                     driver.motor_stop_free()
                     time.sleep(turn_duration)
                 
-                driver.motor_stop_brake() # 確実な停止
+                driver.motor_stop_free() # 確実な停止
                 time.sleep(0.5) # 回転後の安定待ち
                 continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
 
@@ -191,10 +191,11 @@ def navigate_to_goal():
                 err = (target_heading - current_heading + 180) % 360 - 180
                 
                 # 微分項 
-                derr = err - prev_err
+                #derr = err - prev_err
                 
                 # PD制御による補正量の計算
-                correction = (Kp * err) + (Kd * derr)
+                correction = (Kp * err)
+                #correction = (Kp * err) + (Kd * derr)
                 
                 # モーター速度を計算
                 left_speed = max(0, min(100, MOVE_SPEED + correction))
@@ -204,9 +205,9 @@ def navigate_to_goal():
                 driver.motor_Rforward(right_speed)
                 
                 prev_err = err
-                time.sleep(0.02) # 制御ループの間隔
+                time.sleep(10) # 制御ループの間隔
 
-            driver.motor_stop_brake() # 前進後に一旦停止
+            driver.motor_stop_free() # 前進後に一旦停止
             print("[MOVE] 前進完了。")
             time.sleep(0.5) # 停止後の安定待ち
 
