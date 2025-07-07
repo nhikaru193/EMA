@@ -14,8 +14,8 @@ from motor import MotorDriver   # motor.py から MotorDriver クラスをイン
 import following                # following.py モジュールをインポート
 
 # --- 定数設定 ---
-NICHROME_PIN = 25              # ニクロム線が接続されているGPIOピン
-HEATING_DURATION_SECONDS = 3.0 # ニクロム線をオンにしておく時間（秒）
+#NICHROME_PIN = 25              # ニクロム線が接続されているGPIOピン
+#HEATING_DURATION_SECONDS = 3.0 # ニクロム線をオンにしておく時間（秒）
 
 # 目標GPS座標
 destination_lat = 40.47
@@ -107,21 +107,21 @@ if __name__ == "__main__":
     GPIO.setwarnings(False) # 警告を非表示に
 
     # ニクロム線溶断シーケンス
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
-    print("ニクロム線溶断シーケンスを開始します。")
-    try:
-        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
-        GPIO.output(NICHROME_PIN, GPIO.HIGH)
-        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
-        time.sleep(HEATING_DURATION_SECONDS)
-        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
-        GPIO.output(NICHROME_PIN, GPIO.LOW)
-        print("シーケンスが正常に完了しました。")
-    except KeyboardInterrupt:
-        print("ニクロム線溶断シーケンスが中断されました。")
-        GPIO.output(NICHROME_PIN, GPIO.LOW)
-    finally:
-        print("GPIO25の溶断ピンのクリーンアップを実行しました。")
+    #GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    #print("ニクロム線溶断シーケンスを開始します。")
+    #try:
+        #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.HIGH)
+        #print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        #time.sleep(HEATING_DURATION_SECONDS)
+        #print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW)
+        #print("シーケンスが正常に完了しました。")
+    #except KeyboardInterrupt:
+        #print("ニクロム線溶断シーケンスが中断されました。")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW)
+    #finally:
+        #print("GPIO25の溶断ピンのクリーンアップを実行しました。")
         # GPIO.cleanup() は最後にまとめて実行
 
     # デバイス初期化
