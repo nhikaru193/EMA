@@ -158,18 +158,18 @@ def navigate_to_goal():
             # 4. 方向調整フェーズ
             ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
             if angle_error > ANGLE_THRESHOLD_DEG and angle_error < (360 - ANGLE_THRESHOLD_DEG):
-                turn_speed = 25 # 回転速度は固定 (0-100)
+                turn_speed = 40 # 回転速度は固定 (0-100)
                 turn_duration = 0.15 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 #場所によって変える！！！
 
                 if angle_error > 180: # 反時計回り（左）に回る方が近い
                     print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
                     driver.changing_left(0, turn_speed) 
-                    driver.motor_stop_free()
+                    driver.changing_left(turn_speed, 0) 
                     time.sleep(turn_duration)
                 else: # 時計回り（右）に回る方が近い
                     print(f"[TURN] 右に回頭します ({turn_duration:.2f}秒)")
                     driver.changing_right(0, turn_speed) 
-                    driver.motor_stop_free()
+                    driver.changing_right(turn_speed, 0) 
                     time.sleep(turn_duration)
                 
                 driver.motor_stop_free() # 確実な停止
@@ -178,38 +178,38 @@ def navigate_to_goal():
 
 
             # 5. 前進フェーズ (PD制御による直進維持)
-            print(f"[MOVE] 方向OK。PD制御で {MOVE_DURATION_S}秒間 前進します。")
-            target_heading = heading # 現在向いている方向をターゲットとする
-            start_time = time.time()
-            prev_err = 0.0
+            print(f"[MOVE] 方向OK。PD制御で前進します。")
+            def follow_forward(driver, bno, base_speed, duration_time):
+                target = bno.get_heading()
+    
+                #パラメータ
+                base_speed = base_speed
+                Kp = 0.80
+                Kd = 0
+                loop_interval = 0.10
+                prev_err = 0.0
+                derr = 0
+                ls = 0
+                rs = 0
+                start_time = time.time()
+                driver.changing_forward(0, base_speed)
 
-            while time.time() - start_time < MOVE_DURATION_S:
-                current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-                if current_heading is None: continue
-
-                # 角度の誤差を -180 〜 +180 の範囲で計算
-                err = (target_heading - current_heading + 180) % 360 - 180
-                
-                # 微分項 
-                #derr = err - prev_err
-                
-                # PD制御による補正量の計算
-                correction = (Kp * err)
-                #correction = (Kp * err) + (Kd * derr)
-                
-                # モーター速度を計算
-                left_speed = max(0, min(100, MOVE_SPEED + correction))
-                right_speed = max(0, min(100, MOVE_SPEED - correction))
-                
-                driver.motor_Lforward(left_speed)
-                driver.motor_Rforward(right_speed)
-                
-                prev_err = err
-                time.sleep(10) # 制御ループの間隔
-
-            driver.motor_stop_free() # 前進後に一旦停止
-            print("[MOVE] 前進完了。")
-            time.sleep(0.5) # 停止後の安定待ち
+                try:
+                    while True:
+                        current = bno.get_heading()
+                        err = (current - target + 180) % 360 - 180
+                        correction = Kp * err + Kd * derr
+                        ls = max(0, min(100, base_speed - correction))
+                        rs = max(0, min(100, base_speed + correction))
+                        driver.motor_Lforward(ls)
+                        driver.motor_Rforward(rs)
+                        after = bno.get_heading()
+                        time.sleep(loop_interval)
+                        derr = (after - current) / loop_interval
+                        delta_time = time.time() - start_time
+                        if delta_time > duration_time:
+                            driver.motor_stop_free()
+                            break     
 
     except KeyboardInterrupt:
         print("\n[STOP] 手動で停止されました。")
