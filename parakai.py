@@ -140,7 +140,7 @@ if __name__ == "__main__":
         sys.stdout.flush() # 出力を即座にフラッシュ
         
         # システム全体のキャリブレーションレベルが3になるまで待つのが理想
-        if sys_cal == 3:
+        if gyro_cal == 3 and mag_cal == 3:
             print("\nキャリブレーション完了！")
             break
         time.sleep(0.1) # ポーリング間隔
