@@ -12,15 +12,16 @@ try:
     
     driver.changing_forward(0, 90)
     start_time = time.time()
-    
-    elapsed = int(time.time() - start_time)
-    hours = elapsed // 3600
-    minutes = (elapsed % 3600) // 60
-    seconds = elapsed % 60
-    
-    print(f"現在の経過時間は{hours}時間{minutes}分{seconds}秒です")
+    while True:
+        elapsed = int(time.time() - start_time)
+        hours = elapsed // 3600
+        minutes = (elapsed % 3600) // 60
+        seconds = elapsed % 60
+        
+        print(f"現在の経過時間は{hours}時間{minutes}分{seconds}秒です")
 
-    time.sleep(10800)
+        if elapsed > 14000:
+            break
 
 except keyboardInterrupt:
     print("計測を終了します")
