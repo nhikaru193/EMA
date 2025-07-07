@@ -22,8 +22,8 @@ print(f"目標方位: {target_heading:.2f}°")
 
 # --- 制御パラメータ ---
 base_speed = 50      # ベースとなるPWMデューティ（0～100）
-Kp = 1.1             # 比例ゲイン（要チューニング）
-loop_interval = 0.1  # 制御周期[s]
+Kp = 1.08             # 比例ゲイン（要チューニング）
+loop_interval = 0.08  # 制御周期[s]
 
 try:
     while True:
