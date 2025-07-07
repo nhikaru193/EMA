@@ -5,16 +5,6 @@ import smbus
 import struct
 import RPi.GPIO as GPIO
 
-bno = BNO055()
-if not bno.begin():
-    print("BNO055の初期化失敗")
-    exit()
-bno.setMode(BNO055.OPERATION_MODE_NDOF)
-time.sleep(1)
-
-driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,
-                    PWMB=19, BIN1=16, BIN2=26, STBY=21)
-
 #100付近にはしないこと。制御ができなくはならないけど、追従が遅くなる。
 def follow_forward(base_speed, duration_time):
     target = bno.get_heading()
