@@ -1,0 +1,55 @@
+import time
+from BNO055 import BNO055
+from motor import MotorDriver
+import smbus
+import struct
+import RPi.GPIO as GPIO
+
+bno = BNO055()
+if not bno.begin():
+    print("BNO055の初期化失敗")
+    exit()
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
+time.sleep(1)
+
+driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,
+                    PWMB=19, BIN1=16, BIN2=26, STBY=21)
+
+#100付近にはしないこと。制御ができなくはならないけど、追従が遅くなる。
+def follow_forward(base_speed, duration_time):
+    target = bno.get_heading()
+    
+    #パラメータ
+    base_speed = base_speed
+    Kp = 0.40
+    Kd = 0
+    loop_interval = 0.80
+    prev_err = 0.0
+    derr = 0
+    ls = 0
+    rs = 0
+    start_time = time.time()
+    driver.changing_forward(0, base_speed)
+
+    try:
+        while True:
+            current = bno.get_heading()
+            err = (current - target + 180) % 360 - 180
+            correction = Kp * err + Kd * derr
+            ls = max(0, min(100, base_speed - correction))
+            rs = max(0, min(100, base_speed + correction))
+            motor.motor_Lforward(ls)
+            motor.motor_Rforward(rs)
+            after = bno.get_heading()
+            time.sleep(loop_interval)
+            derr = (after - current) / loop_interval
+            delta_time = time.time() - start_time
+            if delta_time > duration_time:
+                driver.motor_stop_free()
+                break
+
+    except keyboardInterrupt:
+        print("誘導終了")
+
+    finally:
+        driver.cleanup()   
