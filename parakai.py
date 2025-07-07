@@ -165,12 +165,8 @@ if __name__ == "__main__":
 
         # STEP 3: その場で回頭 (新しい動的旋回ロジック)
         print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-        ANGLE_THRESHOLD_DEG = 5.0 # 許容する角度誤差（度）を厳しく
-        turn_speed = 40 # 回転速度は固定 (0-100)
-
-        # ターゲット方位に収まるまでループで旋回
-        max_turn_attempts = 10 # 最大試行回数を設定し、無限ループを避ける
-        turn_attempt_count = 0
+        ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）を厳しく
+        turn_speed = 40 # 回転速度は固定 (0-100
 
         while turn_attempt_count < max_turn_attempts:
             current_bno_heading = original_bno_sensor.euler[0]
@@ -198,10 +194,12 @@ if __name__ == "__main__":
 
             if angle_error < 0: # 現在向いている方向が目標より左 (反時計回り)
                 print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                driver.changing_left(0, turn_speed) # 左旋回
+                driver.changing_left(0, turn_speed)
+                driver.changing_left(turn_speed, 0)# 左旋回
             else: # 現在向いている方向が目標より右 (時計回り)
                 print(f"[TURN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                driver.changing_right(0, turn_speed) # 右旋回
+                driver.changing_right(0, turn_speed)
+                driver.changing_right(turn_speed, 0)# 右旋回
             
             time.sleep(turn_duration) # 計算された時間だけ旋回
             driver.motor_stop_brake() # 確実な停止 (以前の motor_stop_free より良い)
