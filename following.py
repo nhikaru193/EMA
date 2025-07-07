@@ -42,7 +42,7 @@ def follow_forward(driver, bno, base_speed, duration_time):
                     rs = rs - i * d_rs
                     driver.motor_Lforward(ls)
                     driver.motor_Rforward(rs)
-                    time.sleep(0.02)
+                    time.sleep(0.03)
                 break
 
     finally:
