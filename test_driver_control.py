@@ -21,5 +21,5 @@ bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
 
-following.follow_forward(70, 5)
-following.follow_forward(50, 5)
+following.follow_forward(driver, bno, 70, 5)
+following.follow_forward(driver, bno, 50, 5)
