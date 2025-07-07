@@ -168,6 +168,9 @@ if __name__ == "__main__":
         ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）を厳しく
         turn_speed = 40 # 回転速度は固定 (0-100
 
+        max_turn_attempts = 100 # 最大試行回数を設定し、無限ループを避ける
+        turn_attempt_count = 0
+
         while turn_attempt_count < max_turn_attempts:
             current_bno_heading = original_bno_sensor.euler[0]
             if current_bno_heading is None:
