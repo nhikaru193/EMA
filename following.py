@@ -38,8 +38,5 @@ def follow_forward(driver, bno, base_speed, duration_time):
                 driver.motor_stop_free()
                 break
 
-    except keyboardInterrupt:
-        print("誘導終了")
-
     finally:
-        driver.cleanup()   
+        print("誘導終了")
