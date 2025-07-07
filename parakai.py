@@ -1,4 +1,4 @@
-# main_rover_control.py (修正版)
+# main_rover_control.py (修正版 - キャリブレーションコードの修正)
 
 import RPi.GPIO as GPIO
 import time
@@ -9,31 +9,24 @@ import adafruit_bno055
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-from libcamera import Transform 
+from libcamera import Transform # Transform をインポート
+import sys # sysモジュールをインポートしてsys.stdout.flush()を使えるようにする
+
+# カスタムモジュールのインポート
 from motor import MotorDriver
 import following
 
 # --- BNO055用のラッパークラス ---
-# following.py が bno.get_heading() を要求するため、
-# adafruit_bno055.BNO055_I2C オブジェクトをラップして提供する
 class BNO055Wrapper:
     def __init__(self, adafruit_bno055_sensor):
         self.sensor = adafruit_bno055_sensor
 
     def get_heading(self):
-        # adafruit_bno055 の方位は euler[0] にある
         return self.sensor.euler[0]
 
 # --- 定数設定 ---
 #NICHROME_PIN = 25
 #HEATING_DURATION_SECONDS = 3.0
-#キャリブレーション
-while True:
-    sys, gyro, accel, mag = bno.getCalibration()
-    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r\n')
-    if gyro == 3 and accel == 3:
-        print("キャリブレーション完了")
-        break
 
 # 目標GPS座標
 destination_lat = 40.47
@@ -42,8 +35,7 @@ destination_lon = 119.42
 # GPS受信ピン
 RX_PIN = 17
 
-# --- 関数定義 ---
-
+# --- 関数定義 (省略 - 変更なし) ---
 def convert_to_decimal(coord, direction):
     """NMEA形式のGPS座標を十進数に変換します。"""
     degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
@@ -124,8 +116,6 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線溶断シーケンス (コメントアウト)
-
     # デバイス初期化
     driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
@@ -139,8 +129,23 @@ if __name__ == "__main__":
     pi_instance.bb_serial_read_open(RX_PIN, 9600, 8)
 
     i2c_bus = busio.I2C(board.SCL, board.SDA)
-    original_bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus) # 元のBNO055センサーオブジェクト
+    original_bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus) # BNO055センサーオブジェクトを作成
     bno_sensor_for_following = BNO055Wrapper(original_bno_sensor) # ラッパーを作成
+
+    # ★★★ キャリブレーションの追加場所と修正 ★★★
+    print("BNO055キャリブレーションを開始します。センサーを動かしてキャリブレーションを進めてください...")
+    while True:
+        sys_cal, gyro_cal, accel_cal, mag_cal = original_bno_sensor.calibration_status # bno_sensor_for_followingではなくoriginal_bno_sensorを使用
+        print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r') # end='\r'で同じ行に上書き
+        sys.stdout.flush() # 出力を即座にフラッシュ
+        
+        # システム全体のキャリブレーションレベルが3になるまで待つのが理想
+        if sys_cal == 3:
+            print("\nキャリブレーション完了！")
+            break
+        time.sleep(0.1) # ポーリング間隔
+
+    # ★★★ キャリブレーションコードここまで ★★★
 
     picam2_instance = Picamera2()
     picam2_instance.configure(picam2_instance.create_preview_configuration(
@@ -160,8 +165,7 @@ if __name__ == "__main__":
         target_gps_heading = calculate_heading(current_lat, current_lon, destination_lat, destination_lon)
         print(f"GPSに基づく目標方位：{target_gps_heading:.2f}度")
 
-        # ここでは original_bno_sensor を直接使う (euler[0] でOK)
-        current_bno_heading = original_bno_sensor.euler[0]
+        current_bno_heading = original_bno_sensor.euler[0] # original_bno_sensorを使用
         if current_bno_heading is None:
             print("警告: BNO055から現在の方位が取得できませんでした。0度を仮定します。")
             current_bno_heading = 0
@@ -207,16 +211,13 @@ if __name__ == "__main__":
                 driver.motor_stop_brake()
                 time.sleep(0.5)
                 print("回避後、方向追従制御で前進します。(速度60, 3秒)")
-                # ラッパーオブジェクトを following.follow_forward に渡す
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=60, duration_time=3)
             else:
                 print("待機後、赤色を検出せず → 方向追従制御で前進します。(速度80, 5秒)")
-                # ラッパーオブジェクトを following.follow_forward に渡す
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=80, duration_time=5)
                 
         else:
             print("赤なし → 方向追従制御で前進します。(速度80, 5秒)")
-            # ラッパーオブジェクトを following.follow_forward に渡す
             following.follow_forward(driver, bno_sensor_for_following, base_speed=80, duration_time=5)
 
         driver.motor_stop_brake()
