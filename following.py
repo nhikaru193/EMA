@@ -38,8 +38,8 @@ def follow_forward(base_speed, duration_time):
             correction = Kp * err + Kd * derr
             ls = max(0, min(100, base_speed - correction))
             rs = max(0, min(100, base_speed + correction))
-            motor.motor_Lforward(ls)
-            motor.motor_Rforward(rs)
+            driver.motor_Lforward(ls)
+            driver.motor_Rforward(rs)
             after = bno.get_heading()
             time.sleep(loop_interval)
             derr = (after - current) / loop_interval
