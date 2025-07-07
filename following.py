@@ -35,7 +35,13 @@ def follow_forward(driver, bno, base_speed, duration_time):
             derr = (after - current) / loop_interval
             delta_time = time.time() - start_time
             if delta_time > duration_time:
-                driver.motor_stop_free()
+                for i in range (1, 100):
+                    d_ls = ls / 100
+                    d_rs = rs / 100
+                    ls = ls - i * d_ls
+                    rs = rs - i * d_rs
+                    driver.motor_Lforward(ls)
+                    driver.motor_Rforward(rs)
                 break
 
     finally:
