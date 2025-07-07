@@ -208,8 +208,7 @@ def navigate_to_goal():
                         derr = (after - current) / loop_interval
                         delta_time = time.time() - start_time
                         if delta_time > duration_time:
-                            driver.motor_stop_free()
-                            break     
+                            driver.motor_stop_free()  
 
     except KeyboardInterrupt:
         print("\n[STOP] 手動で停止されました。")
