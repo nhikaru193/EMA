@@ -1,6 +1,9 @@
 import time
 from BNO055 import BNO055
 from motor import MotorDriver
+import smbus
+import struct
+import RPi.GPIO as GPIO
 
 # --- 初期化 ---
 bno = BNO055()
