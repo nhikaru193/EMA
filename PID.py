@@ -24,6 +24,7 @@ print(f"目標方位: {target_heading:.2f}°")
 base_speed = 50      # ベースとなるPWMデューティ（0～100）
 Kp = 1.06             # 比例ゲイン（要チューニング）
 #kd = 0.01
+kd = 0
 loop_interval = 0.08  # 制御周期[s]
 
 prev_err = 0.0
