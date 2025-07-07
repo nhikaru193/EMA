@@ -1,4 +1,4 @@
-# main_rover_control.py (修正版 - キャリブレーションコードの修正)
+# main_rover_control.py (最新版 - 動的旋回と前進フェーズの統合)
 
 import RPi.GPIO as GPIO
 import time
@@ -9,8 +9,8 @@ import adafruit_bno055
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-from libcamera import Transform # Transform をインポート
-import sys # sysモジュールをインポートしてsys.stdout.flush()を使えるようにする
+from libcamera import Transform
+import sys
 
 # カスタムモジュールのインポート
 from motor import MotorDriver
@@ -129,23 +129,8 @@ if __name__ == "__main__":
     pi_instance.bb_serial_read_open(RX_PIN, 9600, 8)
 
     i2c_bus = busio.I2C(board.SCL, board.SDA)
-    original_bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus) # BNO055センサーオブジェクトを作成
-    bno_sensor_for_following = BNO055Wrapper(original_bno_sensor) # ラッパーを作成
-
-    # ★★★ キャリブレーションの追加場所と修正 ★★★
-    print("BNO055キャリブレーションを開始します。センサーを動かしてキャリブレーションを進めてください...")
-    while True:
-        sys_cal, gyro_cal, accel_cal, mag_cal = original_bno_sensor.calibration_status # bno_sensor_for_followingではなくoriginal_bno_sensorを使用
-        print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r') # end='\r'で同じ行に上書き
-        sys.stdout.flush() # 出力を即座にフラッシュ
-        
-        # システム全体のキャリブレーションレベルが3になるまで待つのが理想
-        if gyro_cal == 3 and mag_cal == 3:
-            print("\nキャリブレーション完了！")
-            break
-        time.sleep(0.1) # ポーリング間隔
-
-    # ★★★ キャリブレーションコードここまで ★★★
+    original_bno_sensor = adafruit_bno055.BNO055_I2C(i2c_bus)
+    bno_sensor_for_following = BNO055Wrapper(original_bno_sensor)
 
     picam2_instance = Picamera2()
     picam2_instance.configure(picam2_instance.create_preview_configuration(
@@ -158,38 +143,82 @@ if __name__ == "__main__":
 
     # --- 自律移動と回避ロジック ---
     try:
-        save_image_for_debug(picam2_instance)
+        # STEP 1: BNO055 キャリブレーション
+        print("\n=== ステップ1: BNO055キャリブレーション開始 ===")
+        print("センサーを動かしてキャリブレーションを進めてください...")
+        while True:
+            sys_cal, gyro_cal, accel_cal, mag_cal = original_bno_sensor.calibration_status
+            print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r')
+            sys.stdout.flush()
+            
+            if gyro_cal == 3 and mag_cal == 3:
+                print("\nキャリブレーション完了！")
+                break
+            time.sleep(0.1)
 
+        # STEP 2: 現在地GPS取得し、目的地と比較
+        print("\n=== ステップ2: GPS現在地取得と目標方位計算 ===")
         current_lat, current_lon = get_current_location(pi_instance, RX_PIN)
         print(f"現在地：緯度={current_lat:.4f}, 経度={current_lon:.4f}")
         target_gps_heading = calculate_heading(current_lat, current_lon, destination_lat, destination_lon)
         print(f"GPSに基づく目標方位：{target_gps_heading:.2f}度")
 
-        current_bno_heading = original_bno_sensor.euler[0] # original_bno_sensorを使用
-        if current_bno_heading is None:
-            print("警告: BNO055から現在の方位が取得できませんでした。0度を仮定します。")
-            current_bno_heading = 0
-        print(f"BNO055に基づく現在の方位：{current_bno_heading:.2f}度")
+        # STEP 3: その場で回頭 (新しい動的旋回ロジック)
+        print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
+        ANGLE_THRESHOLD_DEG = 5.0 # 許容する角度誤差（度）を厳しく
+        turn_speed = 40 # 回転速度は固定 (0-100)
 
-        diff_heading = (target_gps_heading - current_bno_heading + 360) % 360
-        print(f"方位差: {diff_heading:.2f}度")
+        # ターゲット方位に収まるまでループで旋回
+        max_turn_attempts = 10 # 最大試行回数を設定し、無限ループを避ける
+        turn_attempt_count = 0
 
-        if 10 < diff_heading < 180:
-            print("方位調整: 右旋回")
-            driver.changing_right(0, 40)
-            time.sleep(0.5)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-        elif diff_heading >= 180 or diff_heading < -10:
-            print("方位調整: 左旋回")
-            driver.changing_left(0, 40)
-            time.sleep(0.5)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-        else:
-            print("方位調整: OK (誤差±10度以内)")
-            driver.motor_stop_brake()
-            time.sleep(0.5)
+        while turn_attempt_count < max_turn_attempts:
+            current_bno_heading = original_bno_sensor.euler[0]
+            if current_bno_heading is None:
+                print("警告: 旋回中にBNO055方位が取得できませんでした。回頭を中断します。")
+                break # または driver.motor_stop_brake()してエラーを発生させる
+
+            # 角度誤差を計算し、-180から180の範囲に調整
+            angle_error = (target_gps_heading - current_bno_heading + 180 + 360) % 360 - 180
+            
+            # 誤差が許容範囲内であればループを抜ける
+            if abs(angle_error) <= ANGLE_THRESHOLD_DEG:
+                print(f"[TURN] 方位調整完了。最終誤差: {angle_error:.2f}度")
+                break
+
+            # 誤差が大きい場合のみ旋回
+            # angle_errorは-180から180の範囲なので、360-angle_errorのチェックは不要
+            # if abs(angle_error) > ANGLE_THRESHOLD_DEG: # これは冗長
+            
+            # 旋回時間を動的に計算 (ご提供いただいた計算式を適用)
+            # min(abs(angle_error), 360 - abs(angle_error)) を使用して、常に短い方の角度差を基準にする
+            # ただし、angle_errorは既に-180から180なので、abs(angle_error)を使う
+            turn_duration = 0.15 + (abs(angle_error) / 180.0) * 0.2
+            # 最小時間を確保しつつ、角度に応じて線形に増加
+
+            if angle_error < 0: # 現在向いている方向が目標より左 (反時計回り)
+                print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
+                driver.changing_left(0, turn_speed) # 左旋回
+            else: # 現在向いている方向が目標より右 (時計回り)
+                print(f"[TURN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
+                driver.changing_right(0, turn_speed) # 右旋回
+            
+            time.sleep(turn_duration) # 計算された時間だけ旋回
+            driver.motor_stop_brake() # 確実な停止 (以前の motor_stop_free より良い)
+            time.sleep(0.5) # 回転後の安定待ち
+
+            turn_attempt_count += 1 # 試行回数をカウント
+
+        # もし最大試行回数に達してしまった場合
+        if turn_attempt_count >= max_turn_attempts and abs(angle_error) > ANGLE_THRESHOLD_DEG:
+            print(f"警告: 最大回頭試行回数に達しましたが、目標方位に到達できませんでした。最終誤差: {angle_error:.2f}度")
+        
+        driver.motor_stop_brake() # 念のため停止
+        time.sleep(0.5)
+
+        # STEP 4 & 5: カメラで撮影し色検知 → 前進
+        print("\n=== ステップ4&5: カメラ検知と前進 ===")
+        save_image_for_debug(picam2_instance) # デバッグ用画像を保存
 
         red_detected_high_percentage, red_percentage_val = detect_red_object(picam2_instance, min_red_percentage=0.80)
 
@@ -223,8 +252,7 @@ if __name__ == "__main__":
         driver.motor_stop_brake()
 
     except TimeoutError as e:
-        print(e)
-        print("GPS取得失敗しましたが、画像は保存されています。")
+        print(f"メイン処理中にエラーが発生しました (GPS取得タイムアウト): {e}")
         driver.motor_stop_brake()
     except Exception as e:
         print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
