@@ -9,6 +9,7 @@ driver = MotorDriver(
     STBY=21
 )
 try:
+    
     driver.changing_forward(0, 90)
     start_time = time.time()
     
@@ -18,6 +19,8 @@ try:
     seconds = elapsed % 60
     
     print(f"現在の経過時間は{hours}時間{minutes}分{seconds}秒です")
+
+    time.sleep(10800)
 
 except keyboardInterrupt:
     print("計測を終了します")
