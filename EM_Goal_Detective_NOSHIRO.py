@@ -4,6 +4,8 @@ import time
 from picamera2 import Picamera2
 from motor import MotorDriver
 import color
+import following
+from BNO055 import BNO055
 
 def get_percentage():
     frame = picam2.capture_array()
@@ -64,6 +66,14 @@ driver = MotorDriver(
     PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
     STBY=21                      # STBYピン
 )
+
+#BNO055の初期設定
+bno = BNO055()
+bno.begin()
+time.sleep(1)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
+time.sleep(1)
+bno.setExternalCrystalUse(True)
 
 # カメラ初期化と設定
 #color.init_camera()
@@ -138,21 +148,22 @@ try:
             elif percentage > 20:
                 Va2 = 40
                 Vb2 = 40
-                driver.changing_forward(Vb1, Vb2)
+                following.follow_forward(driver, bno, 50, 3)
                 Va1 = Va2
                 Vb1 = Vb2
                 
             elif percentage > 10:
                 Va2 = 60
                 Vb2 = 60
-                driver.changing_forward(Vb1, Vb2)
+                following.follow_forward(driver, bno, 60, 3)
                 Va1 = Va2
                 Vb1 = Vb2
 
             else:
                 Va2 = 80
                 Vb2 = 80
-                driver.changing_forward(Vb1, Vb2)
+                #driver.changing_forward(Vb1, Vb2)
+                following.follow.forward(driver, bno, 80, 3)
                 Va1 = Va2
                 Vb1 = Vb2
 
