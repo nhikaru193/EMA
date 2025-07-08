@@ -1,5 +1,3 @@
-# main_rover_control.py (回避後3点スキャンに基づく詳細な再回避ロジック)
-
 import RPi.GPIO as GPIO
 import time
 import pigpio
