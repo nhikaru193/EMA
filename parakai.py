@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
             # STEP 3: その場で回頭 (動的調整)
             print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-            ANGLE_THRESHOLD_DEG = 5.0 # 許容誤差を5度に設定
+            ANGLE_THRESHOLD_DEG = 20.0 # 許容誤差を5度に設定
             turn_speed = 40
             max_turn_attempts = 100
             turn_attempt_count = 0
@@ -373,17 +373,17 @@ if __name__ == "__main__":
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=5.0) # 右90度
+                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=30.0) # 右90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=60, duration_time=2)
             elif red_location_result == 'right_bottom':
                 print("赤色が右下に検出されました → 左に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=5.0) # 左90度
+                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=30.0) # 左90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=60, duration_time=2)
             elif red_location_result == 'bottom_middle':
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=5.0) # 右120度
+                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=30.0) # 右120度
                 print("120度回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=3)
             elif red_location_result == 'high_percentage_overall':
