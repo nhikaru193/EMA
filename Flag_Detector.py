@@ -65,7 +65,7 @@ class FlagDetector:
         メインの検出処理。画像を取得し、フラッグ、図形、位置を検出する。
         """
         self.last_image = self.camera.capture_array()
-        self.last_image = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        self.last_image = cv2.rotate(self.last_image, cv2.ROTATE_90_COUNTERCLOCKWISE)
         if self.last_image is None:
             print("画像が取得できませんでした。")
             return []
