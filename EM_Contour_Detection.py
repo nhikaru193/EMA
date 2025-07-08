@@ -83,12 +83,12 @@ if __name__ == '__main__':
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            driver.changing_right(0, 70)
-                            driver.changing_right(70, 0)
+                            driver.changing_right(0, 90)
+                            driver.changing_right(90, 0)
                             time.sleep(0.15)
                         elif target_flag['location'] == '右':
-                            driver.changing_left(0, 70)
-                            driver.changing_left(70, 0)
+                            driver.changing_left(0, 90)
+                            driver.changing_left(90, 0)
                             time.sleep(0.15)
                           
                         # 動かした直後に再検出
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、1秒前進
-                            following.follow_forward(driver, bno, 70, 1)
+                            following.follow_forward(driver, bno, 95, 1)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
