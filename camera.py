@@ -29,6 +29,22 @@ def get_percentage():
     percentage = (red_area / total_area) * 100
     return percentage
 
+def get_percentage_black():
+    frame = picam2.capture_array()
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    lower_black1 = np.array([0, 30, 30])
+    upper_black1 = np.array([20, 255, 255])
+    lower_black2 = np.array([95, 30, 30])
+    upper_black2 = np.array([130, 255, 255])
+    mask1 = cv2.inRange(hsv, lower_black1, upper_black1)
+    mask2 = cv2.inRange(hsv, lower_black2, upper_black2)
+    mask = cv2.bitwise_or(mask1, mask2)
+    black_area = np.count_nonzero(mask)
+    total_area = frame.shape[0] * frame.shape[1]
+    percentage = (black_area / total_area) * 100
+    return percentage
+
 #赤色面積の重心がどこにあたるか(画面を左から5分割:左から1→5)
 def get_block_number():
     number = None
