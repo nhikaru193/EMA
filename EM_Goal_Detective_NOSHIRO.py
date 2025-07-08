@@ -114,23 +114,23 @@ try:
         number = get_block_number()
         
         if number == 1:
-            driver.changing_left(0, 40)
-            driver.changing_left(40, 0)
+            driver.changing_left(0, 60)
+            driver.changing_left(60, 0)
 
         elif number == 2:
-            driver.changing_left(0, 25)
-            driver.changing_left(25, 0)
+            driver.changing_left(0, 45)
+            driver.changing_left(45, 0)
 
         elif number == 3:
             break
         
         elif number == 4:
-            driver.changing_right(0, 25)
-            driver.changing_right(25, 0)
+            driver.changing_right(0, 45)
+            driver.changing_right(45, 0)
             
         else:
-            driver.changing_right(0, 40)
-            driver.changing_right(40, 0)
+            driver.changing_right(0, 60)
+            driver.changing_right(60, 0)
     
 
     print("ゴール誘導を開始します")
