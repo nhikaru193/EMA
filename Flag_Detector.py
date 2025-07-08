@@ -6,7 +6,7 @@ from time import sleep
 class FlagDetector:
     """
     カメラ画像から黒い領域（フラッグ）を探し、その中に描かれた
-    特定の白い図形（三角形、長方形、T字、十字）を検出するクラス。
+    特定の白い図形を検出し、フラッグの位置を判定するクラス。
     """
     
     def __init__(self, width=640, height=480, min_black_area=2000):
@@ -33,18 +33,19 @@ class FlagDetector:
     def _classify_shape(self, contour):
         """
         輪郭から頂点数と凸性(Solidity)を用いて図形を判別する。
-        （クラス内部でのみ使用するため、メソッド名の先頭に'_'を付けています）
         """
         shape_name = "不明"
         epsilon = 0.035 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         vertices = len(approx)
 
+        # 小さすぎる輪郭はノイズとして除外
         if cv2.contourArea(contour) < 100:
             return "不明", None
         
         hull = cv2.convexHull(contour)
         solidity = 0
+        # 凸包の面積が0でないことを確認
         if cv2.contourArea(hull) > 0:
             solidity = float(cv2.contourArea(contour)) / cv2.contourArea(hull)
 
@@ -52,30 +53,27 @@ class FlagDetector:
             shape_name = "三角形"
         elif vertices == 4 and solidity > 0.95:
             shape_name = "長方形"
-        elif vertices = 8 and solidity < 0.9:
+        elif vertices == 8 and solidity < 0.9:
             shape_name = "T字"
-        elif vertices = 12 and solidity < 0.75:
+        elif vertices == 12 and solidity < 0.75:
             shape_name = "十字"
             
         return shape_name, approx
 
     def detect(self):
         """
-        メインの検出処理。画像を取得し、フラッグと図形を検出。
+        メインの検出処理。画像を取得し、フラッグ、図形、位置を検出する。
         """
-        # 画像を取得し、インスタンス変数に保存
         self.last_image = self.camera.capture_array()
         if self.last_image is None:
             print("画像が取得できませんでした。")
             return []
 
-        # 検出結果リストをリセット
         self.detected_flags = []
-        
-        img = self.last_image.copy() # 元画像は変更しないようにコピーして処理
+        img = self.last_image.copy()
 
         # --- 1. 黒い領域を特定 ---
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
         upper_black = np.array([180, 255, 60])
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
@@ -85,12 +83,12 @@ class FlagDetector:
         
         valid_black_regions = [c for c in black_contours if cv2.contourArea(c) >= self.min_black_area]
 
-        # --- 2. 各黒領域内で図形を探す ---
+        # --- 2. 各黒領域内で図形を探し、位置を特定 ---
         for region_contour in valid_black_regions:
             x, y, w, h = cv2.boundingRect(region_contour)
             roi_img = img[y:y+h, x:x+w]
             
-            gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY)
+            gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
             _, binary_roi = cv2.threshold(gray_roi, 100, 255, cv2.THRESH_BINARY)
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -99,23 +97,35 @@ class FlagDetector:
             for cnt in contours_in_roi:
                 shape_name, approx = self._classify_shape(cnt)
                 if shape_name != "不明" and approx is not None:
-                    # 輪郭の座標を全体座標に変換
                     approx_global = approx + (x, y)
-                    # 図形の情報を辞書として保存
-                    M = cv2.moments(approx_global)
-                    cx = int(M["m10"] / M["m00"]) if M["m00"] != 0 else 0
-                    cy = int(M["m01"] / M["m00"]) if M["m00"] != 0 else 0
+                    M_shape = cv2.moments(approx_global)
+                    cx_shape = int(M_shape["m10"] / M_shape["m00"]) if M_shape["m00"] != 0 else 0
+                    cy_shape = int(M_shape["m01"] / M_shape["m00"]) if M_shape["m00"] != 0 else 0
                     shapes_in_flag.append({
                         "name": shape_name,
                         "contour": approx_global,
-                        "center": (cx, cy)
+                        "center": (cx_shape, cy_shape)
                     })
             
-            # 黒領域（フラッグ）とその中の図形の情報を保存
             if shapes_in_flag:
+                # フラッグ（黒領域）自体の重心を計算
+                M_flag = cv2.moments(region_contour)
+                flag_cx = int(M_flag["m10"] / M_flag["m00"]) if M_flag["m00"] != 0 else 0
+
+                # 重心のx座標に基づいて位置を判定
+                location = ""
+                if flag_cx < self.width / 3:
+                    location = "左"
+                elif flag_cx < self.width * 2 / 3:
+                    location = "中央"
+                else:
+                    location = "右"
+
+                # 検出結果に、位置情報と図形情報を保存
                 self.detected_flags.append({
                     "flag_contour": region_contour,
-                    "shapes": shapes_in_flag
+                    "shapes": shapes_in_flag,
+                    "location": location
                 })
         
         print(f"{len(self.detected_flags)}個のフラッグを検出し、{sum(len(f['shapes']) for f in self.detected_flags)}個の図形を見つけました。")
@@ -138,7 +148,8 @@ class FlagDetector:
                 cv2.drawContours(img, [shape_info["contour"]], -1, (0, 255, 0), 2)
                 
                 bx, by, _, _ = cv2.boundingRect(shape_info["contour"])
-                cv2.putText(img, shape_info["name"], (bx, by - 10),
+                label = f"{shape_info['name']} ({flag_info['location']})"
+                cv2.putText(img, label, (bx, by - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
         return img
         
@@ -153,32 +164,31 @@ class FlagDetector:
 # --- クラスの使い方 ---
 if __name__ == '__main__':
     
-    # 1. FlagDetectorクラスのインスタンスを作成
     detector = FlagDetector()
 
     try:
-        # 2. 検出処理を実行
-        # detect()メソッドが検出結果のリストを返す
+        # 検出処理を実行
         detected_data = detector.detect()
 
-        # 3. 検出結果をターミナルに表示
+        # 検出結果をターミナルに表示
         if detected_data:
             print("\n--- 検出結果詳細 ---")
             for i, flag in enumerate(detected_data):
                 shape_names = [s["name"] for s in flag["shapes"]]
-                print(f"フラッグ {i+1}: {', '.join(shape_names)}")
+                print(f"フラッグ {i+1}: 位置={flag['location']}, 図形={', '.join(shape_names)}")
         else:
             print("フラッグが見つかりませんでした。")
 
-        # 4. 元画像に検出結果を描画
+        # 元画像に検出結果を描画
         if detector.last_image is not None:
             result_image = detector.draw_results(detector.last_image)
             
-            # 5. 画像を表示
-            cv2.imshow("Detected Shapes", result_image)
+            # OpenCVはBGR形式で表示するため色を変換して表示
+            display_image = cv2.cvtColor(result_image, cv2.COLOR_RGB2BGR)
+            cv2.imshow("Detected Shapes", display_image)
             cv2.waitKey(0)
     
     finally:
-        # 6. 終了処理
+        # 終了処理
         detector.close()
         cv2.destroyAllWindows()
