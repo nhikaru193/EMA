@@ -27,8 +27,8 @@ class BNO055Wrapper:
 #HEATING_DURATION_SECONDS = 3.0
 
 # 目標GPS座標
-destination_lat = 35.9194163
-destination_lon = 139.9080921
+destination_lat = 35.9185458
+destination_lon = 139.9084760
 
 # GPS受信ピン
 RX_PIN = 17
