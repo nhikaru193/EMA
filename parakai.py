@@ -375,17 +375,17 @@ if __name__ == "__main__":
                 print("赤色が左下に検出されました → 右に回頭します")
                 turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=65, angle_tolerance_deg=20.0) # 右90度
                 print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=80, duration_time=2)
+                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'right_bottom':
                 print("赤色が右下に検出されました → 左に回頭します")
                 turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=65, angle_tolerance_deg=20.0) # 左90度
                 print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=80, duration_time=2)
+                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'bottom_middle':
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
                 turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=65, angle_tolerance_deg=20.0) # 右120度
                 print("120度回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=80, duration_time=5)
+                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'high_percentage_overall':
                 print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
                 time.sleep(10) # より長く待機
