@@ -196,7 +196,9 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         return 'error_in_processing'
 
 # --- 新しい関数: 指定角度へ回頭するヘルパー関数 ---
-def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=3.0, max_turn_time=10.0):
+# main_rover_control.py 内の turn_to_relative_angle 関数
+
+def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=3.0, max_turn_attempts=100): # max_turn_time を削除
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
     Args:
@@ -205,7 +207,7 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
         angle_offset_deg (float): 目標とする相対角度（例: 90度右旋回なら90, 90度左旋回なら-90）。
         turn_speed (int): 旋回速度 (0-100)。
         angle_tolerance_deg (float): 許容する最終角度誤差（度）。
-        max_turn_time (float): 最大旋回時間（秒）。
+        max_turn_attempts (int): 旋回を試みる最大ループ回数。
     Returns:
         bool: 成功した場合はTrue、タイムアウトやエラーの場合はFalse。
     """
@@ -217,20 +219,22 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
     target_heading = (initial_heading + angle_offset_deg + 360) % 360
     print(f"現在のBNO方位: {initial_heading:.2f}度, 相対目標角度: {angle_offset_deg:.2f}度 -> 絶対目標方位: {target_heading:.2f}度")
 
-    start_time = time.time()
+    loop_count = 0 # ループ回数をカウントする変数
     
-    while time.time() - start_time < max_turn_time:
+    # 回数のみで上限を設定
+    while loop_count < max_turn_attempts: # 回数のみの条件に変更
         current_heading = bno_sensor_instance.get_heading()
         if current_heading is None:
             print("警告: turn_to_relative_angle: 旋回中に方位が取得できませんでした。スキップします。")
             driver.motor_stop_brake()
             time.sleep(0.1)
+            loop_count += 1 # Noneの場合もカウントを進める
             continue
 
         angle_error = (target_heading - current_heading + 180 + 360) % 360 - 180
 
         if abs(angle_error) <= angle_tolerance_deg:
-            print(f"[TURN] 相対回頭完了。最終誤差: {angle_error:.2f}度")
+            print(f"[TURN] 相対回頭完了。最終誤差: {angle_error:.2f}度 (試行回数: {loop_count})")
             driver.motor_stop_brake()
             time.sleep(0.5)
             return True
@@ -241,12 +245,13 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
             driver.changing_right(0, turn_speed)
         
         time.sleep(0.05) # 短いポーリング間隔
+        loop_count += 1 # ループごとにカウントを増やす
     
-    print(f"警告: turn_to_relative_angle: 最大旋回時間({max_turn_time}秒)内に目標角度に到達できませんでした。最終誤差: {angle_error:.2f}度")
+    # ループが回数の上限で終了した場合
+    print(f"警告: turn_to_relative_angle: 最大試行回数({max_turn_attempts}回)内に目標角度に到達できませんでした。最終誤差: {angle_error:.2f}度 (試行回数: {loop_count})")
     driver.motor_stop_brake()
     time.sleep(0.5)
     return False
-
 
 # --- メインシーケンス ---
 if __name__ == "__main__":
