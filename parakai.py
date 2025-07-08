@@ -1,5 +1,3 @@
-# main_rover_control.py (最新版 - 動的旋回と前進フェーズの統合)
-
 import RPi.GPIO as GPIO
 import time
 import pigpio
@@ -96,13 +94,21 @@ def detect_red_object(picam2_instance, min_red_percentage=0.80):
     if frame is None:
         print("画像取得失敗: フレームがNoneです。")
         return False, 0.0
+    frame = cv2.GaussianBlur(flame, (5, 5), 0)
     
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    lower_red = np.array([0, 120, 70])
-    upper_red = np.array([10, 255, 255])
-    mask = cv2.inRange(hsv, lower_red, upper_red)
     
-    red_pixel_count = np.sum(mask > 0)
+    lower_red1 = np.array([0, 30, 30])
+    upper_red1 = np.array([20, 255, 255])
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+
+    lower_red2 = np.array([170, 30, 30])
+    upper_red2 = np.array([180, 255, 255])
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+
+    mask = cv2.bitwise_or(mask1, mask2)
+    
+    red_pixel_count = np.count_nonzero(mask)
     total_pixels = frame.shape[0] * frame.shape[1]
     red_percentage = red_pixel_count / total_pixels if total_pixels > 0 else 0.0
     
