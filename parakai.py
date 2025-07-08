@@ -124,8 +124,8 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         }
         red_counts = {key: 0 for key in cells} ; total_pixels_in_cell = {key: 0 for key in cells}
 
-        lower_red1 = np.array([0, 100, 100]) ; upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
+        lower_red1 = np.array([0, 50, 50]) ; upper_red1 = np.array([30, 255, 255])
+        lower_red2 = np.array([150, 50, 50]) ; upper_red2 = np.array([180, 255, 255])
 
         blurred_full_frame = cv2.GaussianBlur(rotated_frame_bgr, (5, 5), 0)
         hsv_full = cv2.cvtColor(blurred_full_frame, cv2.COLOR_BGR2HSV)
