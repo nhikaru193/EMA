@@ -340,18 +340,10 @@ if __name__ == "__main__":
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=60, duration_time=2)
             elif red_location_result == 'bottom_middle':
-                print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                turn_speed = 40 # 回頭速度
-                turn_time_for_120_deg = 0.5 # 目安: 120度回頭に必要な時間 (要調整)
-                                             # 例: 40の速度で2秒で90度回るなら、120度には2 * (120/90) = 2.66秒
-                                             # 実際のローバーでテストして最適な時間を設定してください
-                driver.changing_right(0, turn_speed) # 右旋回開始
-                time.sleep(turn_time_for_120_deg) # 120度回頭する時間
-                driver.motor_stop_brake()
-                time.sleep(0.5) # 停止安定待ち
-                print("120度回頭後、少し前進します")
+                print("赤色が下段中央に検出されました → その場で少し待機して様子を見ます")
+                time.sleep(5) # 少し長めに待機
+                print("待機後、少し前進します")
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=70, duration_time=3)
-                # ★★★ 修正ここまで ★★★
             elif red_location_result == 'high_percentage_overall':
                 print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
                 time.sleep(10) # より長く待機
