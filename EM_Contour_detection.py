@@ -32,5 +32,96 @@ def find_target_flag(detected_data, target_name):
         PWMB=19, BIN1=16, BIN2=26,    # 右モーター
         STBY=21
     )
-
     screen_area = detector.width * detector.height
+      
+    try:
+        #全てのターゲットに対してループ
+        for target_name in TARGET_SHAPES:
+            print(f"\n---====== 新しい目標: [{target_name}] の探索を開始します ======---")
+            
+            #このターゲットのタスクが完了するまでループ 
+            task_completed = False
+            while not task_completed:
+                
+                # ---探索 ---
+                print(f"[{target_name}] を探しています...")
+                detected_data = detector.detect()
+                target_flag = find_target_flag(detected_data, target_name)
+
+                # 見つからない場合は回転して探索
+                if target_flag is None:
+                    print(f"[{target_name}] が見つかりません。回転して探索します。")
+                    search_count = 0
+                    while target_flag is None and search_count < 30: # タイムアウト設定
+                        driver.changing_right(0, 40)
+                        driver.changing_right(40, 0)
+                        time.sleep(0.2)
+                        
+                        detected_data = detector.detect()
+                        target_flag = find_target_flag(detected_data, target_name)
+                        search_count += 1
+                
+                # 回転しても見つからなかったら、このターゲットは諦めて次へ
+                if target_flag is None:
+                    print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
+                    break # while not task_completed ループを抜ける
+
+                # --- フェーズ2: 追跡（中央寄せ＆接近）---
+                print(f"[{target_name}] を発見！追跡を開始します。")
+                while target_flag:
+                    # --- 中央寄せ ---
+                    if target_flag['location'] != '中央':
+                        # (この部分は変更なし)
+                        print(f"位置を調整中... (現在位置: {target_flag['location']})")
+                        if target_flag['location'] == '左':
+                            driver.changing_right(0, 40)
+                            driver.changing_right(40, 0)
+                            time.sleep(0.2)
+                        elif target_flag['location'] == '右':
+                            driver.changing_left(0, 40)
+                            driver.changing_left(40, 0)
+                            time.sleep(0.2)
+                            
+                        # 動かした直後に再検出
+                        print("  再検出中...")
+                        detected_data = detector.detect()
+                        target_flag = find_target_flag(detected_data, target_name)
+                        
+                        if not target_flag:
+                            print(f"調整中に [{target_name}] を見失いました。")
+                            break # 追跡ループを抜ける
+                        
+                        # 位置を再評価するため、ループの最初に戻る
+                        continue
+                        
+                    # --- 接近 ---
+                    else: # 中央にいる場合
+                        flag_area = cv2.contourArea(target_flag['flag_contour'])
+                        area_percent = (flag_area / screen_area) * 100
+                        print(f"中央に補足。接近中... (画面占有率: {area_percent:.1f}%)")
+
+                        if area_percent >= AREA_THRESHOLD_PERCENT:
+                            print(f"[{target_name}] に接近完了！")
+                            task_completed = True # タスク完了フラグを立てる
+                            break # 追跡ループを抜ける
+
+                        driver.move_forward_step()
+
+                    # 動作後に再検出
+                    print("  再検出中...")
+                    detected_data = detector.detect()
+                    target_flag = find_target_flag(detected_data, target_name)
+                    
+                    # もし見失ったら、追跡ループを抜けて再度探索フェーズに戻る
+                    if not target_flag:
+                        print(f"追跡中に [{target_name}] を見失いました。再探索します。")
+                        break # 追跡ループ(while target_flag)を抜ける
+
+        print("\n---====== 全ての目標の探索が完了しました ======---")
+
+    finally:
+        # --- 終了処理 ---
+        print("--- 制御を終了します ---")
+        driver.cleanup()
+        detector.close()
+        cv2.destroyAllWindows()
