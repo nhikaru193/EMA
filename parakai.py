@@ -1,49 +1,46 @@
-# main_rover_control.py (パラシュート回避時にBNO055で正確な角度回頭)
+# main_rover_control.py (回避後の追加確認ロジック)
 
 import RPi.GPIO as GPIO
 import time
 import pigpio
 import board
-import busio # I2Cバスの初期化にはboardとbusioが必要です
+import busio
 import numpy as np
 import cv2
 from picamera2 import Picamera2
 from libcamera import Transform
 import sys
 import os
-import math # mathモジュールが必要
+import math
 
 # カスタムモジュールのインポート
 from motor import MotorDriver
-from BNO055 import BNO055 # BNO055.py の BNO055 クラス
+from BNO055 import BNO055
 import following
 
-# --- 定数設定 ---
+# --- BNO055用のラッパークラス (変更なし) ---
+class BNO055Wrapper:
+    def __init__(self, adafruit_bno055_sensor):
+        self.sensor = adafruit_bno055_sensor
+
+    def get_heading(self):
+        heading = self.sensor.euler[0]
+        if heading is None:
+            wait_start_time = time.time()
+            max_wait_time = 0.5
+            while heading is None and (time.time() - wait_start_time < max_wait_time):
+                time.sleep(0.01)
+                heading = self.sensor.euler[0]
+        if heading is None:
+            return 0.0
+        return heading
+
+# --- 定数設定 (変更なし) ---
 destination_lat = 35.9185366
 destination_lon = 139.9085042
 RX_PIN = 17
 
-# --- BNO055用のラッパークラス (既存のBNO055クラスにget_headingがあるので不要ですが、もし必要なら残す) ---
-# ※ BNO055.pyのBNO055クラス自体にget_heading()があるので、このWrapperは不要です。
-#    今回はbno_sensorを直接following.follow_forwardに渡すので、このWrapperクラスは削除しても問題ありません。
-#    コードをシンプルにするために、以下コメントアウトします。
-# class BNO055Wrapper:
-#     def __init__(self, adafruit_bno055_sensor):
-#         self.sensor = adafruit_bno055_sensor
-#     def get_heading(self):
-#         heading = self.sensor.euler[0]
-#         if heading is None:
-#             wait_start_time = time.time()
-#             max_wait_time = 0.5
-#             while heading is None and (time.time() - wait_start_time < max_wait_time):
-#                 time.sleep(0.01)
-#                 heading = self.sensor.euler[0]
-#         if heading is None:
-#             return 0.0
-#         return heading
-
-
-# --- 関数定義 ---
+# --- 関数定義 (省略 - 変更なし) ---
 def convert_to_decimal(coord, direction):
     degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
     minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
@@ -230,7 +227,6 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
             time.sleep(0.1)
             continue
 
-        # 方位誤差を計算し、-180から180の範囲に調整
         angle_error = (target_heading - current_heading + 180 + 360) % 360 - 180
 
         if abs(angle_error) <= angle_tolerance_deg:
@@ -279,16 +275,6 @@ if __name__ == "__main__":
     bno_sensor.setExternalCrystalUse(True) # 外部クリスタルを使用する場合
     time.sleep(1) # センサー安定待ち
     
-    # BNO055Wrapper は BNO055.py の BNO055 クラスに get_heading() があるため不要です。
-    # しかし、following.py が `bno.get_heading()` を期待するため、
-    # following.py が変更できない場合、BNO055Wrapper を復活させるか、
-    # following.py の `bno` 引数に `bno_sensor` を直接渡すことになります。
-    # 現在のコードでは `bno_sensor_for_following` は使用されていませんが、
-    # following.py 側で `bno.get_heading()` がエラーになる場合、
-    # following.py の `bno` 引数を `bno_sensor` に変更して対応してください。
-    # 実際には `following.follow_forward(driver, bno_sensor, ...)` のように直接渡します。
-    # このため、bno_sensor_for_following という変数自体も削除可能です。
-
     picam2_instance = Picamera2()
     picam2_instance.configure(picam2_instance.create_preview_configuration(
         main={"size": (640, 480)},
@@ -338,11 +324,13 @@ if __name__ == "__main__":
 
             # STEP 3: その場で回頭 (動的調整)
             print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-            ANGLE_THRESHOLD_DEG = 20.0 # 許容誤差を5度に設定
+            ANGLE_THRESHOLD_DEG = 5.0 # 許容誤差を5度に設定
             turn_speed = 40
             max_turn_attempts = 100
             turn_attempt_count = 0
 
+            # このブロックは、後述の再確認ループでも再利用するため、関数化することも検討できますが、
+            # 現状の複雑さを考えると、一旦このままにしておきます。
             while turn_attempt_count < max_turn_attempts:
                 current_bno_heading = bno_sensor.get_heading() # bno_sensor.get_heading() を使用
                 if current_bno_heading is None:
@@ -385,20 +373,17 @@ if __name__ == "__main__":
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
-                # BNO055で正確に90度回頭
-                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=30.0) # 右90度
+                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=5.0) # 右90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=60, duration_time=2)
             elif red_location_result == 'right_bottom':
                 print("赤色が右下に検出されました → 左に回頭します")
-                # BNO055で正確に90度回頭
-                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=30.0) # 左90度
+                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=5.0) # 左90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=60, duration_time=2)
             elif red_location_result == 'bottom_middle':
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                # BNO055で正確に120度回頭
-                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=30.0) # 右120度
+                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=5.0) # 右120度
                 print("120度回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=3)
             elif red_location_result == 'high_percentage_overall':
@@ -415,8 +400,115 @@ if __name__ == "__main__":
 
             driver.motor_stop_brake()
 
-            print("\n=== 前進処理が完了しました。プログラムを終了します。 ===")
-            break
+            # ★★★ 回避後の再確認ループ ★★★
+            print("\n=== 回避後の周囲確認を開始します ===")
+            confirmation_attempts = 3 # 最大3回確認を試みる
+            avoidance_confirmed = False
+
+            for i in range(confirmation_attempts):
+                print(f"--- 回避確認試行 {i+1}/{confirmation_attempts} ---")
+                
+                # 1. 目的地のGPS方向を向く
+                print("ローバーを目的地のGPS方向へ向けます...")
+                current_bno_heading = bno_sensor.get_heading()
+                if current_bno_heading is None:
+                    print("警告: BNO055方位が取得できませんでした。GPS方向への回頭をスキップします。")
+                    driver.motor_stop_brake()
+                    time.sleep(1)
+                else:
+                    # STEP 3 と同じ回頭ロジックを再利用
+                    turn_attempt_count_realign = 0
+                    while turn_attempt_count_realign < max_turn_attempts: # max_turn_attempts はメインループのものを再利用
+                        current_bno_heading = bno_sensor.get_heading()
+                        if current_bno_heading is None:
+                            print("警告: 再調整中にBNO055方位が取得できませんでした。リトライします。")
+                            driver.motor_stop_brake()
+                            time.sleep(1)
+                            turn_attempt_count_realign += 1
+                            continue
+
+                        angle_error = (target_gps_heading - current_bno_heading + 180 + 360) % 360 - 180
+                        
+                        if abs(angle_error) <= ANGLE_THRESHOLD_DEG:
+                            print(f"[RE-ALIGN] GPS方向への再調整完了。最終誤差: {angle_error:.2f}度")
+                            break
+
+                        turn_duration = 0.15 + (abs(angle_error) / 180.0) * 0.2
+                        if angle_error < 0:
+                            print(f"[RE-ALIGN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
+                            driver.changing_left(0, turn_speed)
+                        else:
+                            print(f"[RE-ALIGN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
+                            driver.changing_right(0, turn_speed)
+                        
+                        time.sleep(turn_duration)
+                        driver.motor_stop_brake()
+                        time.sleep(0.5)
+                        turn_attempt_count_realign += 1
+                    
+                    if turn_attempt_count_realign >= max_turn_attempts and abs(angle_error) > ANGLE_THRESHOLD_DEG:
+                        print(f"警告: GPS方向への再調整が不十分でした。最終誤差: {angle_error:.2f}度")
+                    driver.motor_stop_brake()
+                    time.sleep(0.5)
+
+
+                # 2. 正面、左30度、右30度の3方向で赤色検知
+                all_directions_clear = True
+                
+                # 正面
+                print("→ 正面方向の赤色を確認します...")
+                result_front = detect_red_in_grid(picam2_instance, save_path=f"/home/mark1/Pictures/confirm_front_{i+1}.jpg", min_red_pixel_ratio_per_cell=0.10)
+                if result_front != 'none_detected':
+                    print(f"正面で赤色を検出しました: {result_front}")
+                    all_directions_clear = False
+
+                # 左30度
+                if all_directions_clear: # 正面がクリアなら次へ
+                    print("→ 左に30度回頭し、赤色を確認します...")
+                    turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=40, angle_tolerance_deg=5.0) # 左30度
+                    result_left = detect_red_in_grid(picam2_instance, save_path=f"/home/mark1/Pictures/confirm_left_{i+1}.jpg", min_red_pixel_ratio_per_cell=0.10)
+                    if result_left != 'none_detected':
+                        print(f"左30度で赤色を検出しました: {result_left}")
+                        all_directions_clear = False
+                    
+                    # 元の方向に戻す (重要)
+                    print("→ 左30度から正面に戻します...")
+                    turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=40, angle_tolerance_deg=5.0) # 右30度で戻す
+
+                # 右30度
+                if all_directions_clear: # 左30度もクリアなら次へ
+                    print("→ 右に30度回頭し、赤色を確認します...")
+                    turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=40, angle_tolerance_deg=5.0) # 右30度
+                    result_right = detect_red_in_grid(picam2_instance, save_path=f"/home/mark1/Pictures/confirm_right_{i+1}.jpg", min_red_pixel_ratio_per_cell=0.10)
+                    if result_right != 'none_detected':
+                        print(f"右30度で赤色を検出しました: {result_right}")
+                        all_directions_clear = False
+                    
+                    # 元の方向に戻す (重要)
+                    print("→ 右30度から正面に戻します...")
+                    turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=40, angle_tolerance_deg=5.0) # 左30度で戻す
+
+                if all_directions_clear:
+                    print("全ての方向でパラシュートは検出されませんでした。回避成功！")
+                    avoidance_confirmed = True
+                    break # 確認成功したらループを抜ける
+                else:
+                    print(f"警告: まだパラシュートらしきものを検出しました。再回避を試みます。")
+                    # 再回避のロジック (下段中央の回避ロジックを再利用)
+                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=5.0) # 右に120度旋回
+                    following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=3) # 少し前進
+                    driver.motor_stop_brake()
+                    time.sleep(1) # 再回避後のクールダウン
+
+            if avoidance_confirmed:
+                print("\n=== 前進処理が完了しました。プログラムを終了します。 ===")
+                break # メインループを終了
+            else:
+                print("\n警告: 回避後の周囲確認でパラシュートが解消されませんでした。次の走行サイクルに進みます。")
+                # ここで break せずに次の走行サイクル (メインwhile Trueの先頭) に戻るか、終了するかを選択
+                # 今回は、無限ループのbreakをそのままにしておくため、このelseブロックには到達しません。
+                # もしこのまま終了させたくないなら、上記 'break' を削除し、continue に変更。
+                break # 確認が取れなければ終了
 
     except Exception as e:
         print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
