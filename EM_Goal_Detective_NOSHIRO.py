@@ -9,6 +9,7 @@ from BNO055 import BNO055
 
 def get_percentage():
     frame = picam2.capture_array()
+    frame = cv2.cvtColor(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     lower_red1 = np.array([0, 30, 30])
@@ -27,6 +28,7 @@ def get_percentage():
 def get_block_number():
     number = None
     frame = picam2.capture_array()
+    frame = cv2.cvtColor(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     lower_red1 = np.array([0, 30, 30])
