@@ -261,7 +261,7 @@ if __name__ == "__main__":
 
             # STEP 3: その場で回頭 (動的調整)
             print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-            ANGLE_THRESHOLD_DEG = 5.0
+            ANGLE_THRESHOLD_DEG = 20.0
             turn_speed = 40
             max_turn_attempts = 100
             turn_attempt_count = 0
