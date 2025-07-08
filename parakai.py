@@ -322,8 +322,7 @@ if __name__ == "__main__":
             # STEP 4 & 5: カメラ検知と前進
             print("\n=== ステップ4&5: カメラ検知と前進 ===")
             
-            # 新しい detect_red_location 関数で赤色検出
-            red_location_result = detect_red_location(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10)
+            red_location_result = detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10)
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
