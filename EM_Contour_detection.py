@@ -34,6 +34,17 @@ def find_target_flag(detected_data, target_name):
     )
     screen_area = detector.width * detector.height
       
+# === BNO055 初期化 ===
+bno = BNO055()
+if not bno.begin():
+    print("BNO055の初期化に失敗しました。")
+    exit(1)
+time.sleep(1)
+bno.setExternalCrystalUse(True)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
+time.sleep(1)
+print("センサー類の初期化完了。")
+
     try:
         #全てのターゲットに対してループ
         for target_name in TARGET_SHAPES:
@@ -99,13 +110,14 @@ def find_target_flag(detected_data, target_name):
                         flag_area = cv2.contourArea(target_flag['flag_contour'])
                         area_percent = (flag_area / screen_area) * 100
                         print(f"中央に補足。接近中... (画面占有率: {area_percent:.1f}%)")
-
-                        if area_percent >= AREA_THRESHOLD_PERCENT:
-                            print(f"[{target_name}] に接近完了！")
-                            task_completed = True # タスク完了フラグを立てる
-                            break # 追跡ループを抜ける
-
-                        driver.move_forward_step()
+                        while area_percent comparison:
+                            if area_percent >= AREA_THRESHOLD_PERCENT:
+                                print(f"[{target_name}] に接近完了！")
+                                task_completed = True # タスク完了フラグを立てる
+                                sleep(1)
+                                break # 追跡ループを抜ける
+                            else: #area_percent <= AREA_THRESHOLD_PERCENT
+                                following.follow_forward(driver, bno, 70, 1)
 
                     # 動作後に再検出
                     print("  再検出中...")
@@ -124,4 +136,5 @@ def find_target_flag(detected_data, target_name):
         print("--- 制御を終了します ---")
         driver.cleanup()
         detector.close()
+        pi.stop()
         cv2.destroyAllWindows()
