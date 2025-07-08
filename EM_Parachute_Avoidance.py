@@ -137,7 +137,7 @@ try:
         
     else:
         print("方位OK")
-        driver.motor_stop_brake()
+        driver.motor_stop_free()
 
     time.sleep(2)
 
