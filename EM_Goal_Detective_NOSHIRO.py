@@ -3,7 +3,7 @@ import numpy as np
 import time
 from picamera2 import Picamera2
 from motor import MotorDriver
-import color
+import camera
 import following
 from BNO055 import BNO055
 
