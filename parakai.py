@@ -135,10 +135,10 @@ def save_and_process_single_image(picam2_instance, save_path="/home/mark1/Pictur
         hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
 
         # 赤色のHSV範囲を定義 (ご希望の範囲)
-        lower_red1 = np.array([0, 30, 30])
-        upper_red1 = np.array([20, 255, 255])
-        lower_red2 = np.array([95, 30, 30]) # 一般的な赤ではない範囲なので、意図をご確認ください
-        upper_red2 = np.array([130, 255, 255])
+        lower_red1 = np.array([0, 100, 100])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([160, 100, 100]) # 一般的な赤ではない範囲なので、意図をご確認ください
+        upper_red2 = np.array([180, 255, 255])
 
         # マスクを作成し結合
         mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r')
             sys.stdout.flush()
             
-            if gyro_cal == 3 and mag_cal == 3: # 必要であれば Sys:3 に変更
+            if gyro_cal == 3 and mag_cal == 3:
                 print("\nキャリブレーション完了！")
                 break
             time.sleep(0.1)
@@ -238,7 +238,7 @@ if __name__ == "__main__":
             ANGLE_THRESHOLD_DEG = 5.0
             turn_speed = 40
 
-            max_turn_attempts = 10
+            max_turn_attempts = 100
             turn_attempt_count = 0
 
             while turn_attempt_count < max_turn_attempts:
