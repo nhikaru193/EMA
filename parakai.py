@@ -39,7 +39,7 @@ RX_PIN = 17
 def convert_to_decimal(coord, direction):
     """NMEA形式のGPS座標を十進数に変換します。"""
     degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
-    minutes = float(coord[2:]) if direction[3:])
+    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
     decimal = degrees + minutes / 60
     if direction in ['S', 'W']:
         decimal *= -1
