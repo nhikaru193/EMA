@@ -142,7 +142,7 @@ if __name__ == "__main__":
     picam2_instance.configure(picam2_instance.create_preview_configuration(
         main={"size": (640, 480)},
         controls={"FrameRate": 30},
-        transform=Transform(rotation=90)
+        transform=Transform(rotation=90, hflip=True)
     ))
     picam2_instance.start()
     time.sleep(2)
