@@ -385,7 +385,7 @@ if __name__ == "__main__":
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
                 turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=55, angle_tolerance_deg=20.0) # 右120度
                 print("120度回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=3)
+                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=5)
             elif red_location_result == 'high_percentage_overall':
                 print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
                 time.sleep(10) # より長く待機
@@ -488,7 +488,7 @@ if __name__ == "__main__":
                 # ここで再回避行動を実行し、メインループの次のサイクルへ戻る
                 print("再回避行動: 右に120度回頭して前進します。")
                 turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=55, angle_tolerance_deg=20.0) # 右120度
-                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=3) # 少し前進
+                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=5) # 少し前進
                 driver.motor_stop_brake()
                 time.sleep(1) # 再回避後のクールダウン
                 
