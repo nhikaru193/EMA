@@ -237,10 +237,36 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
             time.sleep(0.5)
             return True
 
-        if angle_error < 0: # 現在向いている方向が目標より左 (反時計回り)
+        if angle_error < -100: # 現在向いている方向が目標より左 (反時計回り)
             driver.changing_left(0, turn_speed)
-        else: # 現在向いている方向が目標より右 (時計回り)
+            driver.changing_left(turn_speed, 0)
+        elif angle_error < -70:
+            a = 0.90 * turn_speed
+            driver.changing_left(0, a)
+            driver.changing_left(a, 0)
+        elif angle_error < -40:
+            b = 0.80 * turn_speed
+            driver.changing_left(0, b)
+            driver.changing_left(b, 0)
+        elif angle_error < -20:
+            c = 0.70 * turn_speed
+            driver.changing_left(0, c)
+            driver.changing_left(c, 0)
+        elif angle_error < 100:
             driver.changing_right(0, turn_speed)
+            driver.changing_right(turn_speed, 0)
+        elif angle_error > 70:
+            d = 0.90 * turn_speed
+            driver.changing_right(0, d)
+            driver.changing_right(a, 0)
+        elif angle_error > 40:
+            e = 0.80 * turn_speed
+            driver.changing_right(0, b)
+            driver.changing_right(b, 0)
+        elif angle_error > 20:
+            f = 0.70 * turn_speed
+            driver.changing_right(0, c)
+            driver.changing_right(c, 0)
         
         time.sleep(0.05) # 短いポーリング間隔
         loop_count += 1 # ループごとにカウントを増やす
@@ -373,27 +399,27 @@ if __name__ == "__main__":
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=65, angle_tolerance_deg=20.0) # 右90度
+                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=90, angle_tolerance_deg=20.0) # 右90度
                 print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5)
             elif red_location_result == 'right_bottom':
                 print("赤色が右下に検出されました → 左に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=65, angle_tolerance_deg=20.0) # 左90度
+                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=90, angle_tolerance_deg=20.0) # 左90度
                 print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5)
             elif red_location_result == 'bottom_middle':
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=65, angle_tolerance_deg=20.0) # 右120度
+                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=90, angle_tolerance_deg=20.0) # 右120度
                 print("120度回頭後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5)
             elif red_location_result == 'high_percentage_overall':
                 print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
                 time.sleep(10) # より長く待機
                 print("待機後、少し前進します")
-                following.follow_forward(driver, bno_sensor, base_speed=80, duration_time=3)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=3)
             elif red_location_result == 'none_detected':
                 print("赤色を検出しませんでした → 方向追従制御で前進します。(速度80, 5秒)")
-                following.follow_forward(driver, bno_sensor, base_speed=80, duration_time=5)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5)
             elif red_location_result == 'error_in_processing':
                 print("カメラ処理でエラーが発生しました。少し待機します...")
                 time.sleep(2)
