@@ -1,4 +1,4 @@
-# main_rover_control.py (GPS取得失敗時も継続する版)
+# main_rover_control.py (カメラ撮影と赤色検知を新しい関数に統合)
 
 import RPi.GPIO as GPIO
 import time
@@ -9,8 +9,9 @@ import adafruit_bno055
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-from libcamera import Transform
+# from libcamera import Transform # transformを削除したので不要になります
 import sys
+import os # osモジュールはディレクトリ作成のために必要です
 
 # カスタムモジュールのインポート
 from motor import MotorDriver
@@ -29,13 +30,13 @@ class BNO055Wrapper:
 #HEATING_DURATION_SECONDS = 3.0
 
 # 目標GPS座標
-destination_lat = 35.9185458
-destination_lon = 139.9084760
+destination_lat = 35.9194038
+destination_lon = 139.9081183
 
 # GPS受信ピン
 RX_PIN = 17
 
-# --- 関数定義 ---
+# --- 関数定義 (既存のものを保持) ---
 def convert_to_decimal(coord, direction):
     """NMEA形式のGPS座標を十進数に変換します。"""
     degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
@@ -59,17 +60,16 @@ def get_current_location(pi_instance, rx_pin):
                     for line in text.split("\n"):
                         if "$GNRMC" in line:
                             parts = line.strip().split(",")
-                            if len(parts) > 6 and parts[2] == "A": # 'A'はデータが有効であることを示す
+                            if len(parts) > 6 and parts[2] == "A":
                                 lat = convert_to_decimal(parts[3], parts[4])
                                 lon = convert_to_decimal(parts[5], parts[6])
                                 return lat, lon
             except Exception as e:
                 print(f"GPSデータ解析エラー: {e}")
-                # 解析エラーが発生しても、次のデータで成功する可能性があるのでループを継続
                 continue
         time.sleep(0.1)
     print("GPSデータの取得に失敗しました (タイムアウト)。")
-    return None, None # タイムアウト時にNoneを返すように変更
+    return None, None
 
 def calculate_heading(current_lat, current_lon, dest_lat, dest_lon):
     """現在地から目的地への方位角を計算します。"""
@@ -81,48 +81,94 @@ def calculate_heading(current_lat, current_lon, dest_lat, dest_lon):
     bearing = math.degrees(math.atan2(y, x))
     return (bearing + 360) % 360
 
-def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_image.jpg"):
-    """デバッグ用に画像を撮影して保存します。"""
-    frame = picam2_instance.capture_array()
-    if frame is None:
-        print("画像キャプチャ失敗：フレームがNoneです。")
-        return None
-    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(path, frame_bgr)
-    print(f"画像保存成功: {path}")
-    return frame
-
-def detect_red_object(picam2_instance, min_red_percentage=0.80):
+# --- 新しいカメラ撮影・保存・赤色検知関数 ---
+def save_and_process_single_image(picam2_instance, save_path="/home/mark1/Pictures/akairo.jpg", min_red_percentage=0.80):
     """
-    カメラ画像から赤色物体を検出し、その割合を返します。
+    カメラから一度だけ画像をキャプチャし、指定されたパスに保存します。
+    保存後、その画像に対して赤色検知処理を行い、結果を返します。
+    キャプチャした画像を反時計回りに90度回転させてから処理します。
+
+    Args:
+        picam2_instance: Picamera2のインスタンス。
+        save_path (str): 画像を保存するフルパス。
+        min_red_percentage (float): 赤色と判断するピクセル割合の閾値 (0.0〜1.0)。
+
+    Returns:
+        tuple: (赤色が高割合で検出されたか(bool), 赤色の実際のピクセル割合(float))
     """
-    frame = picam2_instance.capture_array()
-    if frame is None:
-        print("画像取得失敗: フレームがNoneです。")
-        return False, 0.0
-    
-    frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
-    lower_red1 = np.array([0, 30, 30])
-    upper_red1 = np.array([20, 255, 255])
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    try:
+        # ディレクトリが存在するか確認し、なければ作成
+        directory = os.path.dirname(save_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print(f"ディレクトリを作成しました: {directory}")
 
-    # 2つ目の赤色範囲 (H: 95〜130度 - 青緑〜紫の範囲になります。これが意図通りかご確認ください)
-    lower_red2 = np.array([170, 30, 30])
-    upper_red2 = np.array([180, 255, 255])
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        print(f"画像をキャプチャし、{save_path}に保存します...")
+        
+        # 画像をキャプチャ (Picamera2はデフォルトでRGB形式のNumPy配列を返す)
+        frame_rgb = picam2_instance.capture_array()
+        
+        if frame_rgb is None:
+            print("画像キャプチャ失敗: フレームがNoneです。")
+            return False, 0.0
+            
+        # RGBからBGRに変換 (OpenCVがBGRを期待するため)
+        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
-    mask = cv2.bitwise_or(mask1, mask2)
-    
-    red_pixel_count = np.count_nonzero(mask)
-    total_pixels = frame.shape[0] * frame.shape[1]
-    red_percentage = red_pixel_count / total_pixels if total_pixels > 0 else 0.0
-    
-    print(f"赤色ピクセル割合: {red_percentage:.2%}")
+        # --- 回転処理を追加 ---
+        # 時計回りに90度傾いているので、反時計回りに90度（または時計回りに270度）回転させる
+        rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        print("画像を反時計回りに90度回転させました。")
+        # --- 回転処理ここまで ---
 
-    return red_percentage >= min_red_percentage, red_percentage
+        # 回転した画像を保存
+        cv2.imwrite(save_path, rotated_frame_bgr)
+        print(f"画像を保存しました: {save_path}")
+
+        # --- 保存した画像 (回転後の画像) に対して赤色検知処理を行う ---
+        print("保存された画像に対して赤色検知を開始します...")
+
+        # ガウシアンブラーを適用してノイズを減らす
+        blurred_frame = cv2.GaussianBlur(rotated_frame_bgr, (5, 5), 0)
+        
+        # BGRからHSV色空間に変換 (回転後の画像を使用)
+        hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+
+        # 赤色のHSV範囲を定義 (ご希望の範囲)
+        lower_red1 = np.array([0, 30, 30])
+        upper_red1 = np.array([20, 255, 255])
+        lower_red2 = np.array([95, 30, 30]) # 一般的な赤ではない範囲なので、意図をご確認ください
+        upper_red2 = np.array([130, 255, 255])
+
+        # マスクを作成し結合
+        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask = cv2.bitwise_or(mask1, mask2)
+
+        # 赤色領域のピクセル数をカウント
+        red_pixels = cv2.countNonZero(mask)
+
+        # 赤色ピクセルの割合を計算
+        height, width, _ = rotated_frame_bgr.shape
+        total_pixels = height * width
+        
+        red_percentage = (red_pixels / total_pixels) if total_pixels > 0 else 0.0
+        print(f"赤色ピクセル割合: {red_percentage:.2%}")
+
+        # 結果をウィンドウ表示（自動実行時はコメントアウト推奨）
+        # res = cv2.bitwise_and(rotated_frame_bgr, rotated_frame_bgr, mask=mask)
+        # cv2.imshow('Captured Original (Rotated)', rotated_frame_bgr)
+        # cv2.imshow('Red Mask', mask)
+        # cv2.imshow('Red Detected', res)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        return red_percentage >= min_red_percentage, red_percentage # フラグと割合を返す
+
+    except Exception as e:
+        print(f"カメラ撮影・処理中にエラーが発生しました: {e}")
+        return False, 0.0 # エラー時は検出失敗として返す
+
 
 # --- メインシーケンス ---
 if __name__ == "__main__":
@@ -147,10 +193,10 @@ if __name__ == "__main__":
     bno_sensor_for_following = BNO055Wrapper(original_bno_sensor)
 
     picam2_instance = Picamera2()
+    # Picamera2のconfigureからtransformを削除 (ソフトウェア回転に任せるため)
     picam2_instance.configure(picam2_instance.create_preview_configuration(
         main={"size": (640, 480)},
-        controls={"FrameRate": 30},
-        transform=Transform(rotation=90) # 必要に応じてhflip/vflipを追加
+        controls={"FrameRate": 30}
     ))
     picam2_instance.start()
     time.sleep(2)
@@ -165,7 +211,7 @@ if __name__ == "__main__":
             print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r')
             sys.stdout.flush()
             
-            if gyro_cal == 3 and mag_cal == 3:
+            if gyro_cal == 3 and mag_cal == 3: # 必要であれば Sys:3 に変更
                 print("\nキャリブレーション完了！")
                 break
             time.sleep(0.1)
@@ -174,14 +220,14 @@ if __name__ == "__main__":
         while True: # GPSが取れるまで、または目標達成まで継続
             print("\n--- 新しい走行サイクル開始 ---")
             
-            # STEP 2: 現在地GPS取得し、目的地と比較
+            # STEP 2: 現在地GPS取得し、目標方位計算
             print("\n=== ステップ2: GPS現在地取得と目標方位計算 ===")
             current_lat, current_lon = get_current_location(pi_instance, RX_PIN)
             
             if current_lat is None or current_lon is None:
                 print("GPSデータが取得できませんでした。リトライします...")
-                time.sleep(2) # 少し待ってからリトライ
-                continue # このサイクルの残りの処理をスキップし、次のループへ
+                time.sleep(2)
+                continue
 
             print(f"現在地：緯度={current_lat:.4f}, 経度={current_lon:.4f}")
             target_gps_heading = calculate_heading(current_lat, current_lon, destination_lat, destination_lon)
@@ -189,10 +235,10 @@ if __name__ == "__main__":
 
             # STEP 3: その場で回頭 (動的調整)
             print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-            ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
-            turn_speed = 40 # 回転速度は固定 (0-100)
+            ANGLE_THRESHOLD_DEG = 5.0
+            turn_speed = 40
 
-            max_turn_attempts = 100 # 最大試行回数を設定し、無限ループを避ける
+            max_turn_attempts = 10
             turn_attempt_count = 0
 
             while turn_attempt_count < max_turn_attempts:
@@ -200,23 +246,21 @@ if __name__ == "__main__":
                 if current_bno_heading is None:
                     print("警告: 旋回中にBNO055方位が取得できませんでした。回頭を中断します。")
                     driver.motor_stop_brake()
-                    time.sleep(1) # センサー回復を待つ
-                    continue # 次の試行へ (またはbreakしてGPS再取得から始めるか検討)
+                    time.sleep(1)
+                    continue
 
-                # 角度誤差を計算し、-180から180の範囲に調整
                 angle_error = (target_gps_heading - current_bno_heading + 180 + 360) % 360 - 180
                 
-                # 誤差が許容範囲内であればループを抜ける
                 if abs(angle_error) <= ANGLE_THRESHOLD_DEG:
                     print(f"[TURN] 方位調整完了。最終誤差: {angle_error:.2f}度")
                     break
 
                 turn_duration = 0.15 + (abs(angle_error) / 180.0) * 0.2
 
-                if angle_error < 0: # 現在向いている方向が目標より左 (反時計回り)
+                if angle_error < 0:
                     print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
                     driver.changing_left(0, turn_speed)
-                else: # 現在向いている方向が目標より右 (時計回り)
+                else:
                     print(f"[TURN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
                     driver.changing_right(0, turn_speed)
                 
@@ -234,9 +278,11 @@ if __name__ == "__main__":
 
             # STEP 4 & 5: カメラで撮影し色検知 → 前進
             print("\n=== ステップ4&5: カメラ検知と前進 ===")
-            save_image_for_debug(picam2_instance)
+            # save_image_for_debug(picam2_instance) # この呼び出しは新しい関数に置き換えられる
 
-            red_detected_high_percentage, red_percentage_val = detect_red_object(picam2_instance, min_red_percentage=0.80)
+            # 新しい関数で画像処理と赤色検知を行う
+            red_detected_high_percentage, red_percentage_val = \
+                save_and_process_single_image(picam2_instance, save_path="/home/mark1/Pictures/akairo.jpg", min_red_percentage=0.80)
 
             if red_detected_high_percentage:
                 print(f"赤色高割合検出（割合: {red_percentage_val:.2%}） → パラシュートが覆いかぶさっている可能性あり。")
@@ -248,7 +294,9 @@ if __name__ == "__main__":
 
                 print("待機終了。再度赤色検知を試みます。")
                 
-                red_detected_after_wait, _ = detect_red_object(picam2_instance, min_red_percentage=0.80)
+                # 待機後に再度、新しい関数で赤色検知
+                red_detected_after_wait, _ = \
+                    save_and_process_single_image(picam2_instance, save_path="/home/mark1/Pictures/akairo_after_wait.jpg", min_red_percentage=0.80)
 
                 if red_detected_after_wait:
                     print("待機後も赤色を検出 → 右へ回避")
@@ -267,12 +315,8 @@ if __name__ == "__main__":
 
             driver.motor_stop_brake()
 
-            # ここに目標地点に到達したかどうかのチェックを追加することもできます
-            # 例: if calculate_distance(current_lat, current_lon, destination_lat, destination_lon) < THRESHOLD_DISTANCE:
-            #         print("目標地点に到達しました！")
-            #         break # ループを抜けて終了処理へ
-            
-            time.sleep(1) # 各サイクル間の短い待機
+            print("\n=== 前進処理が完了しました。プログラムを終了します。 ===")
+            break
 
     except Exception as e:
         print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
