@@ -323,7 +323,7 @@ if __name__ == "__main__":
             print("\n=== ステップ4&5: カメラ検知と前進 ===")
             
             # 新しい detect_red_location 関数で赤色検出
-            red_location_result = detect_red_location(picam2_instance, min_red_pixel_ratio_per_cell=0.10)
+            red_location_result = detect_red_location(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10)
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
@@ -340,9 +340,14 @@ if __name__ == "__main__":
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=60, duration_time=2)
             elif red_location_result == 'bottom_middle':
-                print("赤色が下段中央に検出されました → その場で少し待機して様子を見ます")
-                time.sleep(5) # 少し長めに待機
-                print("待機後、少し前進します")
+                print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
+                turn_speed = 40
+                turn_time_for_120_deg = 3.0 # この時間は要調整です
+                driver.changing_right(0, turn_speed)
+                time.sleep(turn_time_for_120_deg)
+                driver.motor_stop_brake()
+                time.sleep(0.5)
+                print("120度回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor_for_following, base_speed=70, duration_time=3)
             elif red_location_result == 'high_percentage_overall':
                 print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
