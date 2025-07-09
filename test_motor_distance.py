@@ -7,7 +7,7 @@ import smbus
 import struct
 import serial
 import pigpio
-
+import following
 #緯度経度の取得
 """
 def get_current_location():
@@ -95,8 +95,8 @@ if err != 0:
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
 """
 for i in range (1, 10):
-    driver.petit_forward(90)
-    driver.petit_forward(90)
+    following.follow_petit_forward(90)
+    following.follow_petit_forward(90)
     driver.petit_right(90)
     driver.petit_right(90)
     driver.petit_left(90)
