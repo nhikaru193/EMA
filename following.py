@@ -49,7 +49,7 @@ def follow_forward(driver, bno, base_speed, duration_time):
 
 #petit_forward0.1秒所要、減速0.2秒所要、
 def follow_petit_forward(driver, bno, base_speed, duration_time):
-        target = bno.get_heading()
+    target = bno.get_heading()
     
     #パラメータ
     base_speed = base_speed
