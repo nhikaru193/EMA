@@ -109,7 +109,7 @@ for i in range (1, 10):
     #driver.petit_forward(90, 0)
     driver.petit_right(0, 90)
     driver.petit_right(90, 0)
-    time.sleep(1.0)
+    time.sleep(3.0)
     #driver.petit_right(90, 0)
     #driver.petit_left(0, 90)
     #driver.petit_left(90, 0)
