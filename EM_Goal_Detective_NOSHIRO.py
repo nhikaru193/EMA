@@ -148,59 +148,33 @@ try:
                 print("ゴール判定。ゴール誘導を終了します")
                 break
 
+            elif percentage > 40:
+                driver.petit_petit(2)
+                
             elif percentage > 20:
-                Va2 = 40
-                Vb2 = 40
-                following.follow_forward(driver, bno, 50, 3)
-                Va1 = Va2
-                Vb1 = Vb2
+                driver.petit_petit(4)
                 
             elif percentage > 10:
-                Va2 = 60
-                Vb2 = 60
-                following.follow_forward(driver, bno, 60, 3)
-                Va1 = Va2
-                Vb1 = Vb2
-
+                driver.petit_petit(6)
+                
             else:
-                Va2 = 80
-                Vb2 = 80
-                #driver.changing_forward(Vb1, Vb2)
-                following.follow.forward(driver, bno, 80, 3)
-                Va1 = Va2
-                Vb1 = Vb2
+                following.follow_forward(driver, bno, 70, 2)
 
         elif number == 1:
-            Va2 = 0
-            Vb2 = 70
-            driver.changing_Lforward(Va1, Va2)
-            driver.changing_Rforward(Vb1, Vb2)
-            Va1 = Va2
-            Vb1 = Vb2
+            driver.petit_right(0, 100)
+            driver.petit_right(100, 0)
 
         elif number == 2:
-            Va2 = 0
-            Vb2 = 50
-            driver.changing_Lforward(Va1, Va2)
-            driver.changing_Rforward(Vb1, Vb2)
-            Va1 = Va2
-            Vb1 = Vb2
+            driver.petit_right(0, 90)
+            driver.petit_right(90, 0)
         
         elif number == 4:
-            Va2 = 50
-            Vb2 = 0
-            driver.changing_Lforward(Va1, Va2)
-            driver.changing_Rforward(Vb1, Vb2)
-            Va1 = Va2
-            Vb1 = Vb2
+            driver.petit_left(0, 90)
+            driver.petit_left(90, 0)
             
         elif number == 5:
-            Va2 = 70
-            Vb2 = 0
-            driver.changing_Lforward(Va1, Va2)
-            driver.changing_Rforward(Vb1, Vb2)
-            Va1 = Va2
-            Vb1 = Vb2
+            driver.petit_left(0, 100)
+            driver.petit_left(100, 0)
                 
 finally:
     picam2.close()
