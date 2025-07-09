@@ -186,14 +186,14 @@ class MotorDriver():
             self.motor_forward(speed)
             time.sleep(0.02)
             
-    def petit_left(self, power):
+    def petit_left(self, before, after):
         for i in range (1, 5):
             delta_speed = (after - before) / 5
             speed = before + i * delta_speed
             self.motor_left(speed) # notor_left を motor_left に修正
             time.sleep(0.02)
 
-    def petit_right(self, power):
+    def petit_right(self, before, after):
         for i in range (1, 5):
             delta_speed = (after - before) / 5
             speed = before + i * delta_speed
