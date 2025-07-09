@@ -108,7 +108,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_imag
     return frame
 
 # --- 新しいカメラ撮影・赤色検出関数 ---
-def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10):
+def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
     ここではソフトウェア的に回転・反転を行います。
