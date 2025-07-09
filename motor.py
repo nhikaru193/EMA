@@ -179,38 +179,23 @@ class MotorDriver():
             self.motor_Rforward(speed_R)
             time.sleep(0.02)
 
-    def petit_forward(self, power):
+    def petit_forward(self, before, after):
         for i in range (1, 5):
-            delta_speed = power / 5
-            speed1 = i * delta_speed
-            self.motor_forward(speed1)
-            time.sleep(0.02)
-        for i in range (1, 5):
-            delta_speed = power / 5
-            speed2 = power - i * delta_speed
-            self.motor_forward(speed2)
+            delta_speed = (after - before) / 5
+            speed = before + i * delta_speed
+            self.motor_forward(speed)
             time.sleep(0.02)
             
     def petit_left(self, power):
         for i in range (1, 5):
-            delta_speed = power / 5
-            speed1 = i * delta_speed
-            self.motor_left(speed1) # notor_left を motor_left に修正
-            time.sleep(0.02)
-        for i in range (1, 5):
-            delta_speed = power / 5
-            speed2 = power - i * delta_speed
-            self.motor_left(speed2)
+            delta_speed = (after - before) / 5
+            speed = before + i * delta_speed
+            self.motor_left(speed) # notor_left を motor_left に修正
             time.sleep(0.02)
 
     def petit_right(self, power):
         for i in range (1, 5):
-            delta_speed = power / 5
-            speed1 = i * delta_speed
-            self.motor_right(speed1) # notor_right を motor_right に修正
-            time.sleep(0.02)
-        for i in range (1, 5):
-            delta_speed = power / 5
-            speed2 = power - i * delta_speed
-            self.motor_right(speed2)
+            delta_speed = (after - before) / 5
+            speed = before + i * delta_speed
+            self.motor_right(speed) # notor_right を motor_right に修正
             time.sleep(0.02)
