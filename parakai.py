@@ -223,7 +223,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         return 'error_in_processing'
 
 # --- 新しい関数: 指定角度へ回頭するヘルパー関数 ---
-def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=3.0, max_turn_attempts=100):
+def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=50, angle_tolerance_deg=3.0, max_turn_attempts=100):
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
     Args:
@@ -404,24 +404,24 @@ if __name__ == "__main__":
 
             if red_location_result == 'left_bottom':
                 print("赤色が左下に検出されました → 右に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=20.0) # 右90度
+                turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=50, angle_tolerance_deg=20.0) # 右90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'right_bottom':
                 print("赤色が右下に検出されました → 左に回頭します")
-                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=20.0) # 左90度
+                turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=50, angle_tolerance_deg=20.0) # 左90度
                 print("回頭後、少し前進します")
                 following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'bottom_middle':
                 print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=20.0) # 右120度
+                turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=50, angle_tolerance_deg=20.0) # 右120度
                 print("120度回頭後、少し前進します (1回目)")
                 following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
                 print("さらに左に30度回頭し、前進します。")
-                turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=40, angle_tolerance_deg=20.0) # 左に30度回頭
+                turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=50, angle_tolerance_deg=20.0) # 左に30度回頭
                 print("左30度回頭後、少し前進します (2回目)")
                 following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
             elif red_location_result == 'high_percentage_overall':
@@ -444,7 +444,7 @@ if __name__ == "__main__":
 
             # 1. ローバーを目的地のGPS方向へ再度向ける
             print("\n=== 回避後: 再度目的地の方位へ回頭 ===")
-            turn_speed_realign = 40
+            turn_speed_realign = 50
             angle_tolerance_realign = 20.0
             max_turn_attempts_realign = 100
             turn_attempt_count_realign = 0
@@ -495,17 +495,17 @@ if __name__ == "__main__":
 
             # 左30度
             print("→ 左に30度回頭し、赤色を確認します...")
-            turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=40, angle_tolerance_deg=20.0) # 左30度
+            turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=50, angle_tolerance_deg=20.0) # 左30度
             scan_results['left_30'] = detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
             print("→ 左30度から正面に戻します...")
-            turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=40, angle_tolerance_deg=20.0) # 右30度で戻す
+            turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=50, angle_tolerance_deg=20.0) # 右30度で戻す
 
             # 右30度
             print("→ 右に30度回頭し、赤色を確認します...")
-            turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=40, angle_tolerance_deg=20.0) # 右30度
+            turn_to_relative_angle(driver, bno_sensor, 30, turn_speed=50, angle_tolerance_deg=20.0) # 右30度
             scan_results['right_30'] = detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
             print("→ 右30度から正面に戻します...")
-            turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=40, angle_tolerance_deg=20.0) # 左30度で戻す
+            turn_to_relative_angle(driver, bno_sensor, -30, turn_speed=50, angle_tolerance_deg=20.0) # 左30度で戻す
 
             # 3方向の結果を評価
             is_front_clear = (scan_results['front'] == 'none_detected')
@@ -523,13 +523,13 @@ if __name__ == "__main__":
                 # 検出された方向に基づいて再回避行動を選択
                 if scan_results['left_30'] != 'none_detected': # 左30度で検出されたら右90度
                     print("左30度で検出されたため、右90度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=40, angle_tolerance_deg=20.0)
+                    turn_to_relative_angle(driver, bno_sensor, 90, turn_speed=50, angle_tolerance_deg=20.0)
                 elif scan_results['right_30'] != 'none_detected': # 右30度で検出されたら左90度
                     print("右30度で検出されたため、左90度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=40, angle_tolerance_deg=20.0)
+                    turn_to_relative_angle(driver, bno_sensor, -90, turn_speed=50, angle_tolerance_deg=20.0)
                 elif scan_results['front'] != 'none_detected': # 正面で検出されたら右120度
                     print("正面で検出されたため、右120度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=20.0)
+                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=50, angle_tolerance_deg=20.0)
                     driver.motor_stop_brake() # 念のため停止
                     time.sleep(0.5) # 停止安定待ち
 
@@ -541,7 +541,7 @@ if __name__ == "__main__":
                     following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
                 else: # その他の場合 (例えばエラーで検出された場合など、念のため)
                     print("詳細不明な検出のため、右120度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=40, angle_tolerance_deg=20.0)
+                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=50, angle_tolerance_deg=20.0)
                 
                 following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5) # 少し前進
                 driver.motor_stop_brake()
