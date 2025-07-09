@@ -103,10 +103,10 @@ class FlagDetector:
                 continue
 
             # 2. 矩形度をチェック (輪郭面積が外接矩形の面積に近いか？)
-            rect_area = w * h
-            solidity = area / rect_area
-            if solidity < 0.85: # 輪郭が外接矩形の85%未満なら、いびつな形として除外
-                continue
+            #rect_area = w * h
+            #solidity = area / rect_area
+            #if solidity < 0.85: # 輪郭が外接矩形の85%未満なら、いびつな形として除外
+                #continue
             
             # 全てのチェックを通過したものだけを有効な領域とする
             valid_black_regions.append(c)
