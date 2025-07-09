@@ -1,3 +1,5 @@
+# main_rover_control.py (カメラの回転・反転をOpenCVで制御 - 最終版)
+
 import RPi.GPIO as GPIO
 import time
 import pigpio
@@ -6,20 +8,17 @@ import busio
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-from libcamera import Transform # Picamera2のtransform機能のために必要
+# from libcamera import Transform # Transformは使用しないのでコメントアウトまたは削除
 import sys
 import os
 import math
 
 # カスタムモジュールのインポート
-from motor import MotorDriver   # motor.py から MotorDriver クラスをインポート
-from BNO055 import BNO055       # BNO055.py から BNO055 クラスをインポート
-import following                # following.py モジュールをインポート
+from motor import MotorDriver
+from BNO055 import BNO055
+import following
 
-# --- BNO055Wrapper クラス ---
-# BNO055.py の BNO055 クラス自体に get_heading() メソッドがあるため、
-# このラッパークラスは現在のコードでは不要です。
-# コードをシンプルにするために、この定義は削除しても問題ありません。
+# --- BNO055用のラッパークラス (変更なし) ---
 class BNO055Wrapper:
     def __init__(self, adafruit_bno055_sensor):
         self.sensor = adafruit_bno055_sensor
@@ -36,14 +35,12 @@ class BNO055Wrapper:
             return 0.0
         return heading
 
-# --- 定数設定 ---
-# 目標GPS座標 (例: 日本の緯度経度)
+# --- 定数設定 (変更なし) ---
 destination_lat = 35.9190161
 destination_lon = 139.9085679
-RX_PIN = 17 # GPS受信ピン (BCMモード)
+RX_PIN = 17
 
-# --- 関数定義 ---
-
+# --- 関数定義 (省略 - 変更なし) ---
 def convert_to_decimal(coord, direction):
     """NMEA形式のGPS座標を十進数に変換します。"""
     degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
@@ -54,77 +51,53 @@ def convert_to_decimal(coord, direction):
     return decimal
 
 def get_current_location(pi_instance, rx_pin):
+    """GPSデータから現在の緯度と経度を取得します。
+       タイムアウトした場合、None, Noneを返します。
     """
-    GPSデータから現在の緯度と経度を取得します。
-    タイムアウトした場合、None, Noneを返します。
-    """
-    timeout = time.time() + 5 # GPSデータ取得のタイムアウト時間
+    timeout = time.time() + 5
     while time.time() < timeout:
         (count, data) = pi_instance.bb_serial_read(rx_pin)
         if count and data:
             try:
                 text = data.decode("ascii", errors="ignore")
-                if "$GNRMC" in text: # RMCセンテンスを解析 (位置情報、速度、方位など)
+                if "$GNRMC" in text:
                     for line in text.split("\n"):
                         if "$GNRMC" in line:
                             parts = line.strip().split(",")
-                            if len(parts) > 6 and parts[2] == "A": # parts[2] == "A" はデータが有効であることを示す
+                            if len(parts) > 6 and parts[2] == "A":
                                 lat = convert_to_decimal(parts[3], parts[4])
                                 lon = convert_to_decimal(parts[5], parts[6])
                                 return lat, lon
             except Exception as e:
                 print(f"GPSデータ解析エラー: {e}")
-                continue # 解析エラーの場合も、次のデータで成功する可能性があるので継続
-        time.sleep(0.1) # 短い待機
+                continue
+        time.sleep(0.1)
     print("GPSデータの取得に失敗しました (タイムアウト)。")
-    return None, None # タイムアウト時はNoneを返す
+    return None, None
 
 def get_bearing_to_goal(current, goal):
-    """
-    現在地と目標地点から方位角（進行方向の角度）を計算します。
-    Args:
-        current (tuple): 現在地の緯度経度 (lat, lon)
-        goal (tuple): 目標地点の緯度経度 (lat, lon)
-    Returns:
-        float: 方位角 (度, 0-360) または None (入力が無効な場合)
-    """
     if current is None or goal is None: return None
-    # 緯度経度をラジアンに変換
     lat1, lon1 = math.radians(current[0]), math.radians(current[1])
     lat2, lon2 = math.radians(goal[0]), math.radians(goal[1])
-    
     delta_lon = lon2 - lon1
     y = math.sin(delta_lon) * math.cos(lat2)
     x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(delta_lon)
-    
-    bearing_rad = math.atan2(y, x) # 方位角をラジアンで計算
-    return (math.degrees(bearing_rad) + 360) % 360 # 度に変換し、0-360度の範囲に正規化
+    bearing_rad = math.atan2(y, x)
+    return (math.degrees(bearing_rad) + 360) % 360
 
 def get_distance_to_goal(current, goal):
-    """
-    現在地と目標地点間の距離をHaversine公式を使って計算します。
-    Args:
-        current (tuple): 現在地の緯度経度 (lat, lon)
-        goal (tuple): 目標地点の緯度経度 (lat, lon)
-    Returns:
-        float: 距離 (メートル) または inf (入力が無効な場合)
-    """
     if current is None or goal is None: return float('inf')
-    # 緯度経度をラジアンに変換
     lat1, lon1 = math.radians(current[0]), math.radians(current[1])
     lat2, lon2 = math.radians(goal[0]), math.radians(goal[1])
-    
-    radius = 6378137.0  # 地球の平均半径 (メートル)
+    radius = 6378137.0
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    
     a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     dist = radius * c
     return dist
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_image.jpg"):
-    """デバッグ用に画像を撮影して保存します。"""
     frame = picam2_instance.capture_array()
     if frame is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
@@ -134,28 +107,31 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_imag
     print(f"画像保存成功: {path}")
     return frame
 
+# --- 新しいカメラ撮影・赤色検出関数 ---
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
-    Picamera2のTransformで画像が既に回転されていることを前提とし、さらにソフトウェアで反転を補正します。
+    ここではソフトウェア的に回転・反転を行います。
     """
     try:
-        frame_rgb = picam2_instance.capture_array() # Picamera2設定で既に回転済み (transform=rotation=90)
+        frame_rgb = picam2_instance.capture_array() # Picamera2はデフォルトでRGB形式のNumPy配列を返す
         if frame_rgb is None:
             print("画像キャプチャ失敗: フレームがNoneです。")
             return 'error_in_processing'
 
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
-        # Picamera2のtransformで90度回転されているので、cv2.rotateは不要
-        processed_frame_bgr = frame_bgr 
-
-        # ★★★ ここで画像を左右反転させる (horizontal flip) ★★★
-        # もしカメラの映像が左右反転して見える場合、この行を有効にします。
+        # ★★★ ここで画像を回転・反転させる ★★★
+        # 1. 反時計回りに90度回転 (カメラが物理的に時計回りに90度傾いている場合)
+        processed_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        
+        # 2. 左右反転 (水平フリップ)
+        # 以前のコードでこの処理を試しており、ご要望に合わせて再度追加しました。
+        # もし不要であればこの行をコメントアウトしてください。
         processed_frame_bgr = cv2.flip(processed_frame_bgr, 1) # 1は水平フリップ (左右反転)
         
-        # もし上下反転も必要なら cv2.flip(processed_frame_bgr, 0)
-        # もし180度回転（上下左右反転）が必要なら cv2.flip(processed_frame_bgr, -1)
+        # もし、回転後＆左右反転後にさらに上下が反転している場合は、次の行を有効にしてみてください
+        # processed_frame_bgr = cv2.flip(processed_frame_bgr, 0) # 0は垂直フリップ (上下反転)
 
         height, width, _ = processed_frame_bgr.shape # 処理後のフレームのサイズを使う
         cell_height = height // 2 ; cell_width = width // 3
@@ -167,7 +143,6 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         }
         red_counts = {key: 0 for key in cells} ; total_pixels_in_cell = {key: 0 for key in cells}
 
-        # 暗い赤色も認識できるよう S(彩度)とV(明度)の下限を下げ、Hueの範囲を少し広げた
         lower_red1 = np.array([0, 50, 50]) ; upper_red1 = np.array([30, 255, 255])
         lower_red2 = np.array([150, 50, 50]) ; upper_red2 = np.array([180, 255, 255])
 
@@ -178,7 +153,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         red_pixels_full = np.count_nonzero(mask_full) ; total_pixels_full = height * width
         red_percentage_full = red_pixels_full / total_pixels_full if total_pixels_full > 0 else 0.0
 
-        if red_percentage_full >= 0.80: # 画像全体の80%以上が赤色の場合
+        if red_percentage_full >= 0.80:
             print(f"画像全体の赤色ピクセル割合: {red_percentage_full:.2%} (高割合) -> high_percentage_overall")
             cv2.imwrite(save_path, processed_frame_bgr)
             return 'high_percentage_overall'
@@ -205,7 +180,6 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
         cv2.imwrite(save_path, debug_frame)
         print(f"グリッド検出画像を保存しました: {save_path}")
 
-        # 下段のセルで赤色検出の可能性が高い場合を優先して判定
         bottom_left_ratio = red_counts['bottom_left'] / total_pixels_in_cell['bottom_left']
         bottom_middle_ratio = red_counts['bottom_middle'] / total_pixels_in_cell['bottom_middle']
         bottom_right_ratio = red_counts['bottom_right'] / total_pixels_in_cell['bottom_right']
@@ -226,13 +200,13 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
             return 'right_bottom'
         elif 'bottom_left' in detected_cells and 'bottom_middle' in detected_cells and 'bottom_right' in detected_cells:
             print("赤色が下段全体に広く検出されました")
-            return 'bottom_middle' # 下段全体の場合は中央の動きで調整
+            return 'bottom_middle'
         elif 'bottom_middle' in detected_cells:
             print("赤色が下段中央に検出されました")
             return 'bottom_middle'
         else:
             print("赤色が下段の特定の場所に検出されましたが、左右の偏りはありません")
-            return 'bottom_middle' # それ以外のケースは中央として扱う
+            return 'bottom_middle'
 
     except Exception as e:
         print(f"カメラ撮影・グリッド処理中にエラーが発生しました: {e}")
@@ -242,15 +216,6 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
 def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=3.0, max_turn_attempts=100):
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
-    Args:
-        driver: MotorDriverのインスタンス。
-        bno_sensor_instance: BNO055センサーのインスタンス（get_heading()を持つ）。
-        angle_offset_deg (float): 目標とする相対角度（例: 90度右旋回なら90, 90度左旋回なら-90）。
-        turn_speed (int): 旋回速度 (0-100)。
-        angle_tolerance_deg (float): 許容する最終角度誤差（度）。
-        max_turn_attempts (int): 旋回を試みる最大ループ回数。
-    Returns:
-        bool: 成功した場合はTrue、タイムアウトやエラーの場合はFalse。
     """
     initial_heading = bno_sensor_instance.get_heading()
     if initial_heading is None:
@@ -279,15 +244,15 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
             time.sleep(0.5)
             return True
 
-        turn_duration_on = 0.10 + (abs(angle_error) / 180.0) * 0.2 # 誤差に応じたモーターON時間
-        if angle_error < 0: # 現在向いている方向が目標より左 (反時計回り)
+        turn_duration_on = 0.10 + (abs(angle_error) / 180.0) * 0.2
+        if angle_error < 0:
             driver.changing_left(0, turn_speed)
-        else: # 現在向いている方向が目標より右 (時計回り)
+        else:
             driver.changing_right(0, turn_speed)
         
         time.sleep(turn_duration_on)
         driver.motor_stop_brake()
-        time.sleep(0.05) # 短いポーリング間隔での停止
+        time.sleep(0.05)
         
         loop_count += 1
     
@@ -556,7 +521,7 @@ if __name__ == "__main__":
                     following.follow_forward(driver, bno_sensor, base_speed=100, duration_time=5)
                 else: # その他の場合 (例えばエラーで検出された場合など、念のため)
                     print("詳細不明な検出のため、右120度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=50, angle_tolerance_deg=20.0) # ここは20度だった
+                    turn_to_relative_angle(driver, bno_sensor, 120, turn_speed=50, angle_tolerance_deg=20.0)
                 
                 following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5) # 少し前進
                 driver.motor_stop_brake()
