@@ -13,7 +13,7 @@ import RPi.GPIO as GPIO
 
 # --- 設定値 ---
 TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
-AREA_THRESHOLD_PERCENT = 70.0 
+AREA_THRESHOLD_PERCENT = 50.0 
 
 def find_target_flag(detected_data, target_name):
     """検出データから指定された図形(target_name)のフラッグを探して返す"""
