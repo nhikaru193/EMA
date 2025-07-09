@@ -13,7 +13,7 @@ import RPi.GPIO as GPIO
 
 # --- 設定値 ---
 TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
-AREA_THRESHOLD_PERCENT = 70.0 
+AREA_THRESHOLD_PERCENT = 50.0 
 
 def find_target_flag(detected_data, target_name):
     """検出データから指定された図形(target_name)のフラッグを探して返す"""
@@ -63,8 +63,8 @@ if __name__ == '__main__':
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
                     while target_flag is None and search_count < 40: # タイムアウト設定
-                        driver.changing_right(0, 70)
-                        driver.changing_right(70, 0)
+                        driver.changing_right(0, 40)
+                        driver.changing_right(40, 0)
                         time.sleep(0.15)
                         
                         detected_data = detector.detect()
@@ -83,12 +83,12 @@ if __name__ == '__main__':
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            driver.changing_right(0, 90)
-                            driver.changing_right(90, 0)
+                            driver.changing_right(0, 40)
+                            driver.changing_right(40, 0)
                             time.sleep(0.15)
                         elif target_flag['location'] == '右':
-                            driver.changing_left(0, 90)
-                            driver.changing_left(90, 0)
+                            driver.changing_left(0, 40)
+                            driver.changing_left(40, 0)
                             time.sleep(0.15)
                           
                         # 動かした直後に再検出
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、1秒前進
-                            following.follow_forward(driver, bno, 95, 1)
+                            following.follow_forward(driver, bno, 95, 0.1)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
