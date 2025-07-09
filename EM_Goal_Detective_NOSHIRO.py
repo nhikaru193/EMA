@@ -11,6 +11,7 @@ def get_percentage(frame):
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", frame)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     #cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", hsv)
     lower_red1 = np.array([0, 100, 100])
