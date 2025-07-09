@@ -246,9 +246,11 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
 
         turn_duration_on = 0.02 + (abs(angle_error) / 180.0) * 0.2
         if angle_error < 0:
-            driver.changing_left(0, turn_speed)
+            driver.petit_left(0, turn_speed)
+            driver.motor_stop_brake()
         else:
-            driver.changing_right(0, turn_speed)
+            driver.petit_right(0, turn_speed)
+            driver.motor_stop_brake()
         
         time.sleep(turn_duration_on)
         driver.motor_stop_brake()
@@ -362,10 +364,12 @@ if __name__ == "__main__":
                 turn_duration = 0.02 + (abs(angle_error) / 180.0) * 0.2
                 if angle_error < 0:
                     print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.changing_left(0, turn_speed)
+                    driver.petit_left(0, turn_speed)
+                    driver.motor_stop_brake()
                 else:
                     print(f"[TURN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.changing_right(0, turn_speed)
+                    driver.petit_right(0, turn_speed)
+                    driver.motor_stop_brake()
                 
                 time.sleep(turn_duration)
                 driver.motor_stop_brake()
@@ -449,10 +453,12 @@ if __name__ == "__main__":
                 turn_duration = 0.02 + (abs(angle_error) / 180.0) * 0.2
                 if angle_error < 0:
                     print(f"[RE-ALIGN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.changing_left(0, turn_speed_realign)
+                    driver.petit_left(0, turn_speed_realign)
+                    driver.motor_stop_brake()
                 else:
                     print(f"[RE-ALIGN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.changing_right(0, turn_speed_realign)
+                    driver.petit_right(0, turn_speed_realign)
+                    driver.motor_stop_brake()
                 
                 time.sleep(turn_duration)
                 driver.motor_stop_brake()
