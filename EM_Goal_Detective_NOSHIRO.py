@@ -60,8 +60,10 @@ def get_block_number():
                 number = 5
         else:
             print("⚠️ 重心が計算できません")
+            number = None
     else:
         print("❌ 赤色物体が見つかりません")
+        number = None
     return number
     
 #モータの初期化
