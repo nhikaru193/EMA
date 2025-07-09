@@ -104,8 +104,8 @@ try:
             break
 
         else:
-            driver.changing_right(0, 60)
-            driver.changing_right(60, 0)
+            driver.quick_right(0, 60)
+            driver.quick_right(60, 0)
 
     
     print("対象物を画面中央に収める")
@@ -114,23 +114,23 @@ try:
         number = get_block_number()
         
         if number == 1:
-            driver.changing_left(0, 60)
-            driver.changing_left(60, 0)
+            driver.quick_left(0, 60)
+            driver.quick_left(60, 0)
 
         elif number == 2:
-            driver.changing_left(0, 45)
-            driver.changing_left(45, 0)
+            driver.quick_left(0, 45)
+            driver.quick_left(45, 0)
 
         elif number == 3:
             break
         
         elif number == 4:
-            driver.changing_right(0, 45)
-            driver.changing_right(45, 0)
+            driver.quick_right(0, 45)
+            driver.quick_right(45, 0)
             
         else:
-            driver.changing_right(0, 60)
-            driver.changing_right(60, 0)
+            driver.quick_right(0, 60)
+            driver.quick_right(60, 0)
     
 
     print("ゴール誘導を開始します")
@@ -144,7 +144,8 @@ try:
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
         if number == 3:
-            if percentage > 50:
+            if percentage > 60:
+                print("ゴール判定。ゴール誘導を終了します")
                 break
 
             elif percentage > 20:
