@@ -98,7 +98,7 @@ Vb2 = 0
 
 frame = picam2.capture_array()
 percent = get_percentage(frame)
-print(f"{percentage}")
+print(f"{percent}")
 
 """
 try:
