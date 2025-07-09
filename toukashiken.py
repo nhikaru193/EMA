@@ -93,7 +93,7 @@ def get_pressure_and_temperature():
 
 # --- 1. 放出判定用の関数 ---
 
-def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, consecutive_checks=3, timeout=60):
+def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, consecutive_checks=3, timeout=30):
     """
     放出判定を行う関数。BME280の気圧変化とBNO055のZ軸加速度を監視します。
     """
@@ -181,7 +181,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
 # --- 2. 着地判定用の関数 ---
 
-def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
+def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=30, calibrate_bno055=True):
     """
     着地判定を行う関数。気圧の変化量、加速度、角速度が閾値内に収まる状態を監視します。
     """
@@ -284,9 +284,6 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
     finally:
         print("\n--- 判定処理終了 ---")
 
-
-# --- カメラ画像処理関数 (get_percentage_approach, get_block_number_approachは使用しないため削除) ---
-
 # BNO055用のラッパークラス
 class BNO055Wrapper:
     def __init__(self, bno055_sensor_instance):
@@ -321,6 +318,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
+    Picamera2で画像が既に90度回転されている前提で処理します。
     """
     try:
         frame_rgb = picam2_instance.capture_array()
@@ -328,8 +326,10 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             print("画像キャプチャ失敗: フレームがNoneです。")
             return 'error_in_processing'
 
+        # Picamera2のconfigureで回転を指定済みなので、ここではさらに回転させる必要はない
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
+        # 水平フリップは必要であればここで適用
         processed_frame_bgr = cv2.flip(frame_bgr, 1) # 1は水平フリップ (左右反転)
         
         height, width, _ = processed_frame_bgr.shape
@@ -479,7 +479,7 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=60
+        timeout=30
     )
 
     if is_released:
@@ -500,9 +500,10 @@ if __name__ == "__main__":
     bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
 
     picam2 = Picamera2()
+    # Picamera2での画像回転設定を削除
     picam2.configure(picam2.create_still_configuration(
-        main={"size": (320, 240)},
-        transform=cv2.Transform(rotation=90)
+        main={"size": (320, 240)}
+        # transform=cv2.Transform(rotation=90) # この行を削除
     ))
     picam2.start()
     time.sleep(1)
@@ -517,7 +518,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=120,
+            timeout=30,
             calibrate_bno055=True
         )
 
@@ -534,18 +535,19 @@ if __name__ == "__main__":
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
         
-        while True: # 回避が完了するまでループ
+        # 回避と最終確認のループ
+        # このループは、パラシュートが完全に回避され、最終確認スキャンで何も検知されないまで繰り返される
+        while True: 
             print("\n🔍 360度パラシュートスキャンを開始...")
-            detected_during_scan = False # スキャン中にパラシュートが検出されたか
+            detected_during_scan_cycle = False # このスキャンサイクルでパラシュートが検出されたか
 
             # BNO055の方位情報を使用して相対的に正確な旋回を行う
             scan_angles_offsets = [0, 90, 90, 90] # 最初の0度で画像を撮り、その後相対的に90度ずつ回転
-            current_heading_offset = 0 # 現在の旋回開始位置からの相対角度
 
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0: # 最初のスキャン時以外は旋回
-                    current_heading_offset += angle_offset
-                    print(f"→ {angle_offset}度旋回 (現在の相対方位: {current_heading_offset}度) してスキャンします...")
+                    print(f"→ {angle_offset}度旋回してスキャンします...")
+                    # turn_to_relative_angle関数でBNO055を使って正確に旋回
                     turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=60, angle_tolerance_deg=5)
                     time.sleep(0.5) # 旋回後の安定待ち
                     driver.motor_stop_brake()
@@ -557,11 +559,12 @@ if __name__ == "__main__":
                 elif i == 3: current_direction_str = "左90度"
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
+                # detect_red_in_grid内でcv2.rotateを使用する
                 scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
 
                 if scan_result != 'none_detected' and scan_result != 'error_in_processing':
                     print(f"🚩 {current_direction_str}でパラシュートを検知しました！")
-                    detected_during_scan = True
+                    detected_during_scan_cycle = True
                     
                     # 検知したら回避行動
                     print(f"検出されたため、回避行動に移ります。")
@@ -584,76 +587,73 @@ if __name__ == "__main__":
                     following.follow_forward(driver, bno_raw_sensor, base_speed=80, duration_time=3)
                     driver.motor_stop_brake()
                     time.sleep(1) # 回避後のクールダウン
-                    break # 回避行動を取ったら、360度スキャンを中断し、while Trueの次のループで再度スキャンを開始
+                    break # 回避行動を取ったら、360度スキャンを中断し、外側のWhileループで再度スキャンを開始
 
             driver.motor_stop_brake() # スキャン終了後に停止
             time.sleep(0.5)
 
-            if not detected_during_scan:
-                print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。回避は不要です。")
-                break # パラシュートが検出されなかったので、回避ループを抜ける
+            if not detected_during_scan_cycle:
+                # 360度スキャンしてもパラシュートが検出されなかった場合
+                print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。初期回避フェーズ完了。")
+                
+                # 前進
+                print("\n→ 少し前進します。(速度70, 5秒)")
+                following.follow_forward(driver, bno_raw_sensor, base_speed=70, duration_time=5)
+                driver.motor_stop_brake()
+                time.sleep(1)
 
-        print("\n--- パラシュート即時回避フェーズ完了。最終確認スキャンに移ります。 ---")
-        
-        # 前進
-        print("\n→ 少し前進します。(速度70, 5秒)")
-        following.follow_forward(driver, bno_raw_sensor, base_speed=70, duration_time=5)
-        driver.motor_stop_brake()
-        time.sleep(1)
+                # 元の向きに90度旋回 (時計回り)
+                print("\n→ 右に90度旋回して最終確認スキャンを行います。")
+                turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+                driver.motor_stop_brake()
+                time.sleep(1)
 
-        # 元の向きに90度旋回（最初の向きからどれくらいズレているかを考慮しないため、単純に右90度旋回）
-        # ここで「元の向き」が何を指すか不明瞭なため、ここでは単純に右に90度旋回とします。
-        # 例：初期状態の真正面から90度右を向く
-        print("\n→ 右に90度旋回して最終確認スキャンを行います。")
-        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-        driver.motor_stop_brake()
-        time.sleep(1)
+                # 最終確認スキャン（正面、左30度、右30度）
+                final_scan_results = {
+                    'front': 'none_detected',
+                    'left_30': 'none_detected',
+                    'right_30': 'none_detected'
+                }
 
-        # 最終確認スキャン（正面、左30度、右30度）
-        final_scan_results = {
-            'front': 'none_detected',
-            'left_30': 'none_detected',
-            'right_30': 'none_detected'
-        }
+                print("\n=== 最終確認スキャンを開始します (正面、左30度、右30度) ===")
+                
+                # 1. 正面
+                print("→ 正面方向の赤色を確認します...")
+                final_scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
 
-        print("\n=== 最終確認スキャンを開始します (正面、左30度、右30度) ===")
-        
-        # 1. 正面
-        print("→ 正面方向の赤色を確認します...")
-        final_scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
+                # 2. 左30度
+                print("→ 左に30度回頭し、赤色を確認します...")
+                turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
+                final_scan_results['left_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
+                print("→ 左30度から正面に戻します...")
+                turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
 
-        # 2. 左30度
-        print("→ 左に30度回頭し、赤色を確認します...")
-        turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
-        final_scan_results['left_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
-        print("→ 左30度から正面に戻します...")
-        turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
+                # 3. 右30度
+                print("→ 右に30度回頭し、赤色を確認します...")
+                turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
+                final_scan_results['right_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
+                print("→ 右30度から正面に戻します...")
+                turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
 
-        # 3. 右30度
-        print("→ 右に30度回頭し、赤色を確認します...")
-        turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
-        final_scan_results['right_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
-        print("→ 右30度から正面に戻します...")
-        turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
+                is_final_clear = (
+                    final_scan_results['front'] == 'none_detected' and
+                    final_scan_results['left_30'] == 'none_detected' and
+                    final_scan_results['right_30'] == 'none_detected'
+                )
 
-        is_final_clear = (
-            final_scan_results['front'] == 'none_detected' and
-            final_scan_results['left_30'] == 'none_detected' and
-            final_scan_results['right_30'] == 'none_detected'
-        )
-
-        if is_final_clear:
-            print("\n🎉 最終確認スキャン結果: 全ての方向でパラシュートは検知されませんでした。ミッション完了！")
-            # ここでプログラムを終了
-        else:
-            print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
-            # 再度回避ステージのループに戻る
-            # ここではシンプルにSystemExitで終了するようにします。
-            # もし、再び回避ループ（ステージ2）に戻りたい場合は、
-            # 上の `while True:` ループの外側から `continue` などのロジックを追加する必要がありますが、
-            # 今回は「検知されなかったら処理を終わらせたい」というご要望に合わせます。
-            print("再度の回避は実装されていません。プログラムを終了します。")
+                if is_final_clear:
+                    print("\n🎉 最終確認スキャン結果: 全ての方向でパラシュートは検知されませんでした。ミッション完了！")
+                    break # メインのWhile Trueループを抜けてプログラム終了
+                else:
+                    print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
+                    # 外側のWhile Trueループの先頭に戻り、再度360度スキャンからやり直す
+                    continue 
             
+            # detected_during_scan_cycle が True だった場合 (回避行動を取った場合)
+            # このcontinueは省略可能だが、明示的にループの先頭に戻ることを示す
+            continue
+
+
     except SystemExit as e:
         print(f"\nプログラムが強制終了されました: {e}")
     except Exception as e:
