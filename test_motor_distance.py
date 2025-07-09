@@ -102,7 +102,7 @@ if err != 0:
 
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
 """
-for i in range (1, 10):
+for i in range (1, 3):
 #following.follow_petit_forward(driver, bno, 90, 0.5)
 #following.follow_petit_forward(driver, bno, 90, 0.5)
     driver.petit_forward(0, 90)
