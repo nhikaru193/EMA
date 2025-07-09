@@ -10,8 +10,6 @@ from libcamera import Transform
 import sys
 import os
 import math
-
-# カスタムモジュールのインポート
 from motor import MotorDriver
 from BNO055 import BNO055
 import following
