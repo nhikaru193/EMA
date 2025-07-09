@@ -12,7 +12,7 @@ def get_percentage(frame):
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", hsv)
+    #cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", hsv)
     lower_red1 = np.array([0, 100, 50])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 50])
@@ -32,7 +32,6 @@ def get_block_number(frame):
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", hsv)
     lower_red1 = np.array([0, 100, 50])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 50])
@@ -99,6 +98,7 @@ Vb2 = 0
 
 frame = picam2.capture_array()
 percent = get_percentage(frame)
+print(f"{percentage}")
 
 """
 try:
