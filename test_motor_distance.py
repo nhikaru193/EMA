@@ -101,4 +101,5 @@ for i in range (1, 10):
     driver.petit_right(90)
     driver.petit_left(90)
     driver.petit_left(90)
-    
+
+driver.cleanup()
