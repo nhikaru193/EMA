@@ -9,6 +9,7 @@ import serial
 import pigpio
 
 #緯度経度の取得
+"""
 def get_current_location():
     start_time = time.time()
     while time.time() - start_time < 3:
@@ -66,7 +67,7 @@ def speed_test(duty):
     print(f"計測終了です。デューティ比{duty}において")
     print(f"移動距離は{dist} m です")
     print(f"平均速度は{average} m/s です")
-
+"""
 #モータの初期設定
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,    # 左モーター
@@ -74,6 +75,7 @@ driver = MotorDriver(
     STBY=21
 )
 
+"""
 # === GPSデータ取得（仮の実装）===
 TX_PIN = 17
 RX_PIN = 27
@@ -91,7 +93,12 @@ if err != 0:
     exit(1)
 
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
-
-for i in range (9):
-    i = i + 1
-    speed_test(10 * i)
+"""
+for i in range (1, 10):
+    driver.petit_forward(90)
+    driver.petit_forward(90)
+    driver.petit_right(90)
+    driver.petit_right(90)
+    driver.petit_left(90)
+    driver.petit_left(90)
+    
