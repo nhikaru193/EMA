@@ -357,7 +357,8 @@ if __name__ == "__main__":
                     print(f"[TURN] 方位調整完了。最終誤差: {angle_error:.2f}度")
                     break
 
-                turn_duration_on = 0.10 + (abs(angle_error) / 180.0) * 0.2
+                turn_duration = 0.10 + (abs(angle_error) / 180.0) * 0.2
+
                 if angle_error < 0:
                     print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
                     driver.changing_left(0, turn_speed)
