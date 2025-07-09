@@ -8,7 +8,7 @@ import busio
 import numpy as np
 import cv2
 from picamera2 import Picamera2
-# from libcamera import Transform # Transformは使用しないのでコメントアウトまたは削除
+from libcamera import Transform # Transformは使用しないのでコメントアウトまたは削除
 import sys
 import os
 import math
