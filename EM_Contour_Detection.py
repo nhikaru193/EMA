@@ -116,8 +116,8 @@ if __name__ == '__main__':
                             time.sleep(1)
                             break # 追跡ループを抜ける
                         else:
-                            # しきい値未満なら、1秒前進
-                            following.follow_forward(driver, bno, 90, 0.04)
+                            # しきい値未満なら、前進
+                            driver.petit_petit(5)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
