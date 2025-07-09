@@ -7,12 +7,11 @@ import camera
 import following
 from BNO055 import BNO055
 
-def get_percentage():
-    frame = picam2.capture_array()
+def get_percentage(frame):
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    frame = cv2.GaussianBlur(frame, (5, 5), 0)
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
@@ -26,9 +25,8 @@ def get_percentage():
     return percentage
 
 #赤色面積の重心がどこにあたるか(画面を左から5分割:左から1→5)
-def get_block_number():
+def get_block_number(frame):
     number = None
-    frame = picam2.capture_array()
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -102,7 +100,8 @@ try:
     print("対象物を画面内に収める")
     #画面内に映っていない場合に探す
     while True:
-        percentage = get_percentage()
+        frame = picam2.capture_array()
+        percentage = get_percentage(frame)
 
         if percentage > 5:
             break
@@ -115,7 +114,8 @@ try:
     print("対象物を画面中央に収める")
     #画面中央(横に五分割した中央)に収める
     while True:
-        number = get_block_number()
+        frame = picam2.capture_array()
+        number = get_block_number(frame)
         
         if number == 1:
             driver.quick_left(0, 60)
@@ -141,8 +141,9 @@ try:
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
         #画面割合、場所検知
-        percentage = get_percentage()
-        number = get_block_number()
+        frame = picam2.capture_array()
+        percentage = get_percentage(frame)
+        number = get_block_number(frame)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
@@ -177,6 +178,10 @@ try:
             driver.petit_left(90, 0)
             
         elif number == 5:
+            driver.petit_left(0, 100)
+            driver.petit_left(100, 0)
+            
+        elif number is None:
             driver.petit_left(0, 100)
             driver.petit_left(100, 0)
                 
