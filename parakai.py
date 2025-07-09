@@ -244,7 +244,7 @@ def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_s
             time.sleep(0.5)
             return True
 
-        turn_duration_on = 0.10 + (abs(angle_error) / 180.0) * 0.2
+        turn_duration_on = 0.05 + (abs(angle_error) / 180.0) * 0.2
         if angle_error < 0:
             driver.changing_left(0, turn_speed)
         else:
@@ -359,7 +359,7 @@ if __name__ == "__main__":
                     print(f"[TURN] 方位調整完了。最終誤差: {angle_error:.2f}度")
                     break
 
-                turn_duration = 0.10 + (abs(angle_error) / 180.0) * 0.2
+                turn_duration = 0.05 + (abs(angle_error) / 180.0) * 0.2
                 if angle_error < 0:
                     print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
                     driver.changing_left(0, turn_speed)
@@ -446,7 +446,7 @@ if __name__ == "__main__":
                     print(f"[RE-ALIGN] GPS方向への再調整完了。最終誤差: {angle_error:.2f}度")
                     break
 
-                turn_duration = 0.10 + (abs(angle_error) / 180.0) * 0.2
+                turn_duration = 0.05 + (abs(angle_error) / 180.0) * 0.2
                 if angle_error < 0:
                     print(f"[RE-ALIGN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
                     driver.changing_left(0, turn_speed_realign)
