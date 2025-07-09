@@ -200,13 +200,21 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
         print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
         calibration_start_time = time.time()
         while True:
-            sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor_instance.getCalibration()
-            print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{acc_cal}, 地磁気:{mag_cal} ", end='\r')
-            
+            calibration_data = bno_sensor_instance.getCalibration()
+                # 戻り値がNoneでないこと、かつ、期待される4つの要素が含まれていることを確認
+            if calibration_data is not None and len(calibration_data) == 4:
+                sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
+            else:
+                    # データが取得できない場合、警告を出して少し待つ
+                print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
+                time.sleep(0.5)
+                continue # 次のループへ
+                print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
+                
             if gyro_cal == 3 and mag_cal == 3: # 加速度もレベル3を待つように変更
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
-            time.sleep(0.5)
+                time.sleep(0.5)
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
         print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
