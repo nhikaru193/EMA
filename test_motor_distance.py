@@ -107,9 +107,9 @@ for i in range (1, 10):
     following.follow_petit_forward(driver, bno, 90, 0.5)
     driver.petit_forward(0, 90)
     driver.petit_forward(90, 0)
-    driver.petit_right(90)
-    driver.petit_right(90)
-    driver.petit_left(90)
-    driver.petit_left(90)
+    driver.petit_right(0, 90)
+    driver.petit_right(90, 0)
+    driver.petit_left(0, 90)
+    driver.petit_left(90, 0)
 
 driver.cleanup()
