@@ -63,8 +63,8 @@ if __name__ == '__main__':
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
                     while target_flag is None and search_count < 40: # タイムアウト設定
-                        driver.changing_right(0, 40)
-                        driver.changing_right(40, 0)
+                        driver.changing_right(0, 55)
+                        driver.changing_right(55, 0)
                         time.sleep(0.15)
                         
                         detected_data = detector.detect()
@@ -83,12 +83,12 @@ if __name__ == '__main__':
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            driver.changing_right(0, 40)
-                            driver.changing_right(40, 0)
+                            driver.changing_right(0, 55)
+                            driver.changing_right(55, 0)
                             time.sleep(0.15)
                         elif target_flag['location'] == '右':
-                            driver.changing_left(0, 40)
-                            driver.changing_left(40, 0)
+                            driver.changing_left(0, 55)
+                            driver.changing_left(55, 0)
                             time.sleep(0.15)
                           
                         # 動かした直後に再検出
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、1秒前進
-                            following.follow_forward(driver, bno, 95, 0.1)
+                            following.follow_forward(driver, bno, 90, 0.04)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
