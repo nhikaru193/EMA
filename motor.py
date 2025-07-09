@@ -178,6 +178,7 @@ class MotorDriver():
              speed = before + i * delta_speed
              self.motor_left(speed)
              time.sleep(0.02)
+	
      def changing_moving_forward(self, Lmotor_b, Lmotor_a ,Rmotor_b, Rmotor_a):
 	     global speed
 	     for i in range(100):
@@ -188,4 +189,34 @@ class MotorDriver():
 		     self.motor_Lforward(speed_L)
 		     self.motor_Rforward(speed_R)
 		     time.sleep(0.02)
-	
+     def petit_forward(self, power)
+         for i in range (1, 5):
+		     delta_speed = power / 5
+			 speed1 = i * delta_speed
+			 self.notor_forward(speed1)
+		 for i in range (1, 5):
+			 delta_speed = power / 5
+			 speed2 = power - i * delta_speed
+			 self.motor_forward(speed2)
+			 
+     def petit_left(self, power)
+         for i in range (1, 5):
+		     delta_speed = power / 5
+			 speed1 = i * delta_speed
+			 self.notor_left(speed1)
+		 for i in range (1, 5):
+			 delta_speed = power / 5
+			 speed2 = power - i * delta_speed
+			 self.motor_left(speed2)
+			 
+     def petit_right(self, power)
+         for i in range (1, 5):
+		     delta_speed = power / 5
+			 speed1 = i * delta_speed
+			 self.notor_right(speed1)
+		 for i in range (1, 5):
+			 delta_speed = power / 5
+			 speed2 = power - i * delta_speed
+			 self.motor_right(speed2)
+			 
+			 
