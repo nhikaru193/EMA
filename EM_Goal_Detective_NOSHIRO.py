@@ -12,6 +12,7 @@ def get_percentage(frame):
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    cv2.imwrite(hsv, "/home/mark1/Pictures/noshiro.jpg")
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
@@ -28,9 +29,10 @@ def get_percentage(frame):
 def get_block_number(frame):
     number = None
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
     #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    frame = cv2.GaussianBlur(frame, (5, 5), 0)
+    cv2.imwrite(hsv, "/home/mark1/Pictures/noshiro.jpg")
     lower_red1 = np.array([0, 100, 50])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 50])
@@ -95,6 +97,10 @@ Va2 = 0
 Vb1 = 0
 Vb2 = 0
 
+frame = picam2.capture_array()
+percent = get_percentage(frame)
+
+"""
 try:
     
     print("対象物を画面内に収める")
