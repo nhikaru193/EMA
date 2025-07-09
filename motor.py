@@ -208,7 +208,7 @@ class MotorDriver():
 		     delta_speed = power / 5
 		     speed2 = power - i * delta_speed
 		     self.motor_left(speed2)
-			 
+
      def petit_right(self, power):
 	     for i in range (1, 5):
 		     delta_speed = power / 5
