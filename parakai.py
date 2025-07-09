@@ -36,8 +36,8 @@ class BNO055Wrapper:
         return heading
 
 # --- 定数設定 (変更なし) ---
-destination_lat = 35.9190161
-destination_lon = 139.9085679
+destination_lat = 35.9248066
+destination_lon = 139.9112360
 RX_PIN = 17
 
 # --- 関数定義 (省略 - 変更なし) ---
