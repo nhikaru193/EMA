@@ -93,7 +93,7 @@ def get_pressure_and_temperature():
 
 # --- 1. 放出判定用の関数 ---
 
-def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, consecutive_checks=3, timeout=30):
+def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, consecutive_checks=3, timeout=60):
     """
     放出判定を行う関数。BME280の気圧変化とBNO055のZ軸加速度を監視します。
     """
@@ -181,7 +181,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
 # --- 2. 着地判定用の関数 ---
 
-def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=30, calibrate_bno055=True):
+def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
     """
     着地判定を行う関数。気圧の変化量、加速度、角速度が閾値内に収まる状態を監視します。
     """
@@ -201,20 +201,20 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
         calibration_start_time = time.time()
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
-                # 戻り値がNoneでないこと、かつ、期待される4つの要素が含まれていることを確認
+            # 戻り値がNoneでないこと、かつ、期待される4つの要素が含まれていることを確認
             if calibration_data is not None and len(calibration_data) == 4:
                 sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
             else:
-                    # データが取得できない場合、警告を出して少し待つ
                 print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
                 time.sleep(0.5)
                 continue # 次のループへ
-                print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
-                
+
+            print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
+            
             if gyro_cal == 3 and mag_cal == 3: # 加速度もレベル3を待つように変更
                 print("\n✅ BNO055 キャリブレーション完了！")
                 break
-                time.sleep(0.5)
+            time.sleep(0.5)
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
         print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
@@ -298,35 +298,43 @@ class BNO055Wrapper:
         self.sensor = bno055_sensor_instance
 
     def get_heading(self):
-        euler_angles = self.sensor.getEuler() 
-        if euler_angles is None or euler_angles[0] is None:
+        # getEuler()ではなく、getVector(BNO055.VECTOR_EULER)を使用
+        euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER) 
+        if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             wait_start_time = time.time()
             max_wait_time = 0.1
-            while (euler_angles is None or euler_angles[0] is None) and (time.time() - wait_start_time < max_wait_time):
+            while (euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None) and (time.time() - wait_start_time < max_wait_time):
                 time.sleep(0.005)
-                euler_angles = self.sensor.getEuler()
+                euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER)
         
-        if euler_angles is None or euler_angles[0] is None:
+        if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             return None
         
-        heading = euler_angles[0]
+        heading = euler_angles[0] # オイラー角の最初の要素がヘディング
         return heading
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
     """デバッグ用に画像を保存します。"""
-    frame = picam2_instance.capture_array()
-    if frame is None:
+    frame_rgb = picam2_instance.capture_array()
+    if frame_rgb is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
-    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(path, frame_bgr)
+    
+    # ここで画像を回転・反転させる
+    frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+    rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1) # 水平フリップ
+
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory): os.makedirs(directory)
+    cv2.imwrite(path, processed_frame_bgr)
     print(f"画像保存成功: {path}")
-    return frame
+    return processed_frame_bgr # 処理後のフレームを返す
 
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
-    Picamera2で画像が既に90度回転されている前提で処理します。
+    キャプチャした画像を反時計回りに90度回転させてから左右反転させて処理します。
     """
     try:
         frame_rgb = picam2_instance.capture_array()
@@ -334,11 +342,14 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             print("画像キャプチャ失敗: フレームがNoneです。")
             return 'error_in_processing'
 
-        # Picamera2のconfigureで回転を指定済みなので、ここではさらに回転させる必要はない
+        # RGBからBGRに変換
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
-        # 水平フリップは必要であればここで適用
-        processed_frame_bgr = cv2.flip(frame_bgr, 1) # 1は水平フリップ (左右反転)
+        # 反時計回りに90度回転
+        rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        
+        # 水平フリップ (左右反転)
+        processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1)
         
         height, width, _ = processed_frame_bgr.shape
         cell_height = height // 2 ; cell_width = width // 3
@@ -362,7 +373,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
 
         if red_percentage_full >= 0.80:
             print(f"画像全体の赤色ピクセル割合: {red_percentage_full:.2%} (高割合) -> high_percentage_overall")
-            cv2.imwrite(save_path, processed_frame_bgr)
+            cv2.imwrite(save_path, processed_frame_bgr) # 処理後のフレームを保存
             return 'high_percentage_overall'
 
         debug_frame = processed_frame_bgr.copy()
@@ -384,7 +395,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
 
         directory = os.path.dirname(save_path)
         if not os.path.exists(directory): os.makedirs(directory)
-        cv2.imwrite(save_path, debug_frame)
+        cv2.imwrite(save_path, debug_frame) # 処理後のフレームを保存
         print(f"グリッド検出画像を保存しました: {save_path}")
 
         bottom_left_ratio = red_counts['bottom_left'] / total_pixels_in_cell['bottom_left']
@@ -487,7 +498,7 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=30
+        timeout=60
     )
 
     if is_released:
@@ -508,10 +519,9 @@ if __name__ == "__main__":
     bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
 
     picam2 = Picamera2()
-    # Picamera2での画像回転設定を削除
+    # Picamera2でのカメラ設定にtransformは含めない
     picam2.configure(picam2.create_still_configuration(
         main={"size": (320, 240)}
-        # transform=cv2.Transform(rotation=90) # この行を削除
     ))
     picam2.start()
     time.sleep(1)
@@ -526,7 +536,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=30,
+            timeout=120,
             calibrate_bno055=True
         )
 
@@ -567,7 +577,7 @@ if __name__ == "__main__":
                 elif i == 3: current_direction_str = "左90度"
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
-                # detect_red_in_grid内でcv2.rotateを使用する
+                # detect_red_in_grid内でcv2.rotateとcv2.flipを使用する
                 scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
 
                 if scan_result != 'none_detected' and scan_result != 'error_in_processing':
@@ -611,6 +621,7 @@ if __name__ == "__main__":
                 time.sleep(1)
 
                 # 元の向きに90度旋回 (時計回り)
+                # BNO055Wrapperを使用して現在のヘディングを取得し、それから90度相対的に旋回
                 print("\n→ 右に90度旋回して最終確認スキャンを行います。")
                 turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
                 driver.motor_stop_brake()
