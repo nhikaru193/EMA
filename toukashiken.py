@@ -7,12 +7,9 @@ import following
 from BNO055 import BNO055
 import smbus
 import RPi.GPIO as GPIO
-import pigpio
-import board
-import busio 
 import os
-import math
 import sys
+import math # BNO055Wrapperで使用するため
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -68,7 +65,7 @@ def bme280_compensate_t(adc_T):
 def bme280_compensate_p(adc_P):
     """BME280の気圧値を補正します。"""
     global t_fine
-    p = 0.0 # BME280の元のコードではpの初期化がなかったため追加
+    p = 0.0 
     var1 = t_fine - 128000.0
     var2 = var1 * var1 * digP[5]
     var2 += (var1 * digP[4]) * 131072.0
@@ -288,86 +285,7 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
         print("\n--- 判定処理終了 ---")
 
 
-# --- 3. 赤色物体追跡と接近用の関数群 (修正版) ---
-
-def get_percentage_approach(picam2_instance):
-    """
-    カメラフレーム内の赤いピクセルの割合を計算します。(接近用)
-    """
-    frame = picam2_instance.capture_array()
-    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # Picamera2はRGBを返すため、BGRに変換
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    frame = cv2.GaussianBlur(frame, (5, 5), 0)
-
-    lower_red1 = np.array([0, 100, 100])
-    upper_red1 = np.array([10, 255, 255])
-    lower_red2 = np.array([160, 100, 100])
-    upper_red2 = np.array([180, 255, 255])
-
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = cv2.bitwise_or(mask1, mask2)
-
-    red_area = np.count_nonzero(mask)
-    total_area = frame.shape[0] * frame.shape[1]
-    percentage = (red_area / total_area) * 100
-    return percentage
-
-def get_block_number_approach(picam2_instance):
-    """
-    赤色物体の重心が画面のどのブロック（左から1〜5）に当たるかを計算します。(接近用)
-    """
-    number = None
-    frame = picam2_instance.capture_array()
-    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # Picamera2はRGBを返すため、BGRに変換
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    frame = cv2.GaussianBlur(frame, (5, 5), 0)
-
-    lower_red1 = np.array([0, 100, 50])
-    upper_red1 = np.array([10, 255, 255])
-    lower_red2 = np.array([170, 100, 50])
-    upper_red2 = np.array([180, 255, 255])
-
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = cv2.bitwise_or(mask1, mask2)
-
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if contours:
-        largest = max(contours, key=cv2.contourArea)
-        M = cv2.moments(largest)
-        if M["m00"] != 0:
-            cx = int(M["m10"] / M["m00"])
-            width = frame.shape[1]
-            w = width // 5
-            if cx < w:
-                number = 1
-            elif cx < 2 * w:
-                number = 2
-            elif cx < 3 * w:
-                number = 3
-            elif cx < 4 * w:
-                number = 4
-            else:
-                number = 5
-        else:
-            print("⚠️ 重心が計算できません")
-            number = None
-    else:
-        print("❌ 赤色物体が見つかりません")
-        number = None
-    return number
-
-
-# --- 4. 自律走行（GPSとカメラによる障害物回避）用の関数群 ---
-
-# 定数設定
-destination_lat = 35.9248066
-destination_lon = 139.9112360
-RX_PIN = 17 # GPSデータ受信用ピン
+# --- カメラ画像処理関数 (get_percentage_approach, get_block_number_approachは使用しないため削除) ---
 
 # BNO055用のラッパークラス
 class BNO055Wrapper:
@@ -389,77 +307,18 @@ class BNO055Wrapper:
         heading = euler_angles[0]
         return heading
 
-
-def convert_to_decimal(coord, direction):
-    """NMEA形式のGPS座標を十進数に変換します。"""
-    degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[1:3]) # 緯度の度を2桁、経度を3桁で取得
-    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
-    decimal = degrees + minutes / 60
-    if direction in ['S', 'W']:
-        decimal *= -1
-    return decimal
-
-def get_current_location(pi_instance, rx_pin):
-    """GPSデータから現在の緯度と経度を取得します。
-        タイムアウトした場合、None, Noneを返します。
-    """
-    timeout = time.time() + 5
-    while time.time() < timeout:
-        (count, data) = pi_instance.bb_serial_read(rx_pin)
-        if count and data:
-            try:
-                text = data.decode("ascii", errors="ignore")
-                # $GPRMCまたは$GNRMCを処理
-                for line in text.split("\n"):
-                    if "$GPRMC" in line or "$GNRMC" in line:
-                        parts = line.strip().split(",")
-                        if len(parts) > 6 and parts[2] == "A": # "A"はデータ有効
-                            lat = convert_to_decimal(parts[3], parts[4])
-                            lon = convert_to_decimal(parts[5], parts[6])
-                            return lat, lon
-            except Exception as e:
-                print(f"GPSデータ解析エラー: {e}")
-                continue
-        time.sleep(0.1)
-    print("GPSデータの取得に失敗しました (タイムアウト)。")
-    return None, None
-
-def get_bearing_to_goal(current, goal):
-    """現在の位置から目標位置への方位（度）を計算します。"""
-    if current is None or goal is None: return None
-    lat1, lon1 = math.radians(current[0]), math.radians(current[1])
-    lat2, lon2 = math.radians(goal[0]), math.radians(goal[1])
-    delta_lon = lon2 - lon1
-    y = math.sin(delta_lon) * math.cos(lat2)
-    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(delta_lon)
-    bearing_rad = math.atan2(y, x)
-    return (math.degrees(bearing_rad) + 360) % 360
-
-def get_distance_to_goal(current, goal):
-    """現在の位置から目標位置までの距離（メートル）を計算します。"""
-    if current is None or goal is None: return float('inf')
-    lat1, lon1 = math.radians(current[0]), math.radians(current[1])
-    lat2, lon2 = math.radians(goal[0]), math.radians(goal[1])
-    radius = 6378137.0 # 地球の平均半径（メートル）
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    dist = radius * c
-    return dist
-
-def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_image.jpg"):
+def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
     """デバッグ用に画像を保存します。"""
     frame = picam2_instance.capture_array()
     if frame is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
-    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # Picamera2はRGBを返すのでBGRに変換
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     cv2.imwrite(path, frame_bgr)
     print(f"画像保存成功: {path}")
     return frame
 
-def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
+def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
     """
@@ -471,7 +330,6 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/Pictures/akairo_g
 
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
-        # Picamera2のconfigureで回転を指定済みのため、ここでは反転のみを考慮
         processed_frame_bgr = cv2.flip(frame_bgr, 1) # 1は水平フリップ (左右反転)
         
         height, width, _ = processed_frame_bgr.shape
@@ -604,6 +462,7 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
     time.sleep(0.5)
     return False
 
+
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
     # GPIO設定
@@ -616,7 +475,7 @@ if __name__ == "__main__":
     # --- ステージ0: 放出判定 ---
     print("\n--- ステージ0: 放出判定を開始します ---")
     is_released = check_release(
-        bno_raw_sensor, # 放出判定には生インスタンスを渡す
+        bno_raw_sensor,
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
@@ -627,7 +486,6 @@ if __name__ == "__main__":
         print("\n=== ローバーの放出を確認しました！次のフェーズへ移行します。 ===")
     else:
         print("\n=== ローバーの放出は確認できませんでした。プログラムを終了します。 ===")
-        # 放出失敗の場合はここで終了
         GPIO.cleanup()
         sys.exit("放出失敗")
 
@@ -638,39 +496,28 @@ if __name__ == "__main__":
         STBY=21
     )
 
-    # pigpio初期化 (GPS用)
-    pi_instance = pigpio.pi()
-    if not pi_instance.connected:
-        print("pigpioデーモンに接続できません。プログラムを終了します。")
-        driver.cleanup()
-        GPIO.cleanup()
-        sys.exit()
-    pi_instance.bb_serial_read_open(RX_PIN, 9600, 8)
-
-    # BNO055Wrapperインスタンス（自律走行でget_heading()を使うため）
+    # BNO055Wrapperインスタンス
     bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
 
-    # カメラ初期化と設定
     picam2 = Picamera2()
-    # カメラ画像を90度回転させる設定を直接Picamera2に行う
     picam2.configure(picam2.create_still_configuration(
-        main={"size": (320, 240)}, # 赤色追跡用関数のサイズに合わせる
-        transform=cv2.Transform(rotation=90) # libcamera.Transformの代わりにcv2.Transformを使用
+        main={"size": (320, 240)},
+        transform=cv2.Transform(rotation=90)
     ))
     picam2.start()
-    time.sleep(1) # カメラ安定待ち
+    time.sleep(1)
 
 
     try:
         # --- ステージ1: 着地判定 ---
         print("\n--- ステージ1: 着地判定を開始します ---")
         is_landed = check_landing(
-            bno_raw_sensor, # check_landing関数にはBNO055の生インスタンスを渡す
+            bno_raw_sensor,
             pressure_change_threshold=0.1,
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=120, # タイムアウトを延ばす
+            timeout=120,
             calibrate_bno055=True
         )
 
@@ -679,323 +526,134 @@ if __name__ == "__main__":
         else:
             print("\n=== ローバーの着地は確認できませんでした。プログラムを終了します。 ===")
             raise SystemExit("着地失敗")
+            
+        driver.motor_stop_brake() # 着地後、念のため停止
+        time.sleep(1)
 
-        # --- ステージ2: 赤色物体追跡と接近 ---
-        print("\n--- ステージ2: 赤色物体を追跡し、接近します ---")
+
+        # --- ステージ2: パラシュート即時回避と最終確認 ---
+        print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
         
-        print("対象物を画面内に収める")
-        while True:
-            percentage = get_percentage_approach(picam2) # 修正版の関数を使用
-            if percentage > 5:
-                print(f"赤色物体を検出しました (割合: {percentage:.2f}%)。")
-                break
-            else:
-                print(f"赤色物体を探索中... (現在の割合: {percentage:.2f}%) 右に旋回します。")
-                driver.quick_right(0, 60)
-                driver.quick_right(60, 0)
-                time.sleep(0.1)
+        while True: # 回避が完了するまでループ
+            print("\n🔍 360度パラシュートスキャンを開始...")
+            detected_during_scan = False # スキャン中にパラシュートが検出されたか
 
-        print("対象物を画面中央に収める")
-        while True:
-            number = get_block_number_approach(picam2) # 修正版の関数を使用
-            if number == 1:
-                print(f"赤色物体が左端にあります (ブロック: {number})。左に大きく旋回。")
-                driver.quick_left(0, 60)
-                driver.quick_left(60, 0)
-            elif number == 2:
-                print(f"赤色物体が左寄りにあります (ブロック: {number})。左に小さく旋回。")
-                driver.quick_left(0, 45)
-                driver.quick_left(45, 0)
-            elif number == 3:
-                print(f"赤色物体が中央にあります (ブロック: {number})。")
-                break
-            elif number == 4:
-                print(f"赤色物体が右寄りにあります (ブロック: {number})。右に小さく旋回。")
-                driver.quick_right(0, 45)
-                driver.quick_right(45, 0)
-            elif number == 5:
-                print(f"赤色物体が右端にあります (ブロック: {number})。右に大きく旋回。")
-                driver.quick_right(0, 60)
-                driver.quick_right(60, 0)
-            else:
-                print("画面中央に調整中ですが、赤色物体が見つかりません。探索を継続します。")
-                driver.quick_right(0, 60)
-                driver.quick_right(60, 0)
-            time.sleep(0.1)
+            # BNO055の方位情報を使用して相対的に正確な旋回を行う
+            scan_angles_offsets = [0, 90, 90, 90] # 最初の0度で画像を撮り、その後相対的に90度ずつ回転
+            current_heading_offset = 0 # 現在の旋回開始位置からの相対角度
 
-        print("ゴール誘導を開始します")
-        while True:
-            percentage = get_percentage_approach(picam2) # 修正版の関数を使用
-            number = get_block_number_approach(picam2)   # 修正版の関数を使用
-            
-            print(f"赤割合: {percentage:.2f}% ----- 画面場所:{number}です ")
-
-            if number == 3:
-                if percentage > 60:
-                    print("ゴール判定。ゴール誘導を終了します")
+            for i, angle_offset in enumerate(scan_angles_offsets):
+                if i > 0: # 最初のスキャン時以外は旋回
+                    current_heading_offset += angle_offset
+                    print(f"→ {angle_offset}度旋回 (現在の相対方位: {current_heading_offset}度) してスキャンします...")
+                    turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=60, angle_tolerance_deg=5)
+                    time.sleep(0.5) # 旋回後の安定待ち
                     driver.motor_stop_brake()
-                    break
-                elif percentage > 40:
-                    print("赤割合が高いです (40-60%)。ゆっくり前進。")
-                    driver.petit_petit(2)
-                elif percentage > 20:
-                    print("赤割合が中程度です (20-40%)。少し速く前進。")
-                    driver.petit_petit(4)
-                elif percentage > 10:
-                    print("赤割合が低めです (10-20%)。さらに速く前進。")
-                    driver.petit_petit(6)
-                else:
-                    print("赤割合が低いです (<10%)。前進して接近。")
-                    following.follow_forward(driver, bno_raw_sensor, 70, 2) # bno_raw_sensorを渡す
 
-            elif number == 1:
-                print("赤色物体が左端にずれました (ブロック1)。右に大きく修正。")
-                driver.petit_right(0, 100)
-                driver.petit_right(100, 0)
-            elif number == 2:
-                print("赤色物体が左にずれました (ブロック2)。右に修正。")
-                driver.petit_right(0, 90)
-                driver.petit_right(90, 0)
-            elif number == 4:
-                print("赤色物体が右にずれました (ブロック4)。左に修正。")
-                driver.petit_left(0, 90)
-                driver.petit_left(90, 0)
-            elif number == 5:
-                print("赤色物体が右端にずれました (ブロック5)。左に大きく修正。")
-                driver.petit_left(0, 100)
-                driver.petit_left(100, 0)
-            else:
-                print("ゴール誘導中に赤色物体を見失いました。探索動作を行います。")
-                driver.quick_right(0, 60)
-                driver.quick_right(60, 0)
-            
-            time.sleep(0.1)
+                current_direction_str = ""
+                if i == 0: current_direction_str = "正面"
+                elif i == 1: current_direction_str = "右90度"
+                elif i == 2: current_direction_str = "後方"
+                elif i == 3: current_direction_str = "左90度"
 
+                print(f"--- スキャン方向: {current_direction_str} ---")
+                scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
+
+                if scan_result != 'none_detected' and scan_result != 'error_in_processing':
+                    print(f"🚩 {current_direction_str}でパラシュートを検知しました！")
+                    detected_during_scan = True
+                    
+                    # 検知したら回避行動
+                    print(f"検出されたため、回避行動に移ります。")
+                    
+                    # 検出された方向を考慮して回避方向を決定し、90度回頭して前進
+                    if current_direction_str == "正面":
+                        print("正面で検出されたため、右90度回頭して回避します。")
+                        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+                    elif current_direction_str == "右90度":
+                        print("右90度で検出されたため、左90度回頭して回避します。")
+                        turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=10)
+                    elif current_direction_str == "後方":
+                        print("後方で検出されたため、右90度回頭して回避します。") # または左90度でも良い
+                        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+                    elif current_direction_str == "左90度":
+                        print("左90度で検出されたため、右90度回頭して回避します。")
+                        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+                    
+                    print("回避のため少し前進します。(速度80, 3秒)")
+                    following.follow_forward(driver, bno_raw_sensor, base_speed=80, duration_time=3)
+                    driver.motor_stop_brake()
+                    time.sleep(1) # 回避後のクールダウン
+                    break # 回避行動を取ったら、360度スキャンを中断し、while Trueの次のループで再度スキャンを開始
+
+            driver.motor_stop_brake() # スキャン終了後に停止
+            time.sleep(0.5)
+
+            if not detected_during_scan:
+                print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。回避は不要です。")
+                break # パラシュートが検出されなかったので、回避ループを抜ける
+
+        print("\n--- パラシュート即時回避フェーズ完了。最終確認スキャンに移ります。 ---")
+        
+        # 前進
+        print("\n→ 少し前進します。(速度70, 5秒)")
+        following.follow_forward(driver, bno_raw_sensor, base_speed=70, duration_time=5)
         driver.motor_stop_brake()
-        print("赤い物体への接近段階が完了しました。")
+        time.sleep(1)
+
+        # 元の向きに90度旋回（最初の向きからどれくらいズレているかを考慮しないため、単純に右90度旋回）
+        # ここで「元の向き」が何を指すか不明瞭なため、ここでは単純に右に90度旋回とします。
+        # 例：初期状態の真正面から90度右を向く
+        print("\n→ 右に90度旋回して最終確認スキャンを行います。")
+        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+        driver.motor_stop_brake()
+        time.sleep(1)
+
+        # 最終確認スキャン（正面、左30度、右30度）
+        final_scan_results = {
+            'front': 'none_detected',
+            'left_30': 'none_detected',
+            'right_30': 'none_detected'
+        }
+
+        print("\n=== 最終確認スキャンを開始します (正面、左30度、右30度) ===")
         
-        # --- ステージ3: 自律走行（GPSとカメラによる障害物回避） ---
-        print("\n--- ステージ3: 自律走行（GPSとカメラによる障害物回避）を開始します ---")
+        # 1. 正面
+        print("→ 正面方向の赤色を確認します...")
+        final_scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
 
-        # メインの自律走行ループ
-        while True:
-            print("\n--- 新しい走行サイクル開始 ---")
+        # 2. 左30度
+        print("→ 左に30度回頭し、赤色を確認します...")
+        turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
+        final_scan_results['left_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
+        print("→ 左30度から正面に戻します...")
+        turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
+
+        # 3. 右30度
+        print("→ 右に30度回頭し、赤色を確認します...")
+        turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
+        final_scan_results['right_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
+        print("→ 右30度から正面に戻します...")
+        turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
+
+        is_final_clear = (
+            final_scan_results['front'] == 'none_detected' and
+            final_scan_results['left_30'] == 'none_detected' and
+            final_scan_results['right_30'] == 'none_detected'
+        )
+
+        if is_final_clear:
+            print("\n🎉 最終確認スキャン結果: 全ての方向でパラシュートは検知されませんでした。ミッション完了！")
+            # ここでプログラムを終了
+        else:
+            print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
+            # 再度回避ステージのループに戻る
+            # ここではシンプルにSystemExitで終了するようにします。
+            # もし、再び回避ループ（ステージ2）に戻りたい場合は、
+            # 上の `while True:` ループの外側から `continue` などのロジックを追加する必要がありますが、
+            # 今回は「検知されなかったら処理を終わらせたい」というご要望に合わせます。
+            print("再度の回避は実装されていません。プログラムを終了します。")
             
-            # STEP 2: GPS現在地取得し、目標方位計算
-            print("\n=== ステップ2: GPS現在地取得と目標方位計算 ===")
-            current_gps_coords = get_current_location(pi_instance, RX_PIN)
-            goal_gps_coords = (destination_lat, destination_lon)
-
-            if current_gps_coords[0] is None or current_gps_coords[1] is None:
-                print("GPSデータが取得できませんでした。リトライします...")
-                time.sleep(2)
-                continue
-
-            print(f"現在地：緯度={current_gps_coords[0]:.4f}, 経度={current_gps_coords[1]:.4f}")
-            
-            target_gps_heading = get_bearing_to_goal(current_gps_coords, goal_gps_coords)
-            if target_gps_heading is None:
-                print("警告: 目標方位の計算に失敗しました。リトライします...")
-                time.sleep(2)
-                continue
-
-            print(f"GPSに基づく目標方位：{target_gps_heading:.2f}度")
-            
-            distance_to_goal = get_distance_to_goal(current_gps_coords, goal_gps_coords)
-            print(f"目的地までの距離：{distance_to_goal:.2f}メートル")
-
-            if distance_to_goal < 3.0: # 例: 3メートル以内になったらゴール
-                print("\n🎉 目的地に到達しました！自律走行を終了します。")
-                break
-
-            # STEP 3: その場で回頭 (動的調整)
-            print("\n=== ステップ3: 目標方位への回頭 (動的調整) ===")
-            ANGLE_THRESHOLD_DEG = 10
-            turn_speed = 90
-            max_turn_attempts = 100
-            turn_attempt_count = 0
-
-            while turn_attempt_count < max_turn_attempts:
-                current_bno_heading = bno_sensor_wrapper.get_heading() # ラッパーから方位取得
-                if current_bno_heading is None:
-                    print("警告: 旋回中にBNO055方位が取得できませんでした。リトライします。")
-                    driver.motor_stop_brake()
-                    time.sleep(1)
-                    turn_attempt_count += 1
-                    continue
-
-                angle_error = (target_gps_heading - current_bno_heading + 180 + 360) % 360 - 180
-                
-                if abs(angle_error) <= ANGLE_THRESHOLD_DEG:
-                    print(f"[TURN] 方位調整完了。最終誤差: {angle_error:.2f}度")
-                    break
-
-                turn_duration = 0.02 + (abs(angle_error) / 180.0) * 0.2
-                if angle_error < 0:
-                    print(f"[TURN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.petit_left(0, turn_speed)
-                    driver.petit_left(turn_speed, 0)
-                else:
-                    print(f"[TURN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.petit_right(0, turn_speed)
-                    driver.petit_right(turn_speed, 0)
-                    
-                time.sleep(turn_duration)
-                driver.motor_stop_brake()
-                time.sleep(0.5)
-
-                turn_attempt_count += 1
-
-            if turn_attempt_count >= max_turn_attempts and abs(angle_error) > ANGLE_THRESHOLD_DEG:
-                print(f"警告: 最大回頭試行回数に達しましたが、目標方位に到達できませんでした。最終誤差: {angle_error:.2f}度")
-            
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-
-            # STEP 4 & 5: カメラ検知と前進（障害物回避）
-            print("\n=== ステップ4&5: カメラ検知と前進（障害物回避） ===")
-            
-            red_location_result = detect_red_in_grid(picam2, save_path="/home/mark1/Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.10)
-
-            if red_location_result == 'left_bottom':
-                print("赤色が左下に検出されました → 右に回頭します")
-                turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=20)
-                print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=100, duration_time=5)
-            elif red_location_result == 'right_bottom':
-                print("赤色が右下に検出されました → 左に回頭します")
-                turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=20)
-                print("回頭後、少し前進します")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=100, duration_time=5)
-            elif red_location_result == 'bottom_middle':
-                print("赤色が下段中央に検出されました → 右に120度回頭して前進します")
-                turn_to_relative_angle(driver, bno_sensor_wrapper, 120, turn_speed=90, angle_tolerance_deg=20)
-                print("120度回頭後、少し前進します (1回目)")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=100, duration_time=5)
-                driver.motor_stop_brake()
-                time.sleep(0.5)
-
-                print("さらに左に30度回頭し、前進します。")
-                turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=20)
-                print("左30度回頭後、少し前進します (2回目)")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=100, duration_time=5)
-            elif red_location_result == 'high_percentage_overall':
-                print("画像全体に高割合で赤色を検出 → パラシュートが覆いかぶさっている可能性。長く待機して様子を見ます")
-                time.sleep(10)
-                print("待機後、少し前進します")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=90, duration_time=3)
-            elif red_location_result == 'none_detected':
-                print("赤色を検出しませんでした → 方向追従制御で前進します。(速度80, 5秒)")
-                following.follow_forward(driver, bno_raw_sensor, base_speed=90, duration_time=5)
-            elif red_location_result == 'error_in_processing':
-                print("カメラ処理でエラーが発生しました。少し待機します...")
-                time.sleep(2)
-
-            driver.motor_stop_brake()
-
-            # 回避後の再確認ロジック（3点スキャン）
-            print("\n=== 回避後の周囲確認を開始します (3点スキャン) ===")
-            
-            # 1. ローバーを目的地のGPS方向へ再度向ける
-            print("\n=== 回避後: 再度目的地の方位へ回頭 ===")
-            turn_speed_realign = 80
-            angle_tolerance_realign = 10
-            max_turn_attempts_realign = 100
-            turn_attempt_count_realign = 0
-
-            while turn_attempt_count_realign < max_turn_attempts_realign:
-                current_bno_heading = bno_sensor_wrapper.get_heading()
-                if current_bno_heading is None:
-                    print("警告: 再調整中にBNO055方位が取得できませんでした。リトライします。")
-                    driver.motor_stop_brake()
-                    time.sleep(1)
-                    turn_attempt_count_realign += 1
-                    continue
-
-                angle_error = (target_gps_heading - current_bno_heading + 180 + 360) % 360 - 180
-                
-                if abs(angle_error) <= angle_tolerance_realign:
-                    print(f"[RE-ALIGN] GPS方向への再調整完了。最終誤差: {angle_error:.2f}度")
-                    break
-
-                turn_duration = 0.02 + (abs(angle_error) / 180.0) * 0.2
-                if angle_error < 0:
-                    print(f"[RE-ALIGN] 左に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.petit_left(0, turn_speed_realign)
-                    driver.petit_left(turn_speed_realign, 0)
-                else:
-                    print(f"[RE-ALIGN] 右に回頭します (誤差: {angle_error:.2f}度, 時間: {turn_duration:.2f}秒)")
-                    driver.petit_right(0, turn_speed_realign)
-                    driver.petit_right(turn_speed_realign, 0)
-                    
-                time.sleep(turn_duration)
-                driver.motor_stop_brake()
-                time.sleep(0.05)
-                turn_attempt_count_realign += 1
-                
-            if turn_attempt_count_realign >= max_turn_attempts_realign and abs(angle_error) > angle_tolerance_realign:
-                print(f"警告: 回避後の目的地方位への回頭が不十分です。最終誤差: {angle_error:.2f}度")
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-
-            # 2. 正面、左30度、右30度の3方向で赤色検知
-            scan_results = {
-                'front': 'none_detected',
-                'left_30': 'none_detected',
-                'right_30': 'none_detected'
-            }
-            
-            print("→ 正面方向の赤色を確認します...")
-            scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/Pictures/confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
-
-            print("→ 左に30度回頭し、赤色を確認します...")
-            turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
-            scan_results['left_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/Pictures/confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
-            print("→ 左30度から正面に戻します...")
-            turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
-
-            print("→ 右に30度回頭し、赤色を確認します...")
-            turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
-            scan_results['right_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/Pictures/confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
-            print("→ 右30度から正面に戻します...")
-            turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
-
-            is_front_clear = (scan_results['front'] == 'none_detected')
-            is_left_clear = (scan_results['left_30'] == 'none_detected')
-            is_right_clear = (scan_results['right_30'] == 'none_detected')
-
-            if is_front_clear and is_left_clear and is_right_clear:
-                print("\n=== 3点スキャン結果: 全ての方向でパラシュートは検出されませんでした。回避成功、ミッション継続！ ===")
-            else:
-                print("\n=== 3点スキャン結果: まだパラシュートが検出されました。再回避を試みます。 ===")
-                print(f"検出詳細: 正面: {scan_results['front']}, 左30: {scan_results['left_30']}, 右30: {scan_results['right_30']}")
-                
-                if scan_results['left_30'] != 'none_detected':
-                    print("左30度で検出されたため、右90度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=20)
-                elif scan_results['right_30'] != 'none_detected':
-                    print("右30度で検出されたため、左90度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=20)
-                elif scan_results['front'] != 'none_detected':
-                    print("正面で検出されたため、右120度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, 120, turn_speed=90, angle_tolerance_deg=20)
-                    driver.motor_stop_brake()
-                    time.sleep(0.5)
-
-                    print("さらに左に30度回頭し、前進します。")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=20)
-                    print("左30度回頭後、少し前進します (2回目)")
-                    following.follow_forward(driver, bno_raw_sensor, base_speed=100, duration_time=5)
-                else:
-                    print("詳細不明な検出のため、右120度回頭して回避します。")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, 120, turn_speed=90, angle_tolerance_deg=20.0)
-                
-                following.follow_forward(driver, bno_raw_sensor, base_speed=90, duration_time=5)
-                driver.motor_stop_brake()
-                time.sleep(1)
-                
-                # メインループの先頭に戻り、GPS取得から再開
-
     except SystemExit as e:
         print(f"\nプログラムが強制終了されました: {e}")
     except Exception as e:
@@ -1003,11 +661,7 @@ if __name__ == "__main__":
     finally:
         if 'driver' in locals():
             driver.cleanup()
-        if 'pi_instance' in locals() and pi_instance.connected:
-            pi_instance.bb_serial_read_close(RX_PIN)
-            pi_instance.stop()
         if 'picam2' in locals():
             picam2.close()
-        # BNO055のクリーンアップは不要 (smbusが自動的に管理)
         GPIO.cleanup()
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
