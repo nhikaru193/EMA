@@ -66,7 +66,7 @@ if __name__ == '__main__':
                         driver.petit_right(0, 70)
                         driver.petit_right(70, 0)
                         driver.motor_stop_brake()
-                        time.sleep(0.15)
+                        time.sleep(1.0)
                         
                         detected_data = detector.detect()
                         target_flag = find_target_flag(detected_data, target_name)
@@ -87,12 +87,12 @@ if __name__ == '__main__':
                             driver.petit_right(0, 70)
                             driver.petit_right(70, 0)
                             driver.motor_stop_brake()
-                            time.sleep(0.15)
+                            time.sleep(1.0)
                         elif target_flag['location'] == '右':
                             driver.petit_left(0, 70)
                             driver.petit_left(70, 0)
                             driver.motor_stop_brake()
-                            time.sleep(0.15)
+                            time.sleep(1.0)
                           
                         # 動かした直後に再検出
                         print("  再検出中...")
