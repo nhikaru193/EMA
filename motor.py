@@ -199,3 +199,9 @@ class MotorDriver():
             speed = before + i * delta_speed
             self.motor_right(speed) # notor_right を motor_right に修正
             time.sleep(0.02)
+            
+    def petit_petit(self, count):
+        for i in range (1, count):
+            self.petit_forward(0, 90)
+            self.petit_forward(90, 0)
+            time.sleep(0.2)
