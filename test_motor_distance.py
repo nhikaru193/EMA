@@ -75,6 +75,14 @@ driver = MotorDriver(
     STBY=21
 )
 
+bno = BNO055()
+if not bno.begin():
+    print("Error initializing device")
+    exit()
+time.sleep(1)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
+time.sleep(1)
+bno.setExternalCrystalUse(True)
 """
 # === GPSデータ取得（仮の実装）===
 TX_PIN = 17
