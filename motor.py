@@ -195,28 +195,28 @@ class MotorDriver():
 		     speed1 = i * delta_speed
                      self.notor_forward(speed1)
 	     for i in range (1, 5):
-delta_speed = power / 5
-			 speed2 = power - i * delta_speed
-			 self.motor_forward(speed2)
+		     delta_speed = power / 5
+		     speed2 = power - i * delta_speed
+		     self.motor_forward(speed2)
 			 
      def petit_left(self, power):
-         for i in range (1, 5):
+	     for i in range (1, 5):
 		     delta_speed = power / 5
-			 speed1 = i * delta_speed
-			 self.notor_left(speed1)
-		 for i in range (1, 5):
-			 delta_speed = power / 5
-			 speed2 = power - i * delta_speed
-			 self.motor_left(speed2)
+		     speed1 = i * delta_speed
+		     self.notor_left(speed1)
+             for i in range (1, 5):
+		     delta_speed = power / 5
+		     speed2 = power - i * delta_speed
+		     self.motor_left(speed2)
 			 
      def petit_right(self, power):
-         for i in range (1, 5):
+	     for i in range (1, 5):
 		     delta_speed = power / 5
-			 speed1 = i * delta_speed
-			 self.notor_right(speed1)
-		 for i in range (1, 5):
-			 delta_speed = power / 5
-			 speed2 = power - i * delta_speed
-			 self.motor_right(speed2)
+		     speed1 = i * delta_speed
+		     self.notor_right(speed1)
+             for i in range (1, 5):
+		     delta_speed = power / 5
+		     speed2 = power - i * delta_speed
+		     self.motor_right(speed2)
 			 
 			 
