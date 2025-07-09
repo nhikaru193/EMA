@@ -197,3 +197,4 @@ finally:
     print("ゴール判定")
     driver.cleanup()
     print("GPIOクリーンアップが終了しました。プログラムを終了します")
+"""
