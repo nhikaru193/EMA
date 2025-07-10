@@ -146,11 +146,11 @@ try:
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
-        time.sleep(1)
+        time.sleep(4)
         percentage = get_percentage(frame)
-        time.sleep(1)
+        time.sleep(4)
         number = get_block_number(frame)
-        time.sleep(1)
+        time.sleep(4)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
@@ -162,12 +162,15 @@ try:
 
             elif percentage > 40:
                 driver.petit_petit(2)
+                time.sleep(1)
                 
             elif percentage > 20:
                 driver.petit_petit(4)
+                time.sleep(1)
                 
             elif percentage > 10:
                 driver.petit_petit(6)
+                time.sleep(1)
                 
             else:
                 following.follow_forward(driver, bno, 70, 2)
@@ -175,14 +178,17 @@ try:
         elif number == 1:
             driver.petit_right(0, 100)
             driver.petit_right(100, 0)
+            time.sleep(1)
 
         elif number == 2:
             driver.petit_right(0, 90)
             driver.petit_right(90, 0)
-        
+            time.sleep(1)
+
         elif number == 4:
             driver.petit_left(0, 90)
             driver.petit_left(90, 0)
+            time.sleep(1)
             
         elif number == 5:
             driver.petit_left(0, 100)
@@ -191,6 +197,7 @@ try:
         elif number is None:
             driver.petit_left(0, 100)
             driver.petit_left(100, 0)
+            time.sleep(1)
                 
 finally:
     picam2.close()
