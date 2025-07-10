@@ -186,12 +186,11 @@ try:
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
-        if number == 3:
-            if percentage > 80:
-                print("ゴール判定。ゴール誘導を終了します")
-                break
-
-            elif percentage > 40:
+        if percentage >= 90:
+            print("percentageでのゴール判定")
+            break
+        elif number == 3:
+            if percentage > 40:
                 driver.petit_petit(1)
                 time.sleep(0.3)
                 
