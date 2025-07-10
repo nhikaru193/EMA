@@ -45,7 +45,7 @@ def read_compensate():
     digH = [dh, (dat_h[1] << 8) | dat_h[0], dat_h[2],
             (dat_h[3] << 4) | (0x0F & dat_h[4]),
             (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F),
-            dat_h[6]]
+            digH[6]] # ここを修正: dat_h[6] ではなく digH[6]
     if digH[1] >= 32768:
         digH[1] -= 65536
     for i in range(3, 4):
@@ -199,22 +199,20 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
-
+        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+        
         print("機体回転前に3秒間待機します...")
         time.sleep(3) # 追加した3秒スリープ
         print("機体回転を開始します。")
         
         calibration_start_time = time.time()
         rotation_start_time = time.time()
-        # キャリブレーション中の回転速度と周期
-        CALIBRATION_TURN_SPEED = 80
-        TURN_DURATION = 5 # 回転し続ける時間（秒）
-        STOP_DURATION = 0.1 # 停止する時間（秒）
+        CALIBRATION_TURN_SPEED = 60
+        TURN_DURATION = 0.5 # 回転し続ける時間（秒）
+        STOP_DURATION = 0.2 # 停止する時間（秒）
 
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
-            # 戻り値がNoneでないこと、かつ、期待される4つの要素が含まれていることを確認
             if calibration_data is not None and len(calibration_data) == 4:
                 sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
             else:
@@ -224,8 +222,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            # ジャイロと地磁気がレベル3になったらキャリブレーション完了
-            if gyro_cal == 3 and mag_cal == 3:
+            if gyro_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake() # 回転を停止
                 break
@@ -233,7 +230,6 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             # キャリブレーションが完了していない場合、機体を回転させる
             if (time.time() - rotation_start_time) < TURN_DURATION:
                 driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) # 右旋回
-                # driver_instance.changing_right(CALIBRATION_TURN_SPEED, 0) # 減速は不要かも
             elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
                 driver_instance.motor_stop_brake() # 停止
             else:
@@ -244,7 +240,6 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
         print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
-        # キャリブレーションをスキップする場合でもモーターは動かさない
         driver_instance.motor_stop_brake()
 
     print("🛬 着地判定開始...")
@@ -515,25 +510,27 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
 NICHROME_PIN = 25
 HEATING_DURATION_SECONDS = 3.0
 
-#def activate_nichrome_wire():
-    #ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
-    #print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
-    #try:
-        #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
-        #GPIO.output(NICHROME_PIN, GPIO.HIGH)
+def activate_nichrome_wire():
+    """
+    ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
+    """
+    print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    try:
+        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        GPIO.output(NICHROME_PIN, GPIO.HIGH)
 
-        #print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
-        #time.sleep(HEATING_DURATION_SECONDS)
+        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        time.sleep(HEATING_DURATION_SECONDS)
 
-        #print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
-        #GPIO.output(NICHROME_PIN, GPIO.LOW)
+        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        GPIO.output(NICHROME_PIN, GPIO.LOW)
         
-        #print("ニクロム線溶断シーケンスが正常に完了しました。")
+        print("ニクロム線溶断シーケンスが正常に完了しました。")
 
-    #except Exception as e:
-        #print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
-        #GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
-    #print("--- ニクロム線溶断シーケンス終了。 ---")
+    except Exception as e:
+        print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
+        GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
+    print("--- ニクロム線溶断シーケンス終了。 ---")
 
 
 # --- メイン実行ブロック ---
@@ -542,7 +539,8 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定
+    # ニクロム線ピンの初期設定 (activate_nichrome_wire関数外で定義されたNICHROME_PINを使用)
+    # これによりNICHROME_PINが確実に定義され、GPIO.setupも行われる
     GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
@@ -561,12 +559,12 @@ if __name__ == "__main__":
     if is_released:
         print("\n=== ローバーの放出を確認しました！次のフェーズへ移行します。 ===")
     else:
-        print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===") # メッセージを修正
+        print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===")
+        # エラーで終了する前にGPIOをクリーンアップ
         GPIO.cleanup()
         sys.exit("放出失敗")
 
     # 放出が確認されたら、以降のデバイスを初期化
-    # driverインスタンスはcheck_landingに渡す必要があるため、ここで初期化
     driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
         PWMB=19, BIN1=16, BIN2=26,
@@ -610,8 +608,8 @@ if __name__ == "__main__":
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
-        #activate_nichrome_wire()
-        #time.sleep(2) # 溶断後のクールダウンや安定待ち
+        activate_nichrome_wire()
+        time.sleep(2) # 溶断後のクールダウンや安定待ち
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
