@@ -4,12 +4,13 @@ import time
 from picamera2 import Picamera2
 from motor import MotorDriver
 import following
-from BNO055 import BNO055
+from BNO055 import BNO055 # BNO055ライブラリの正しいインポート
 import smbus
 import RPi.GPIO as GPIO
 import os
 import sys
-import math # BNO055Wrapperで使用するため
+import math
+import struct # BNO055ライブラリのgetVector()で使用される可能性
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -181,9 +182,10 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
 # --- 2. 着地判定用の関数 ---
 
-def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60, calibrate_bno055=True):
+def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=120, calibrate_bno055=True): # driver_instanceを追加
     """
     着地判定を行う関数。気圧の変化量、加速度、角速度が閾値内に収まる状態を監視します。
+    キャリブレーション中に機体を回転させ、完了を待ちます。
     """
     init_bme280()
     read_compensate()
@@ -198,7 +200,14 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
         print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+        
         calibration_start_time = time.time()
+        rotation_start_time = time.time()
+        # キャリブレーション中の回転速度と周期
+        CALIBRATION_TURN_SPEED = 60
+        TURN_DURATION = 0.5 # 回転し続ける時間（秒）
+        STOP_DURATION = 0.2 # 停止する時間（秒）
+
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
             # 戻り値がNoneでないこと、かつ、期待される4つの要素が含まれていることを確認
@@ -211,13 +220,28 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            if gyro_cal == 3 and mag_cal == 3: # 加速度もレベル3を待つように変更
+            # ジャイロと地磁気がレベル3になったらキャリブレーション完了
+            if gyro_cal == 3 and mag_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
+                driver_instance.motor_stop_brake() # 回転を停止
                 break
-            time.sleep(0.5)
+            
+            # キャリブレーションが完了していない場合、機体を回転させる
+            if (time.time() - rotation_start_time) < TURN_DURATION:
+                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) # 右旋回
+                # driver_instance.changing_right(CALIBRATION_TURN_SPEED, 0) # 減速は不要かも
+            elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
+                driver_instance.motor_stop_brake() # 停止
+            else:
+                rotation_start_time = time.time() # サイクルリセット
+
+            time.sleep(0.1) # センサー読み取りと制御の間に短い間隔
+            
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
         print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
+        # キャリブレーションをスキップする場合でもモーターは動かさない
+        driver_instance.motor_stop_brake()
 
     print("🛬 着地判定開始...")
     print(f"    気圧変化量閾値: < {pressure_change_threshold:.2f} hPa")
@@ -292,6 +316,7 @@ def check_landing(bno_sensor_instance, pressure_change_threshold=0.1, acc_thresh
     finally:
         print("\n--- 判定処理終了 ---")
 
+
 # BNO055用のラッパークラス
 class BNO055Wrapper:
     def __init__(self, bno055_sensor_instance):
@@ -339,7 +364,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
     try:
         frame_rgb = picam2_instance.capture_array()
         if frame_rgb is None:
-            print("画像キャプチャ失敗: フレームがNoneです。")
+            print("画像キャプション失敗: フレームがNoneです。")
             return 'error_in_processing'
 
         # RGBからBGRに変換
@@ -373,7 +398,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
 
         if red_percentage_full >= 0.80:
             print(f"画像全体の赤色ピクセル割合: {red_percentage_full:.2%} (高割合) -> high_percentage_overall")
-            cv2.imwrite(save_path, processed_frame_bgr) # 処理後のフレームを保存
+            cv2.imwrite(save_path, processed_frame_bgr)
             return 'high_percentage_overall'
 
         debug_frame = processed_frame_bgr.copy()
@@ -395,7 +420,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
 
         directory = os.path.dirname(save_path)
         if not os.path.exists(directory): os.makedirs(directory)
-        cv2.imwrite(save_path, debug_frame) # 処理後のフレームを保存
+        cv2.imwrite(save_path, debug_frame)
         print(f"グリッド検出画像を保存しました: {save_path}")
 
         bottom_left_ratio = red_counts['bottom_left'] / total_pixels_in_cell['bottom_left']
@@ -482,11 +507,41 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
     return False
 
 
+# --- ニクロム線溶断関数 ---
+NICHROME_PIN = 25
+HEATING_DURATION_SECONDS = 3.0
+
+def activate_nichrome_wire():
+    """
+    ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
+    """
+    print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    try:
+        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        GPIO.output(NICHROME_PIN, GPIO.HIGH)
+
+        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        time.sleep(HEATING_DURATION_SECONDS)
+
+        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        GPIO.output(NICHROME_PIN, GPIO.LOW)
+        
+        print("ニクロム線溶断シーケンスが正常に完了しました。")
+
+    except Exception as e:
+        print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
+        GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
+    print("--- ニクロム線溶断シーケンス終了。 ---")
+
+
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
     # GPIO設定
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
+
+    # ニクロム線ピンの初期設定
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
     bno_raw_sensor = BNO055(address=0x28) 
@@ -504,11 +559,12 @@ if __name__ == "__main__":
     if is_released:
         print("\n=== ローバーの放出を確認しました！次のフェーズへ移行します。 ===")
     else:
-        print("\n=== ローバーの放出は確認できませんでした。プログラムを終了します。 ===")
+        print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===") # メッセージを修正
         GPIO.cleanup()
         sys.exit("放出失敗")
 
     # 放出が確認されたら、以降のデバイスを初期化
+    # driverインスタンスはcheck_landingに渡す必要があるため、ここで初期化
     driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
         PWMB=19, BIN1=16, BIN2=26,
@@ -519,7 +575,7 @@ if __name__ == "__main__":
     bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
 
     picam2 = Picamera2()
-    # Picamera2でのカメラ設定にtransformは含めない
+    # Picamera2でのカメラ設定にtransformは含めない (各画像処理関数内で回転・反転)
     picam2.configure(picam2.create_still_configuration(
         main={"size": (320, 240)}
     ))
@@ -530,8 +586,10 @@ if __name__ == "__main__":
     try:
         # --- ステージ1: 着地判定 ---
         print("\n--- ステージ1: 着地判定を開始します ---")
+        # 着地判定関数にdriverインスタンスを渡す
         is_landed = check_landing(
             bno_raw_sensor,
+            driver, # driverインスタンスを渡す
             pressure_change_threshold=0.1,
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
@@ -549,25 +607,25 @@ if __name__ == "__main__":
         driver.motor_stop_brake() # 着地後、念のため停止
         time.sleep(1)
 
+        # --- ステージ1.5: ニクロム線溶断シーケンス ---
+        activate_nichrome_wire()
+        time.sleep(2) # 溶断後のクールダウンや安定待ち
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
         
         # 回避と最終確認のループ
-        # このループは、パラシュートが完全に回避され、最終確認スキャンで何も検知されないまで繰り返される
         while True: 
             print("\n🔍 360度パラシュートスキャンを開始...")
             detected_during_scan_cycle = False # このスキャンサイクルでパラシュートが検出されたか
 
-            # BNO055の方位情報を使用して相対的に正確な旋回を行う
             scan_angles_offsets = [0, 90, 90, 90] # 最初の0度で画像を撮り、その後相対的に90度ずつ回転
 
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0: # 最初のスキャン時以外は旋回
                     print(f"→ {angle_offset}度旋回してスキャンします...")
-                    # turn_to_relative_angle関数でBNO055を使って正確に旋回
                     turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=60, angle_tolerance_deg=5)
-                    time.sleep(0.5) # 旋回後の安定待ち
+                    time.sleep(0.5)
                     driver.motor_stop_brake()
 
                 current_direction_str = ""
@@ -577,17 +635,14 @@ if __name__ == "__main__":
                 elif i == 3: current_direction_str = "左90度"
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
-                # detect_red_in_grid内でcv2.rotateとcv2.flipを使用する
                 scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
 
                 if scan_result != 'none_detected' and scan_result != 'error_in_processing':
                     print(f"🚩 {current_direction_str}でパラシュートを検知しました！")
                     detected_during_scan_cycle = True
                     
-                    # 検知したら回避行動
                     print(f"検出されたため、回避行動に移ります。")
                     
-                    # 検出された方向を考慮して回避方向を決定し、90度回頭して前進
                     if current_direction_str == "正面":
                         print("正面で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
@@ -595,7 +650,7 @@ if __name__ == "__main__":
                         print("右90度で検出されたため、左90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=10)
                     elif current_direction_str == "後方":
-                        print("後方で検出されたため、右90度回頭して回避します。") # または左90度でも良い
+                        print("後方で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
                     elif current_direction_str == "左90度":
                         print("左90度で検出されたため、右90度回頭して回避します。")
@@ -604,30 +659,25 @@ if __name__ == "__main__":
                     print("回避のため少し前進します。(速度80, 3秒)")
                     following.follow_forward(driver, bno_raw_sensor, base_speed=80, duration_time=3)
                     driver.motor_stop_brake()
-                    time.sleep(1) # 回避後のクールダウン
-                    break # 回避行動を取ったら、360度スキャンを中断し、外側のWhileループで再度スキャンを開始
+                    time.sleep(1)
+                    break 
 
-            driver.motor_stop_brake() # スキャン終了後に停止
+            driver.motor_stop_brake()
             time.sleep(0.5)
 
             if not detected_during_scan_cycle:
-                # 360度スキャンしてもパラシュートが検出されなかった場合
                 print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。初期回避フェーズ完了。")
                 
-                # 前進
                 print("\n→ 少し前進します。(速度70, 5秒)")
                 following.follow_forward(driver, bno_raw_sensor, base_speed=70, duration_time=5)
                 driver.motor_stop_brake()
                 time.sleep(1)
 
-                # 元の向きに90度旋回 (時計回り)
-                # BNO055Wrapperを使用して現在のヘディングを取得し、それから90度相対的に旋回
                 print("\n→ 右に90度旋回して最終確認スキャンを行います。")
                 turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
                 driver.motor_stop_brake()
                 time.sleep(1)
 
-                # 最終確認スキャン（正面、左30度、右30度）
                 final_scan_results = {
                     'front': 'none_detected',
                     'left_30': 'none_detected',
@@ -636,18 +686,15 @@ if __name__ == "__main__":
 
                 print("\n=== 最終確認スキャンを開始します (正面、左30度、右30度) ===")
                 
-                # 1. 正面
                 print("→ 正面方向の赤色を確認します...")
                 final_scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
 
-                # 2. 左30度
                 print("→ 左に30度回頭し、赤色を確認します...")
                 turn_to_relative_angle(driver, bno_sensor_wrapper, -30, turn_speed=90, angle_tolerance_deg=10)
                 final_scan_results['left_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_left.jpg", min_red_pixel_ratio_per_cell=0.10)
                 print("→ 左30度から正面に戻します...")
                 turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
 
-                # 3. 右30度
                 print("→ 右に30度回頭し、赤色を確認します...")
                 turn_to_relative_angle(driver, bno_sensor_wrapper, 30, turn_speed=90, angle_tolerance_deg=10)
                 final_scan_results['right_30'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_right.jpg", min_red_pixel_ratio_per_cell=0.10)
@@ -662,14 +709,11 @@ if __name__ == "__main__":
 
                 if is_final_clear:
                     print("\n🎉 最終確認スキャン結果: 全ての方向でパラシュートは検知されませんでした。ミッション完了！")
-                    break # メインのWhile Trueループを抜けてプログラム終了
+                    break 
                 else:
                     print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
-                    # 外側のWhile Trueループの先頭に戻り、再度360度スキャンからやり直す
                     continue 
             
-            # detected_during_scan_cycle が True だった場合 (回避行動を取った場合)
-            # このcontinueは省略可能だが、明示的にループの先頭に戻ることを示す
             continue
 
 
@@ -682,5 +726,7 @@ if __name__ == "__main__":
             driver.cleanup()
         if 'picam2' in locals():
             picam2.close()
+        # メインのfinallyブロックでニクロム線ピンもクリーンアップ
+        GPIO.output(NICHROME_PIN, GPIO.LOW) # 念のためオフ
         GPIO.cleanup()
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
