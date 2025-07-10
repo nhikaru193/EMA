@@ -33,7 +33,7 @@ if __name__ == '__main__':
         STBY=21
     )
     screen_area = detector.width * detector.height
-    
+
     # === BNO055 初期化 ===
     bno = BNO055()
     if not bno.begin():
@@ -49,10 +49,10 @@ if __name__ == '__main__':
         # --- 全てのターゲットに対してループ ---
         for target_name in TARGET_SHAPES:
             print(f"\n---====== 新しい目標: [{target_name}] の探索を開始します ======---")
-            
+
             task_completed = False
             while not task_completed:
-                
+
                 # --- 探索 ---
                 print(f"[{target_name}] を探しています...")
                 detected_data = detector.detect()
@@ -71,13 +71,39 @@ if __name__ == '__main__':
                         detected_data = detector.detect()
                         target_flag = find_target_flag(detected_data, target_name)
                         search_count += 1
+
+                    if target_flag is None: # 回転しても見つからなかった場合
+                        print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
+                        break # while not task_completed ループを抜ける
                 
-                # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
-                if target_flag is None:
-                    print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
-                    break # while not task_completed ループを抜ける
+                # --- 図形が見つかった場合（ここから変更） ---
+                if target_flag is not None:
+                    # 見つけた図形の方向に向かって0.5秒前進
+                    print(f"[{target_name}] を発見！ {target_flag['location']} 方向に0.5秒前進します。")
+                    # 必要であればここで左右の調整も考慮する
+                    if target_flag['location'] == '左':
+                        driver.petit_right(0, 30) # 少しだけ右に旋回しながら前進
+                        driver.petit_right(30, 0)
+                    elif target_flag['location'] == '右':
+                        driver.petit_left(0, 30) # 少しだけ左に旋回しながら前進
+                        driver.petit_left(30, 0)
+                    else: # 中央の場合
+                        driver.forward(60) # まっすぐ前進 (速度60は例)
+                    
+                    time.sleep(0.5) # 0.5秒前進
+                    driver.motor_stop_brake() # 停止
+
+                    # 前進後に再度図形を探す
+                    print("前進後、再度図形を探索します...")
+                    detected_data = detector.detect()
+                    target_flag = find_target_flag(detected_data, target_name)
+
+                    if target_flag is None:
+                        print(f"前進中に [{target_name}] を見失いました。再探索を開始します。")
+                        continue # 探索フェーズの最初に戻る
 
                 # --- 追跡（中央寄せ＆接近）---
+                # ここから以下のコードは変更なし
                 print(f"[{target_name}] を発見！追跡を開始します。")
                 while target_flag:
                     # --- 中央寄せ ---
@@ -93,7 +119,7 @@ if __name__ == '__main__':
                             driver.petit_left(60, 0)
                             driver.motor_stop_brake()
                             time.sleep(1.0)
-                          
+                        
                         # 動かした直後に再検出
                         print("  再検出中...")
                         detected_data = detector.detect()
@@ -120,7 +146,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、前進
-                            driver.petit_petit(2)
+                            driver.petit_petit(2) # おそらく微小な前進
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
@@ -138,5 +164,6 @@ if __name__ == '__main__':
         print("--- 制御を終了します ---")
         driver.cleanup()
         detector.close()
-        GPIO.cleanup() 
+        GPIO.cleanup()
         cv2.destroyAllWindows()
+                        
