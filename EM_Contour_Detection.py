@@ -120,7 +120,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、前進
-                            driver.petit_petit(3)
+                            driver.petit_petit(2)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
