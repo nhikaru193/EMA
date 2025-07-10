@@ -129,7 +129,7 @@ picam2.start()
 time.sleep(1)
 
 try:
-    
+    """
     print("対象物を画面内に収める")
     #画面内に映っていない場合に探す
     while True:
@@ -170,19 +170,34 @@ try:
         else:
             driver.quick_right(0, 60)
             driver.quick_right(60, 0)
-    
+        """
 
+    counter = 50
     print("ゴール誘導を開始します")
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
-        time.sleep(0.3)
+        time.sleep(0.2)
         percentage = get_percentage(frame)
-        time.sleep(0.3)
+        time.sleep(0.2)
         number = get_block_number_by_density(frame)
-        time.sleep(0.3)
-        
+        time.sleep(0.2)
+        if counter <= 0:
+            print("赤コーンが近くにありません。探索を行います")
+            counter = 50
+            while True:
+                print("探索中")
+                driver.changing_moving_forward(0, 90, 0, 70)
+                time.sleep(2)
+                driver.changing_moving_forward(90, 0, 70, 0)
+                frame = picam2.capture_array()
+                time.sleep(0.2)
+                percentage = get_percentage(frame)
+                if percentage > 15:
+                    print("赤コーンの探索に成功しました")
+                    break
+            
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
@@ -236,7 +251,7 @@ try:
             driver.petit_left(0, 80)
             driver.petit_left(80, 0)
             time.sleep(0.3)
-                
+        counter = counter - 1
 finally:
     picam2.close()
     print("カメラを閉じました。")
