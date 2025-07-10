@@ -1,7 +1,9 @@
 import time
 import smbus
 import struct
-import following
+# ここに following.py をインポートします
+import following # 新しく追加
+
 import cv2
 import math
 import numpy as np
@@ -78,19 +80,15 @@ if __name__ == '__main__':
 
                 # --- 図形が見つかった場合（ここを修正） ---
                 if target_flag is not None:
-                    print(f"[{target_name}] を発見！滑らかに前進します。")
-                    # changing_forward を使って前進
-                    # before: 開始速度 (例: 0から加速)
-                    # after: 目標速度 (例: 60まで加速)
-                    driver.changing_forward(0, 60) # 開始速度0から60まで滑らかに加速しながら前進
-                    
-                    # changing_forward の中で time.sleep(0.02) が繰り返されるため、
-                    # ここでの time.sleep は、加速が終わった後に追加で前進させたい場合にのみ必要
-                    # 例: 速度60でさらに0.5秒進む
-                    # driver.motor_forward(60) # 速度60で前進を維持
-                    # time.sleep(0.5)
+                    print(f"[{target_name}] を発見！IMU制御で前進します。")
+                    # following.py の follow_petit_forward を呼び出す
+                    # 第1引数: driver (MotorDriverインスタンス)
+                    # 第2引数: bno (BNO055インスタンス)
+                    # 第3引数: base_speed (基本速度、例: 30)
+                    # 第4引数: duration_time (前進させる時間、例: 0.5秒)
+                    following.follow_petit_forward(driver, bno, 30, 0.5) # 速度30で0.5秒前進する例
 
-                    driver.motor_stop_brake() # 停止
+                    driver.motor_stop_brake() # 動作後に必ず停止
 
                     # 前進後に再度図形を探す
                     print("前進後、再度図形を探索します...")
