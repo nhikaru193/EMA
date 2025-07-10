@@ -198,7 +198,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
         
         print("機体回転前に3秒間待機します...")
         time.sleep(3) 
@@ -221,7 +221,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            if gyro_cal == 3:
+            if gyro_cal == 3 and mag_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake() 
                 break
@@ -503,25 +503,27 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
 NICHROME_PIN = 25
 HEATING_DURATION_SECONDS = 3.0
 
-#def activate_nichrome_wire():
-    #ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
-    #print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
-    #try:
-        #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
-        #GPIO.output(NICHROME_PIN, GPIO.HIGH)
+def activate_nichrome_wire():
+    """
+    ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
+    """
+    print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    try:
+        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        GPIO.output(NICHROME_PIN, GPIO.HIGH)
 
-        #print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
-        #time.sleep(HEATING_DURATION_SECONDS)
+        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        time.sleep(HEATING_DURATION_SECONDS)
 
-        #print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
-        #GPIO.output(NICHROME_PIN, GPIO.LOW)
+        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        GPIO.output(NICHROME_PIN, GPIO.LOW)
         
-        #print("ニクロム線溶断シーケンスが正常に完了しました。")
+        print("ニクロム線溶断シーケンスが正常に完了しました。")
 
-    #except Exception as e:
-        #print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
-        #GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
-    #print("--- ニクロム線溶断シーケンス終了。 ---")
+    except Exception as e:
+        print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
+        GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
+    print("--- ニクロム線溶断シーケンス終了。 ---")
 
 
 # --- メイン実行ブロック ---
@@ -530,14 +532,8 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定 (NICHROME_PINはactivate_nichrome_wire関数内で定義されるため、ここでは不要)
-    # 代わりに、NICHROME_PINの定義とGPIO.setupはメイン関数（__main__ブロック）の先頭に移動し、
-    # activate_nichrome_wire関数内ではGPIO.outputのみを行うように変更する
-    # ---- 以前のコメントアウトされた NICHROME_PIN 定義を有効化する ----
-    NICHROME_PIN = 25 # この行を有効化
-    HEATING_DURATION_SECONDS = 3.0 # この行を有効化
-    # -----------------------------------------------------------------
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW) # NICHROME_PINがこの時点で定義されている必要がある
+    # ニクロム線ピンの初期設定 (NICHROME_PINはここで定義され、GPIO.setupも行われる)
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
     bno_raw_sensor = BNO055(address=0x28) 
@@ -549,7 +545,7 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=30
+        timeout=30 # タイムアウトを短く設定
     )
 
     if is_released:
@@ -587,7 +583,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=30,
+            timeout=30, # タイムアウトを短く設定
             calibrate_bno055=True
         )
 
@@ -601,8 +597,8 @@ if __name__ == "__main__":
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
-        #activate_nichrome_wire()
-        #time.sleep(2) 
+        activate_nichrome_wire()
+        time.sleep(2) 
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
@@ -621,17 +617,17 @@ if __name__ == "__main__":
                     time.sleep(0.5)
                     driver.motor_stop_brake()
 
-                # current_direction_str の表示を45度に合わせて調整
-                current_relative_angle = sum(scan_angles_offsets[:i+1]) % 360 # 現在の相対角度
-                if i == 0: current_direction_str = "正面(0度)"
-                elif current_relative_angle == 45: current_direction_str = "右45度"
-                elif current_relative_angle == 90: current_direction_str = "右90度"
-                elif current_relative_angle == 135: current_direction_str = "右135度"
-                elif current_relative_angle == 180: current_direction_str = "後方(180度)"
-                elif current_relative_angle == 225: current_direction_str = "左135度" # または右-135度
-                elif current_relative_angle == 270: current_direction_str = "左90度"  # または右-90度
-                elif current_relative_angle == 315: current_direction_str = "左45度"  # または右-45度
-                else: current_direction_str = f"方向不明({current_relative_angle}度)"
+                current_direction_str = ""
+                total_angle_turned = sum(scan_angles_offsets[:i+1]) % 360
+                if total_angle_turned == 0: current_direction_str = "正面(0度)"
+                elif total_angle_turned == 45: current_direction_str = "右45度"
+                elif total_angle_turned == 90: current_direction_str = "右90度"
+                elif total_angle_turned == 135: current_direction_str = "右135度"
+                elif total_angle_turned == 180: current_direction_str = "後方(180度)"
+                elif total_angle_turned == 225: current_direction_str = "左135度" 
+                elif total_angle_turned == 270: current_direction_str = "左90度"  
+                elif total_angle_turned == 315: current_direction_str = "左45度"  
+                else: current_direction_str = f"方向不明({total_angle_turned}度)"
 
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
@@ -643,22 +639,17 @@ if __name__ == "__main__":
                     
                     print(f"検出されたため、回避行動に移ります。")
                     
-                    # 検出された方向を考慮して回避方向を決定し、90度回頭して前進
-                    # 45度スキャンに対応した回避方向の調整
-                    if current_direction_str == "正面(0度)":
-                        print("正面で検出されたため、右90度回頭して回避します。")
+                    if total_angle_turned <= 45 or total_angle_turned >= 315: 
+                        print("正面付近で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    elif "右" in current_direction_str: # 右方向で検知されたら左に90度
-                        print(f"{current_direction_str}で検出されたため、左90度回頭して回避します。")
+                    elif total_angle_turned > 45 and total_angle_turned < 180: 
+                        print("右側で検出されたため、左90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=10)
-                    elif "左" in current_direction_str: # 左方向で検知されたら右に90度
-                        print(f"{current_direction_str}で検出されたため、右90度回頭して回避します。")
+                    elif total_angle_turned > 180 and total_angle_turned < 315: 
+                        print("左側で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    elif current_direction_str == "後方(180度)": # 後方で検知されたら右か左に90度
-                        print("後方で検出されたため、右90度回頭して回避します。")
-                        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    else: # その他のケースやエラーなど
-                        print("不明な方向で検出されたため、右90度回頭して回避します。")
+                    else: 
+                        print("後方または不明な方向で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
                     
                     print("回避のため少し前進します。(速度80, 3秒)")
@@ -722,11 +713,13 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nメイン処理中に予期せぬエラーが発生しました: {e}")
     finally:
+        # メインのfinallyブロックで全てのGPIOをクリーンアップ
         if 'driver' in locals():
-            driver.cleanup()
+            driver.cleanup() # モータードライバーのGPIOをクリーンアップ
         if 'picam2' in locals():
-            picam2.close()
-        # メインのfinallyブロックでニクロム線ピンもクリーンアップ
-        GPIO.output(NICHROME_PIN, GPIO.LOW) # 念のためオフ
-        GPIO.cleanup()
+            picam2.close() # Picamera2を閉じる
+        
+        # GPIO.cleanup()は必ず最後に一度だけ呼び出す
+        # ニクロム線ピンはactivate_nichrome_wire()内でLOWになるので、ここで個別に設定する必要はない
+        GPIO.cleanup() 
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
