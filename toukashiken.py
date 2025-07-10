@@ -4,13 +4,13 @@ import time
 from picamera2 import Picamera2
 from motor import MotorDriver
 import following
-from BNO055 import BNO055 # BNO055ライブラリの正しいインポート
+from BNO055 import BNO055 
 import smbus
 import RPi.GPIO as GPIO
 import os
 import sys
 import math
-import struct # BNO055ライブラリのgetVector()で使用される可能性
+import struct 
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -19,7 +19,7 @@ digP = []
 digH = []
 
 i2c = smbus.SMBus(1)
-BME280_address = 0x76 # BME280のアドレス
+BME280_address = 0x76 
 
 def init_bme280():
     """BME280センサーを初期化します。"""
@@ -42,10 +42,12 @@ def read_compensate():
             digP[i] -= 65536
     dh = i2c.read_byte_data(BME280_address, 0xA1)
     dat_h = i2c.read_i2c_block_data(BME280_address, 0xE1, 8)
+    # --- 修正箇所 ---
     digH = [dh, (dat_h[1] << 8) | dat_h[0], dat_h[2],
             (dat_h[3] << 4) | (0x0F & dat_h[4]),
             (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F),
-            digH[6]] # ここを修正: dat_h[6] ではなく digH[6]
+            dat_h[6]] # ここが正しいです。digH[6] ではなく dat_h[6]
+    # --- 修正箇所終わり ---
     if digH[1] >= 32768:
         digH[1] -= 65536
     for i in range(3, 4):
@@ -199,7 +201,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
         
         print("機体回転前に3秒間待機します...")
         time.sleep(3) # 追加した3秒スリープ
@@ -222,12 +224,11 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            if gyro_cal == 3:
+            if gyro_cal == 3 and mag_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake() # 回転を停止
                 break
             
-            # キャリブレーションが完了していない場合、機体を回転させる
             if (time.time() - rotation_start_time) < TURN_DURATION:
                 driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) # 右旋回
             elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
@@ -235,7 +236,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             else:
                 rotation_start_time = time.time() # サイクルリセット
 
-            time.sleep(0.1) # センサー読み取りと制御の間に短い間隔
+            time.sleep(0.1)
             
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
@@ -539,8 +540,8 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定 (activate_nichrome_wire関数外で定義されたNICHROME_PINを使用)
-    # これによりNICHROME_PINが確実に定義され、GPIO.setupも行われる
+    # ニクロム線ピンの初期設定
+    # mainのtryブロックに入る前に、NICHROME_PINが定義されGPIO.setupが完了している必要がある
     GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
@@ -586,7 +587,6 @@ if __name__ == "__main__":
     try:
         # --- ステージ1: 着地判定 ---
         print("\n--- ステージ1: 着地判定を開始します ---")
-        # 着地判定関数にdriverインスタンスを渡す
         is_landed = check_landing(
             bno_raw_sensor,
             driver, # driverインスタンスを渡す
