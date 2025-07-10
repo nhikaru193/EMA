@@ -200,12 +200,16 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
         print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+
+        print("機体回転前に3秒間待機します...")
+        time.sleep(3) # 追加した3秒スリープ
+        print("機体回転を開始します。")
         
         calibration_start_time = time.time()
         rotation_start_time = time.time()
         # キャリブレーション中の回転速度と周期
         CALIBRATION_TURN_SPEED = 60
-        TURN_DURATION = 0.5 # 回転し続ける時間（秒）
+        TURN_DURATION = 5 # 回転し続ける時間（秒）
         STOP_DURATION = 0.2 # 停止する時間（秒）
 
         while True:
