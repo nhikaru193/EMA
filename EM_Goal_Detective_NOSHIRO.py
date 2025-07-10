@@ -31,7 +31,7 @@ def get_block_number(frame):
     number = None
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     lower_red1 = np.array([0, 100, 50])
     upper_red1 = np.array([10, 255, 255])
@@ -97,11 +97,6 @@ Va2 = 0
 Vb1 = 0
 Vb2 = 0
 
-frame = picam2.capture_array()
-percent = get_percentage(frame)
-print(f"{percent}")
-
-"""
 try:
     
     print("対象物を画面内に収める")
@@ -198,4 +193,4 @@ finally:
     print("ゴール判定")
     driver.cleanup()
     print("GPIOクリーンアップが終了しました。プログラムを終了します")
-"""
+
