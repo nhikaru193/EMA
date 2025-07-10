@@ -512,9 +512,7 @@ NICHROME_PIN = 25
 HEATING_DURATION_SECONDS = 3.0
 
 #def activate_nichrome_wire():
-    """
     #ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
-    """
     #print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
     #try:
         #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
