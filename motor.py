@@ -170,9 +170,9 @@ class MotorDriver():
     
     def changing_moving_forward(self, Lmotor_b, Lmotor_a ,Rmotor_b, Rmotor_a):
         global speed # main_rover_control.pyから呼び出される際にglobal speedが定義されていないとエラーになる可能性
-        for i in range(1, 100):
-            delta_speed_L = (Lmotor_a - Lmotor_b) / 100
-            delta_speed_R = (Rmotor_a - Rmotor_b) / 100
+        for i in range(1, 20):
+            delta_speed_L = (Lmotor_a - Lmotor_b) / 20
+            delta_speed_R = (Rmotor_a - Rmotor_b) / 20
             speed_L = Lmotor_b + i * delta_speed_L
             speed_R = Rmotor_b + i * delta_speed_R
             self.motor_Lforward(speed_L)
