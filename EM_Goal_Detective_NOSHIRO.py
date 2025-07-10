@@ -146,11 +146,11 @@ try:
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
-        time.sleep(2)
+        time.sleep(1)
         percentage = get_percentage(frame)
-        time.sleep(2)
+        time.sleep(1)
         number = get_block_number(frame)
-        time.sleep(2)
+        time.sleep(1)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
