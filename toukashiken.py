@@ -10,7 +10,6 @@ import RPi.GPIO as GPIO
 import os
 import sys
 import math
-import struct 
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -42,12 +41,10 @@ def read_compensate():
             digP[i] -= 65536
     dh = i2c.read_byte_data(BME280_address, 0xA1)
     dat_h = i2c.read_i2c_block_data(BME280_address, 0xE1, 8)
-    # --- 修正箇所 ---
     digH = [dh, (dat_h[1] << 8) | dat_h[0], dat_h[2],
             (dat_h[3] << 4) | (0x0F & dat_h[4]),
             (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F),
-            dat_h[6]] # ここが正しいです。digH[6] ではなく dat_h[6]
-    # --- 修正箇所終わり ---
+            dat_h[6]] 
     if digH[1] >= 32768:
         digH[1] -= 65536
     for i in range(3, 4):
@@ -201,17 +198,17 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
         
         print("機体回転前に3秒間待機します...")
-        time.sleep(3) # 追加した3秒スリープ
+        time.sleep(3) 
         print("機体回転を開始します。")
         
         calibration_start_time = time.time()
         rotation_start_time = time.time()
         CALIBRATION_TURN_SPEED = 60
-        TURN_DURATION = 0.5 # 回転し続ける時間（秒）
-        STOP_DURATION = 0.2 # 停止する時間（秒）
+        TURN_DURATION = 0.5 
+        STOP_DURATION = 0.2 
 
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
@@ -220,23 +217,23 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             else:
                 print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
                 time.sleep(0.5)
-                continue # 次のループへ
+                continue 
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            if gyro_cal == 3 and mag_cal == 3:
+            if gyro_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
-                driver_instance.motor_stop_brake() # 回転を停止
+                driver_instance.motor_stop_brake() 
                 break
             
             if (time.time() - rotation_start_time) < TURN_DURATION:
-                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) # 右旋回
+                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) 
             elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
-                driver_instance.motor_stop_brake() # 停止
+                driver_instance.motor_stop_brake() 
             else:
-                rotation_start_time = time.time() # サイクルリセット
+                rotation_start_time = time.time() 
 
-            time.sleep(0.1)
+            time.sleep(0.1) 
             
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
@@ -323,7 +320,6 @@ class BNO055Wrapper:
         self.sensor = bno055_sensor_instance
 
     def get_heading(self):
-        # getEuler()ではなく、getVector(BNO055.VECTOR_EULER)を使用
         euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER) 
         if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             wait_start_time = time.time()
@@ -335,7 +331,7 @@ class BNO055Wrapper:
         if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             return None
         
-        heading = euler_angles[0] # オイラー角の最初の要素がヘディング
+        heading = euler_angles[0] 
         return heading
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
@@ -345,7 +341,6 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
     
-    # ここで画像を回転・反転させる
     frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
     rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
     processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1) # 水平フリップ
@@ -354,7 +349,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
     if not os.path.exists(directory): os.makedirs(directory)
     cv2.imwrite(path, processed_frame_bgr)
     print(f"画像保存成功: {path}")
-    return processed_frame_bgr # 処理後のフレームを返す
+    return processed_frame_bgr 
 
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
@@ -367,13 +362,10 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             print("画像キャプション失敗: フレームがNoneです。")
             return 'error_in_processing'
 
-        # RGBからBGRに変換
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
-        # 反時計回りに90度回転
         rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
         
-        # 水平フリップ (左右反転)
         processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1)
         
         height, width, _ = processed_frame_bgr.shape
@@ -511,27 +503,27 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
 NICHROME_PIN = 25
 HEATING_DURATION_SECONDS = 3.0
 
-def activate_nichrome_wire():
+#def activate_nichrome_wire():
     """
-    ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
+    #ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
     """
-    print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
-    try:
-        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
-        GPIO.output(NICHROME_PIN, GPIO.HIGH)
+    #print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    #try:
+        #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.HIGH)
 
-        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
-        time.sleep(HEATING_DURATION_SECONDS)
+        #print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        #time.sleep(HEATING_DURATION_SECONDS)
 
-        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
-        GPIO.output(NICHROME_PIN, GPIO.LOW)
+        #print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW)
         
-        print("ニクロム線溶断シーケンスが正常に完了しました。")
+        #print("ニクロム線溶断シーケンスが正常に完了しました。")
 
-    except Exception as e:
-        print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
-        GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
-    print("--- ニクロム線溶断シーケンス終了。 ---")
+    #except Exception as e:
+        #print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
+    #print("--- ニクロム線溶断シーケンス終了。 ---")
 
 
 # --- メイン実行ブロック ---
@@ -540,8 +532,7 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定
-    # mainのtryブロックに入る前に、NICHROME_PINが定義されGPIO.setupが完了している必要がある
+    # ニクロム線ピンの初期設定 (NICHROME_PINの定義が関数の外にあり、ここで使用される)
     GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
@@ -562,7 +553,7 @@ if __name__ == "__main__":
     else:
         print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===")
         # エラーで終了する前にGPIOをクリーンアップ
-        GPIO.cleanup()
+        GPIO.cleanup() # ここでGPIOをクリーンアップ
         sys.exit("放出失敗")
 
     # 放出が確認されたら、以降のデバイスを初期化
@@ -576,7 +567,6 @@ if __name__ == "__main__":
     bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
 
     picam2 = Picamera2()
-    # Picamera2でのカメラ設定にtransformは含めない (各画像処理関数内で回転・反転)
     picam2.configure(picam2.create_still_configuration(
         main={"size": (320, 240)}
     ))
@@ -589,7 +579,7 @@ if __name__ == "__main__":
         print("\n--- ステージ1: 着地判定を開始します ---")
         is_landed = check_landing(
             bno_raw_sensor,
-            driver, # driverインスタンスを渡す
+            driver, 
             pressure_change_threshold=0.1,
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
@@ -604,12 +594,12 @@ if __name__ == "__main__":
             print("\n=== ローバーの着地は確認できませんでした。プログラムを終了します。 ===")
             raise SystemExit("着地失敗")
             
-        driver.motor_stop_brake() # 着地後、念のため停止
+        driver.motor_stop_brake() 
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
-        activate_nichrome_wire()
-        time.sleep(2) # 溶断後のクールダウンや安定待ち
+        #activate_nichrome_wire()
+        #time.sleep(2) 
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
@@ -617,12 +607,12 @@ if __name__ == "__main__":
         # 回避と最終確認のループ
         while True: 
             print("\n🔍 360度パラシュートスキャンを開始...")
-            detected_during_scan_cycle = False # このスキャンサイクルでパラシュートが検出されたか
+            detected_during_scan_cycle = False 
 
-            scan_angles_offsets = [0, 90, 90, 90] # 最初の0度で画像を撮り、その後相対的に90度ずつ回転
+            scan_angles_offsets = [0, 90, 90, 90] 
 
             for i, angle_offset in enumerate(scan_angles_offsets):
-                if i > 0: # 最初のスキャン時以外は旋回
+                if i > 0: 
                     print(f"→ {angle_offset}度旋回してスキャンします...")
                     turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=60, angle_tolerance_deg=5)
                     time.sleep(0.5)
@@ -673,11 +663,6 @@ if __name__ == "__main__":
                 driver.motor_stop_brake()
                 time.sleep(1)
 
-                print("\n→ 右に90度旋回して最終確認スキャンを行います。")
-                turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                driver.motor_stop_brake()
-                time.sleep(1)
-
                 final_scan_results = {
                     'front': 'none_detected',
                     'left_30': 'none_detected',
@@ -722,11 +707,17 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nメイン処理中に予期せぬエラーが発生しました: {e}")
     finally:
+        # 最終的なクリーンアップはGPIO.cleanup()で一括して行う
+        # driver.cleanup()はRPi.GPIOを内部で呼ぶので、その後にGPIO.outputはできない
+        # したがって、ニクロム線ピンをLOWにする処理は、driver.cleanup()より前、かつ
+        # 例外処理の直前など、モードが有効なうちに行うべき
+        # 今回のコードではactivate_nichrome_wire()がすでにLOWにしているため、ここでの個別指定は不要
+
         if 'driver' in locals():
-            driver.cleanup()
+            driver.cleanup() # モータードライバーのGPIOをクリーンアップ
         if 'picam2' in locals():
-            picam2.close()
-        # メインのfinallyブロックでニクロム線ピンもクリーンアップ
-        GPIO.output(NICHROME_PIN, GPIO.LOW) # 念のためオフ
-        GPIO.cleanup()
+            picam2.close() # Picamera2を閉じる
+        
+        # GPIO.cleanup()は必ず最後に一度だけ呼び出す
+        GPIO.cleanup() 
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
