@@ -13,7 +13,7 @@ import RPi.GPIO as GPIO
 
 # --- 設定値 ---
 TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
-AREA_THRESHOLD_PERCENT = 50.0 
+AREA_THRESHOLD_PERCENT = 60.0 
 
 def find_target_flag(detected_data, target_name):
     """検出データから指定された図形(target_name)のフラッグを探して返す"""
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                         driver.petit_right(0, 70)
                         driver.petit_right(70, 0)
                         driver.motor_stop_brake()
-                        time.sleep(1.0)
+                        time.sleep(2.0)
                         
                         detected_data = detector.detect()
                         target_flag = find_target_flag(detected_data, target_name)
