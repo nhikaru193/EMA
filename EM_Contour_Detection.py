@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 if target_flag is None:
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
-                    while target_flag is None and search_count < 40: # タイムアウト設定
+                    while target_flag is None and search_count < 50: # タイムアウト設定
                         driver.petit_right(0, 70)
                         driver.petit_right(70, 0)
                         driver.motor_stop_brake()
@@ -84,13 +84,13 @@ if __name__ == '__main__':
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            driver.petit_right(0, 70)
-                            driver.petit_right(70, 0)
+                            driver.petit_right(0, 60)
+                            driver.petit_right(60, 0)
                             driver.motor_stop_brake()
                             time.sleep(1.0)
                         elif target_flag['location'] == '右':
-                            driver.petit_left(0, 70)
-                            driver.petit_left(70, 0)
+                            driver.petit_left(0, 60)
+                            driver.petit_left(60, 0)
                             driver.motor_stop_brake()
                             time.sleep(1.0)
                           
