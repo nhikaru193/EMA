@@ -97,10 +97,11 @@ def get_block_number_by_density(frame):
 
     # 最も赤の密度が高いブロックの番号（1〜5）を返す
     max_ratio = max(red_ratios)
-    if max_ratio < 0.01:
+    if max_ratio < 0.1:
         print("❌ 赤色が検出されません（全ブロックで密度低）")
         return None  # 全体的に赤が少なすぎる場合
     else:
+        print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
         return red_ratios.index(max_ratio) + 1
         
 #モータの初期化
@@ -154,9 +155,9 @@ try:
     #画面中央(横に五分割した中央)に収める
     while True:
         frame = picam2.capture_array()
-        time.sleep(2)
+        time.sleep(1)
         number = get_block_number_by_density(frame)
-        time.sleep(2)
+        time.sleep(1)
         
         if number == 1:
             driver.quick_left(0, 60)
@@ -183,11 +184,11 @@ try:
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
-        time.sleep(4)
+        time.sleep(1)
         percentage = get_percentage(frame)
-        time.sleep(4)
+        time.sleep(1)
         number = get_block_number_by_density(frame)
-        time.sleep(4)
+        time.sleep(1)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
