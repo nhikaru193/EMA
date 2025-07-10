@@ -90,7 +90,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
             
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 100, 255, cv2.THRESH_BINARY)
+            _, binary_roi = cv2.threshold(gray_roi, 80, 255, cv2.THRESH_BINARY)
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
