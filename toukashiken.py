@@ -208,9 +208,9 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
         calibration_start_time = time.time()
         rotation_start_time = time.time()
         # キャリブレーション中の回転速度と周期
-        CALIBRATION_TURN_SPEED = 60
+        CALIBRATION_TURN_SPEED = 80
         TURN_DURATION = 5 # 回転し続ける時間（秒）
-        STOP_DURATION = 0.2 # 停止する時間（秒）
+        STOP_DURATION = 0.1 # 停止する時間（秒）
 
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
