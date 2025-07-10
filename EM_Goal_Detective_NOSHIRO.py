@@ -23,6 +23,7 @@ def get_percentage(frame):
     red_area = np.count_nonzero(mask)
     total_area = frame.shape[0] * frame.shape[1]
     percentage = (red_area / total_area) * 100
+    print(f"検知割合は{percentage}%です")
     return percentage
 
 #赤色面積の重心がどこにあたるか(画面を左から5分割:左から1→5)
@@ -176,11 +177,11 @@ try:
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
-        time.sleep(1)
+        time.sleep(0.3)
         percentage = get_percentage(frame)
-        time.sleep(1)
+        time.sleep(0.3)
         number = get_block_number_by_density(frame)
-        time.sleep(1)
+        time.sleep(0.3)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
@@ -192,15 +193,15 @@ try:
 
             elif percentage > 40:
                 driver.petit_petit(1)
-                time.sleep(1)
+                time.sleep(0.3)
                 
             elif percentage > 20:
                 driver.petit_petit(3)
-                time.sleep(1)
+                time.sleep(0.3)
                 
             elif percentage > 10:
                 driver.petit_petit(6)
-                time.sleep(1)
+                time.sleep(0.3)
                 
             else:
                 following.follow_forward(driver, bno, 70, 2)
@@ -208,27 +209,26 @@ try:
         elif number == 1:
             driver.petit_right(0, 100)
             driver.petit_right(100, 0)
-            time.sleep(1)
+            time.sleep(0.3)
 
         elif number == 2:
-            """
             driver.petit_right(0, 90)
-            driver.petit_right(90, 0)
-            time.sleep(1)
-            """
+            driver.motor_stop_brake()
+            time.sleep(0.3)
             if percentage < 50:
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 4:
             driver.petit_left(0, 90)
-            driver.petit_left(90, 0)
-            time.sleep(1)
+            driver.motor_stop_brake()
+            time.sleep(0.3)
             if percentage < 50:
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 5:
             driver.petit_left(0, 100)
-            driver.petit_left(100, 0)
+            driver.motor_stop_brake()
+            time.sleep(0.3)
 
         elif percentage >= 60:
             print("percentageでのゴール判定")
@@ -236,7 +236,7 @@ try:
         elif number is None:
             driver.petit_left(0, 80)
             driver.petit_left(80, 0)
-            time.sleep(1)
+            time.sleep(0.3)
                 
 finally:
     picam2.close()
