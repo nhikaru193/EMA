@@ -530,8 +530,14 @@ if __name__ == "__main__":
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定 (NICHROME_PINの定義が関数の外にあり、ここで使用される)
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    # ニクロム線ピンの初期設定 (NICHROME_PINはactivate_nichrome_wire関数内で定義されるため、ここでは不要)
+    # 代わりに、NICHROME_PINの定義とGPIO.setupはメイン関数（__main__ブロック）の先頭に移動し、
+    # activate_nichrome_wire関数内ではGPIO.outputのみを行うように変更する
+    # ---- 以前のコメントアウトされた NICHROME_PIN 定義を有効化する ----
+    NICHROME_PIN = 25 # この行を有効化
+    HEATING_DURATION_SECONDS = 3.0 # この行を有効化
+    # -----------------------------------------------------------------
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW) # NICHROME_PINがこの時点で定義されている必要がある
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
     bno_raw_sensor = BNO055(address=0x28) 
@@ -543,15 +549,14 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=60
+        timeout=30
     )
 
     if is_released:
         print("\n=== ローバーの放出を確認しました！次のフェーズへ移行します。 ===")
     else:
         print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===")
-        # エラーで終了する前にGPIOをクリーンアップ
-        GPIO.cleanup() # ここでGPIOをクリーンアップ
+        GPIO.cleanup() 
         sys.exit("放出失敗")
 
     # 放出が確認されたら、以降のデバイスを初期化
@@ -582,7 +587,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=120,
+            timeout=30,
             calibrate_bno055=True
         )
 
@@ -607,7 +612,7 @@ if __name__ == "__main__":
             print("\n🔍 360度パラシュートスキャンを開始...")
             detected_during_scan_cycle = False 
 
-            scan_angles_offsets = [0, 90, 90, 90] 
+            scan_angles_offsets = [0, 45, 45, 45, 45, 45, 45, 45] # 45度ずつに修正
 
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0: 
@@ -616,11 +621,18 @@ if __name__ == "__main__":
                     time.sleep(0.5)
                     driver.motor_stop_brake()
 
-                current_direction_str = ""
-                if i == 0: current_direction_str = "正面"
-                elif i == 1: current_direction_str = "右90度"
-                elif i == 2: current_direction_str = "後方"
-                elif i == 3: current_direction_str = "左90度"
+                # current_direction_str の表示を45度に合わせて調整
+                current_relative_angle = sum(scan_angles_offsets[:i+1]) % 360 # 現在の相対角度
+                if i == 0: current_direction_str = "正面(0度)"
+                elif current_relative_angle == 45: current_direction_str = "右45度"
+                elif current_relative_angle == 90: current_direction_str = "右90度"
+                elif current_relative_angle == 135: current_direction_str = "右135度"
+                elif current_relative_angle == 180: current_direction_str = "後方(180度)"
+                elif current_relative_angle == 225: current_direction_str = "左135度" # または右-135度
+                elif current_relative_angle == 270: current_direction_str = "左90度"  # または右-90度
+                elif current_relative_angle == 315: current_direction_str = "左45度"  # または右-45度
+                else: current_direction_str = f"方向不明({current_relative_angle}度)"
+
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
                 scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
@@ -631,17 +643,22 @@ if __name__ == "__main__":
                     
                     print(f"検出されたため、回避行動に移ります。")
                     
-                    if current_direction_str == "正面":
+                    # 検出された方向を考慮して回避方向を決定し、90度回頭して前進
+                    # 45度スキャンに対応した回避方向の調整
+                    if current_direction_str == "正面(0度)":
                         print("正面で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    elif current_direction_str == "右90度":
-                        print("右90度で検出されたため、左90度回頭して回避します。")
+                    elif "右" in current_direction_str: # 右方向で検知されたら左に90度
+                        print(f"{current_direction_str}で検出されたため、左90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=10)
-                    elif current_direction_str == "後方":
+                    elif "左" in current_direction_str: # 左方向で検知されたら右に90度
+                        print(f"{current_direction_str}で検出されたため、右90度回頭して回避します。")
+                        turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
+                    elif current_direction_str == "後方(180度)": # 後方で検知されたら右か左に90度
                         print("後方で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    elif current_direction_str == "左90度":
-                        print("左90度で検出されたため、右90度回頭して回避します。")
+                    else: # その他のケースやエラーなど
+                        print("不明な方向で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
                     
                     print("回避のため少し前進します。(速度80, 3秒)")
@@ -705,17 +722,11 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\nメイン処理中に予期せぬエラーが発生しました: {e}")
     finally:
-        # 最終的なクリーンアップはGPIO.cleanup()で一括して行う
-        # driver.cleanup()はRPi.GPIOを内部で呼ぶので、その後にGPIO.outputはできない
-        # したがって、ニクロム線ピンをLOWにする処理は、driver.cleanup()より前、かつ
-        # 例外処理の直前など、モードが有効なうちに行うべき
-        # 今回のコードではactivate_nichrome_wire()がすでにLOWにしているため、ここでの個別指定は不要
-
         if 'driver' in locals():
-            driver.cleanup() # モータードライバーのGPIOをクリーンアップ
+            driver.cleanup()
         if 'picam2' in locals():
-            picam2.close() # Picamera2を閉じる
-        
-        # GPIO.cleanup()は必ず最後に一度だけ呼び出す
-        GPIO.cleanup() 
+            picam2.close()
+        # メインのfinallyブロックでニクロム線ピンもクリーンアップ
+        GPIO.output(NICHROME_PIN, GPIO.LOW) # 念のためオフ
+        GPIO.cleanup()
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
