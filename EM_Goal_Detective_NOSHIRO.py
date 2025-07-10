@@ -58,6 +58,7 @@ def get_block_number(frame):
                 number = 4
             else:
                 number = 5
+            print(f"検知場所は{number}です")
         else:
             print("⚠️ 重心が計算できません")
             number = None
@@ -71,24 +72,16 @@ def get_block_number_by_density(frame):
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
-    
-    # HSV変換
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
-    # 赤色のHSV範囲（2つの範囲でマスク）
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
     upper_red2 = np.array([180, 255, 255])
-    
     mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
-
-    # 横方向に5分割して、それぞれ赤色の密度（割合）を計算
     height, width = mask.shape
     block_width = width // 5
-
     red_ratios = []
     for i in range(5):
         x_start = i * block_width
@@ -201,16 +194,16 @@ try:
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
         if number == 3:
-            if percentage > 60:
+            if percentage > 80:
                 print("ゴール判定。ゴール誘導を終了します")
                 break
 
             elif percentage > 40:
-                driver.petit_petit(2)
+                driver.petit_petit(1)
                 time.sleep(1)
                 
             elif percentage > 20:
-                driver.petit_petit(4)
+                driver.petit_petit(3)
                 time.sleep(1)
                 
             elif percentage > 10:
@@ -226,14 +219,20 @@ try:
             time.sleep(1)
 
         elif number == 2:
+            """
             driver.petit_right(0, 90)
             driver.petit_right(90, 0)
             time.sleep(1)
-
+            """
+            if percentage < 50:
+                following.follow_forward(driver, bno, 70, 1)
+            
         elif number == 4:
             driver.petit_left(0, 90)
             driver.petit_left(90, 0)
             time.sleep(1)
+            if percentage < 50:
+                following.follow_forward(driver, bno, 70, 1)
             
         elif number == 5:
             driver.petit_left(0, 100)
