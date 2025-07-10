@@ -177,12 +177,6 @@ try:
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
         #画面割合、場所検知
-        frame = picam2.capture_array()
-        time.sleep(0.2)
-        percentage = get_percentage(frame)
-        time.sleep(0.2)
-        number = get_block_number_by_density(frame)
-        time.sleep(0.2)
         if counter <= 0:
             print("赤コーンが近くにありません。探索を行います")
             counter = 50
@@ -197,7 +191,13 @@ try:
                 if percentage > 15:
                     print("赤コーンの探索に成功しました")
                     break
-            
+                    
+        frame = picam2.capture_array()
+        time.sleep(0.2)
+        percentage = get_percentage(frame)
+        time.sleep(0.2)
+        number = get_block_number_by_density(frame)
+        time.sleep(0.2)
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
 
