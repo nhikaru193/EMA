@@ -79,16 +79,21 @@ if __name__ == '__main__':
                 # --- 図形が見つかった場合（ここから変更） ---
                 if target_flag is not None:
                     # 見つけた図形の方向に向かって1秒前進
-                    print(f"[{target_name}] を発見！ {target_flag['location']} 方向に1秒前進します。")
-                    # 必要であればここで左右の調整も考慮する
-                    if target_flag['location'] == '左':
-                        driver.petit_right(0, 70) # 少しだけ右に旋回しながら前進
-                        driver.petit_right(70, 0)
-                    elif target_flag['location'] == '右':
-                        driver.petit_left(0, 70) # 少しだけ左に旋回しながら前進
-                        driver.petit_left(70, 0)
-                    else: # 中央の場合
-                        driver.forward(60) # まっすぐ前進 (速度60は例)
+                    print(f"[{target_name}] を発見！まっすぐ1秒前進します。") # メッセージも変更
+                    # 図形の位置にかかわらず、まっすぐ前進
+                    driver.forward(60) # まっすぐ前進 (速度60は例)
+                    
+                    time.sleep(1.0) # 1秒前進 (元のコードのコメントと合わせました)
+                    driver.motor_stop_brake() # 停止
+
+                    # 前進後に再度図形を探す
+                    print("前進後、再度図形を探索します...")
+                    detected_data = detector.detect()
+                    target_flag = find_target_flag(detected_data, target_name)
+
+                    if target_flag is None:
+                        print(f"前進中に [{target_name}] を見失いました。再探索を開始します。")
+                        continue # 探索フェーズの最初に戻る
                     
                     time.sleep(1.0) # 1秒前進
                     driver.motor_stop_brake() # 停止
