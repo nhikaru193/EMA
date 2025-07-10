@@ -608,8 +608,8 @@ if __name__ == "__main__":
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
-        activate_nichrome_wire()
-        time.sleep(2) # 溶断後のクールダウンや安定待ち
+        #activate_nichrome_wire()
+        #time.sleep(2) # 溶断後のクールダウンや安定待ち
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
