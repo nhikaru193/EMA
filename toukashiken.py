@@ -508,30 +508,30 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
 
 
 # --- ニクロム線溶断関数 ---
-NICHROME_PIN = 25
-HEATING_DURATION_SECONDS = 3.0
+#NICHROME_PIN = 25
+#HEATING_DURATION_SECONDS = 3.0
 
-def activate_nichrome_wire():
+#def activate_nichrome_wire():
     """
     ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
     """
-    print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
-    try:
-        print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
-        GPIO.output(NICHROME_PIN, GPIO.HIGH)
+    #print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    #try:
+        #print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.HIGH)
 
-        print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
-        time.sleep(HEATING_DURATION_SECONDS)
+        #print(f"{HEATING_DURATION_SECONDS}秒間、加熱します...")
+        #time.sleep(HEATING_DURATION_SECONDS)
 
-        print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
-        GPIO.output(NICHROME_PIN, GPIO.LOW)
+        #print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW)
         
-        print("ニクロム線溶断シーケンスが正常に完了しました。")
+        #print("ニクロム線溶断シーケンスが正常に完了しました。")
 
-    except Exception as e:
-        print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
-        GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
-    print("--- ニクロム線溶断シーケンス終了。 ---")
+    #except Exception as e:
+        #print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
+        #GPIO.output(NICHROME_PIN, GPIO.LOW) # エラー時も安全のためオフ
+    #print("--- ニクロム線溶断シーケンス終了。 ---")
 
 
 # --- メイン実行ブロック ---
