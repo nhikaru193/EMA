@@ -207,15 +207,15 @@ try:
         elif number == 3:
             if percentage > 40:
                 driver.petit_petit(1)
-                time.sleep(0.3)
+                time.sleep(1.0)
                 
             elif percentage > 20:
                 driver.petit_petit(3)
-                time.sleep(0.3)
+                time.sleep(1.0)
                 
             elif percentage > 10:
                 driver.petit_petit(6)
-                time.sleep(0.3)
+                time.sleep(1.0)
                 
             else:
                 following.follow_forward(driver, bno, 70, 2)
@@ -223,26 +223,26 @@ try:
         elif number == 1:
             driver.petit_right(0, 100)
             driver.petit_right(100, 0)
-            time.sleep(0.3)
+            time.sleep(1.0)
 
         elif number == 2:
             driver.petit_right(0, 90)
             driver.motor_stop_brake()
-            time.sleep(0.3)
+            time.sleep(1.0)
             if percentage < 50:
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 4:
             driver.petit_left(0, 90)
             driver.motor_stop_brake()
-            time.sleep(0.3)
+            time.sleep(1.0)
             if percentage < 50:
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 5:
             driver.petit_left(0, 100)
             driver.motor_stop_brake()
-            time.sleep(0.3)
+            time.sleep(1.0)
 
         elif percentage >= 60:
             print("percentageでのゴール判定")
@@ -250,7 +250,8 @@ try:
         elif number is None:
             driver.petit_left(0, 80)
             driver.petit_left(80, 0)
-            time.sleep(0.3)
+            driver.motor_stop_brake()
+            time.sleep(1.0)
         counter = counter - 1
 finally:
     picam2.close()
