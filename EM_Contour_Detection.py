@@ -13,7 +13,7 @@ import RPi.GPIO as GPIO
 
 # --- 設定値 ---
 TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
-AREA_THRESHOLD_PERCENT = 60.0 
+AREA_THRESHOLD_PERCENT = 20.0 
 
 def find_target_flag(detected_data, target_name):
     """検出データから指定された図形(target_name)のフラッグを探して返す"""
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、前進
-                            driver.petit_petit(2)
+                            driver.petit_petit(1)
                     
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
