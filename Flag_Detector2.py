@@ -35,7 +35,7 @@ class FlagDetector:
         輪郭から頂点数と凸性(Solidity)を用いて図形を判別する。
         """
         shape_name = "不明"
-        epsilon = 0.05 * cv2.arcLength(contour, True) 
+        epsilon = 0.04 * cv2.arcLength(contour, True) 
         #0.035の値を小さくすると輪郭がより詳細になり頂点数が増え、大きくするとより単純化されて頂点数が減る
         #T字や十字が長方形として認識されたら、0.02-0.04の間で調整する
         approx = cv2.approxPolyDP(contour, epsilon, True)
@@ -78,7 +78,7 @@ class FlagDetector:
         # --- 1. 黒い領域を特定 ---
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 50]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
+        upper_black = np.array([180, 255, 45]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
         kernel = np.ones((5, 5), np.uint8)
         black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
@@ -117,7 +117,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
             
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 100, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
+            _, binary_roi = cv2.threshold(gray_roi, 70, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -187,3 +187,35 @@ class FlagDetector:
         """
         self.camera.close()
         print("カメラを解放しました。")
+        
+# --- クラスの使い方 ---
+if __name__ == '__main__':
+    
+    detector = FlagDetector()
+
+    try:
+        # 検出処理を実行
+        detected_data = detector.detect()
+
+        # 検出結果をターミナルに表示
+        if detected_data:
+            print("\n--- 検出結果詳細 ---")
+            for i, flag in enumerate(detected_data):
+                shape_names = [s["name"] for s in flag["shapes"]]
+                print(f"フラッグ {i+1}: 位置={flag['location']}, 図形={', '.join(shape_names)}")
+        else:
+            print("フラッグが見つかりませんでした。")
+
+        # 元画像に検出結果を描画
+        if detector.last_image is not None:
+            result_image = detector.draw_results(detector.last_image)
+            
+            # OpenCVはBGR形式で表示するため色を変換して表示
+            display_image = cv2.cvtColor(result_image, cv2.COLOR_RGB2BGR)
+            cv2.imshow("Detected Shapes", display_image)
+            cv2.waitKey(0)
+    
+    finally:
+        # 終了処理
+        detector.close()
+        cv2.destroyAllWindows()
