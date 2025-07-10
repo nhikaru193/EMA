@@ -7,13 +7,15 @@ import math
 import numpy as np
 from picamera2 import Picamera2
 from BNO055 import BNO055
-from motor import MotorDriver
-from Flag_Detector3 import FlagDetector
+from motor import MotorDriver # ここは Flag_Detector3.py ではなく motor.py からインポートしているはず
+
+from Flag_Detector3 import FlagDetector # Flag_Detector3 を使用していることを確認
+
 import RPi.GPIO as GPIO
 
 # --- 設定値 ---
-TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
-AREA_THRESHOLD_PERCENT = 20.0 
+TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"]
+AREA_THRESHOLD_PERCENT = 20.0
 
 def find_target_flag(detected_data, target_name):
     """検出データから指定された図形(target_name)のフラッグを探して返す"""
@@ -22,7 +24,7 @@ def find_target_flag(detected_data, target_name):
             if shape['name'] == target_name:
                 return flag
     return None
- 
+
 # メインの実行ブロック
 if __name__ == '__main__':
     # --- 初期化処理 ---
@@ -63,11 +65,12 @@ if __name__ == '__main__':
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
                     while target_flag is None and search_count < 50: # タイムアウト設定
-                        driver.petit_right(0, 70)
-                        driver.petit_right(70, 0)
+                        # petit_right メソッドは motor.py に存在します
+                        driver.petit_right(0, 70) # 修正: motor_right を使う場合もあるかもしれません
+                        driver.petit_right(70, 0) # ただし、この2行の組み合わせが意図した「微調整しながら旋回」になっているかは確認が必要です
                         driver.motor_stop_brake()
                         time.sleep(2.0)
-                        
+
                         detected_data = detector.detect()
                         target_flag = find_target_flag(detected_data, target_name)
                         search_count += 1
@@ -75,26 +78,14 @@ if __name__ == '__main__':
                     if target_flag is None: # 回転しても見つからなかった場合
                         print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
                         break # while not task_completed ループを抜ける
-                
-                # --- 図形が見つかった場合（ここから変更） ---
+
+                # --- 図形が見つかった場合（ここを修正） ---
                 if target_flag is not None:
-                    # 見つけた図形の方向に向かって1秒前進
-                    print(f"[{target_name}] を発見！まっすぐ1秒前進します。") # メッセージも変更
-                    # 図形の位置にかかわらず、まっすぐ前進
-                    driver.forward(60) # まっすぐ前進 (速度60は例)
-                    
-                    time.sleep(1.0) # 1秒前進 (元のコードのコメントと合わせました)
-                    driver.motor_stop_brake() # 停止
+                    # 見つけた図形の方向にかかわらず、まっすぐ1秒前進
+                    print(f"[{target_name}] を発見！まっすぐ1秒前進します。")
+                    # motor_forward メソッドは motor.py に存在します
+                    driver.motor_forward(60) # ここを motor_forward に変更しました！
 
-                    # 前進後に再度図形を探す
-                    print("前進後、再度図形を探索します...")
-                    detected_data = detector.detect()
-                    target_flag = find_target_flag(detected_data, target_name)
-
-                    if target_flag is None:
-                        print(f"前進中に [{target_name}] を見失いました。再探索を開始します。")
-                        continue # 探索フェーズの最初に戻る
-                    
                     time.sleep(1.0) # 1秒前進
                     driver.motor_stop_brake() # 停止
 
@@ -108,7 +99,6 @@ if __name__ == '__main__':
                         continue # 探索フェーズの最初に戻る
 
                 # --- 追跡（中央寄せ＆接近）---
-                # ここから以下のコードは変更なし
                 print(f"[{target_name}] を発見！追跡を開始します。")
                 while target_flag:
                     # --- 中央寄せ ---
@@ -124,23 +114,24 @@ if __name__ == '__main__':
                             driver.petit_left(60, 0)
                             driver.motor_stop_brake()
                             time.sleep(1.0)
-                        
+
                         # 動かした直後に再検出
                         print("  再検出中...")
                         detected_data = detector.detect()
                         target_flag = find_target_flag(detected_data, target_name)
-                        
+
                         if not target_flag:
                             print(f"調整中に [{target_name}] を見失いました。")
                             break # 追跡ループを抜ける
-                        
+
                         # 位置を再評価するため、ループの最初に戻る
                         continue
-                    
+
                     # --- 接近 ---
                     else: # 中央にいる場合
                         flag_area = cv2.contourArea(target_flag['flag_contour'])
-                        area_percent = (flag_area / screen_area) * 100
+                        screen_area_calc = detector.width * detector.height # screen_area をここで再計算（念のため）
+                        area_percent = (flag_area / screen_area_calc) * 100
                         print(f"中央に補足。接近中... (画面占有率: {area_percent:.1f}%)")
 
                         # 面積の比較
@@ -151,13 +142,13 @@ if __name__ == '__main__':
                             break # 追跡ループを抜ける
                         else:
                             # しきい値未満なら、前進
-                            driver.petit_petit(2) # おそらく微小な前進
-                    
+                            driver.petit_petit(2) # ここも motor.py に存在します
+
                     # 動作後に再検出（正しい位置）
                     print("  再検出中...")
                     detected_data = detector.detect()
                     target_flag = find_target_flag(detected_data, target_name)
-                    
+
                     if not target_flag:
                         print(f"追跡中に [{target_name}] を見失いました。再探索します。")
                         break # 追跡ループ(while target_flag)を抜ける
@@ -171,4 +162,3 @@ if __name__ == '__main__':
         detector.close()
         GPIO.cleanup()
         cv2.destroyAllWindows()
-                        
