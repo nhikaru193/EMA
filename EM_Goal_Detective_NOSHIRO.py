@@ -118,7 +118,7 @@ try:
     while True:
         frame = picam2.capture_array()
         time.sleep(2)
-        number = get_block_number(frame)]
+        number = get_block_number(frame)
         time.sleep(2)
         
         if number == 1:
