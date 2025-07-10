@@ -117,7 +117,9 @@ try:
     #画面中央(横に五分割した中央)に収める
     while True:
         frame = picam2.capture_array()
-        number = get_block_number(frame)
+        time.sleep(2)
+        number = get_block_number(frame)]
+        time.sleep(2)
         
         if number == 1:
             driver.quick_left(0, 60)
@@ -144,8 +146,11 @@ try:
     while True:
         #画面割合、場所検知
         frame = picam2.capture_array()
+        time.sleep(2)
         percentage = get_percentage(frame)
+        time.sleep(2)
         number = get_block_number(frame)
+        time.sleep(2)
         
         # 判定出力
         print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
