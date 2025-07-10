@@ -1,46 +1,50 @@
 import time
-# ご指定の通り、ファイル名 BNO055.py から BNO055 クラスをインポートします。
+import math
 from BNO055 import BNO055
 
 def main():
-    # BNO055センサーのインスタンスを作成
     bno = BNO055()
 
     print("BNO055の初期化中...")
-    # センサーの初期化
     if not bno.begin():
         print("BNO055の初期化に失敗しました。配線とI2Cアドレスを確認してください。")
         return
 
     print("BNO055の初期化に成功しました。")
     # 加速度計を含む最適なフュージョンモードであるNDOFモードに設定
-    # BNO055.VECTOR_LINEARACCEL はNDOFモードで最も正確なデータを提供します。
     bno.setMode(BNO055.OPERATION_MODE_NDOF)
-    time.sleep(1) # センサーが安定するのを待つ
+    time.sleep(1)
 
-    # オプション: 精度向上のために外部クリスタルを使用する場合
-    # bno.setExternalCrystalUse(True)
-    # time.sleep(0.1)
+    print("全加速度 (重力込み) と直線加速度 (重力なし) を測定中 (m/s^2)... Ctrl+Cで終了します。")
+    print("形式:")
+    print("  全加速度 [X, Y, Z] | 大きさ")
+    print("  直線加速度 [X, Y, Z] | 大きさ")
+    print("-" * 50)
 
-    print("Z軸方向の直線加速度 (m/s^2) を測定中... Ctrl+Cで終了します。")
     try:
         while True:
-            # 直線加速度のデータを取得 (X, Y, Z軸)
-            # getVectorメソッドは (x, y, z) のタプルを返します
-            # VECTOR_LINEARACCEL は重力成分を除いた加速度です
+            # 全加速度 (重力加速度を含む) のデータを取得
+            # BNO055.VECTOR_ACCELEROMETER は生の加速度センサーデータに近い値です
+            total_accel = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
+            ax, ay, az = total_accel
+            total_accel_magnitude = math.hypot(ax, ay, az)
+
+            # 直線加速度 (重力加速度を除去) のデータを取得
+            # BNO055.VECTOR_LINEARACCEL はBNO055内部で重力成分が除去された値です
             linear_accel = bno.getVector(BNO055.VECTOR_LINEARACCEL)
+            lx, ly, lz = linear_accel
+            linear_accel_magnitude = math.hypot(lx, ly, lz)
 
-            # Z軸方向の加速度はタプルの3番目の要素 (インデックス2) です
-            z_accel = linear_accel[2]
+            # 出力
+            print(f"全加速度:    X={ax:.2f}, Y={ay:.2f}, Z={az:.2f} | 大きさ={total_accel_magnitude:.2f} m/s^2")
+            print(f"直線加速度: X={lx:.2f}, Y={ly:.2f}, Z={lz:.2f} | 大きさ={linear_accel_magnitude:.2f} m/s^2")
+            print("-" * 50)
 
-            print(f"Z軸直線加速度: {z_accel:.2f} m/s^2")
-
-            time.sleep(0.1) # 100ミリ秒ごとに読み取り
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("\nプログラムを終了します。")
     finally:
-        # 終了前にセンサーをCONFIGモードに戻すのが良い慣例です
         bno.setMode(BNO055.OPERATION_MODE_CONFIG)
 
 if __name__ == '__main__':
