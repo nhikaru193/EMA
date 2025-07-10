@@ -127,14 +127,6 @@ picam2.configure(config)
 picam2.start()
 time.sleep(1)
 
-#速度定義
-Va = 0
-Vb = 0
-Va1 = 0
-Va2 = 0
-Vb1 = 0
-Vb2 = 0
-
 try:
     
     print("対象物を画面内に収める")
