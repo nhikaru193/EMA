@@ -65,7 +65,52 @@ def get_block_number(frame):
         print("❌ 赤色物体が見つかりません")
         number = None
     return number
+
+def get_block_number_by_density(frame):
+    # 前処理：回転・BGR変換・ぼかし
+    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    frame = cv2.GaussianBlur(frame, (5, 5), 0)
     
+    # HSV変換
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # 赤色のHSV範囲（2つの範囲でマスク）
+    lower_red1 = np.array([0, 100, 100])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([160, 100, 100])
+    upper_red2 = np.array([180, 255, 255])
+    
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask = cv2.bitwise_or(mask1, mask2)
+
+    # 横方向に5分割して、それぞれ赤色の密度（割合）を計算
+    height, width = mask.shape
+    block_width = width // 5
+
+    red_ratios = []
+    for i in range(5):
+        x_start = i * block_width
+        x_end = (i + 1) * block_width if i < 4 else width
+        block_mask = mask[:, x_start:x_end]
+        red_count = np.count_nonzero(block_mask)
+        total_count = block_mask.size
+        ratio = red_count / total_count
+        red_ratios.append(ratio)
+
+    # デバッグ出力（オプション）
+    for i, r in enumerate(red_ratios):
+        print(f"[DEBUG] ブロック{i+1}の赤密度: {r:.2%}")
+
+    # 最も赤の密度が高いブロックの番号（1〜5）を返す
+    max_ratio = max(red_ratios)
+    if max_ratio < 0.01:
+        print("❌ 赤色が検出されません（全ブロックで密度低）")
+        return None  # 全体的に赤が少なすぎる場合
+    else:
+        return red_ratios.index(max_ratio) + 1
+        
 #モータの初期化
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
@@ -118,7 +163,7 @@ try:
     while True:
         frame = picam2.capture_array()
         time.sleep(2)
-        number = get_block_number(frame)
+        number = get_block_number_by_density(frame)
         time.sleep(2)
         
         if number == 1:
@@ -149,7 +194,7 @@ try:
         time.sleep(4)
         percentage = get_percentage(frame)
         time.sleep(4)
-        number = get_block_number(frame)
+        number = get_block_number_by_density(frame)
         time.sleep(4)
         
         # 判定出力
@@ -193,10 +238,13 @@ try:
         elif number == 5:
             driver.petit_left(0, 100)
             driver.petit_left(100, 0)
-            
+
+        elif percentage >= 60:
+            print("percentageでのゴール判定")
+            break
         elif number is None:
-            driver.petit_left(0, 100)
-            driver.petit_left(100, 0)
+            driver.petit_left(0, 80)
+            driver.petit_left(80, 0)
             time.sleep(1)
                 
 finally:
