@@ -508,8 +508,8 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
 
 
 # --- ニクロム線溶断関数 ---
-#NICHROME_PIN = 25
-#HEATING_DURATION_SECONDS = 3.0
+NICHROME_PIN = 25
+HEATING_DURATION_SECONDS = 3.0
 
 #def activate_nichrome_wire():
     """
