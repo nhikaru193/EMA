@@ -35,7 +35,7 @@ class FlagDetector:
         輪郭から頂点数と凸性(Solidity)を用いて図形を判別する。
         """
         shape_name = "不明"
-        epsilon = 0.05 * cv2.arcLength(contour, True)
+        epsilon = 0.04 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         vertices = len(approx)
 
@@ -76,7 +76,7 @@ class FlagDetector:
         # --- 1. 黒い領域を特定 ---
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 55])
+        upper_black = np.array([180, 255, 45])
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
         kernel = np.ones((5, 5), np.uint8)
         black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
@@ -90,7 +90,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
             
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 130, 255, cv2.THRESH_BINARY)
+            _, binary_roi = cv2.threshold(gray_roi, 70, 255, cv2.THRESH_BINARY) #ここかえる
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
