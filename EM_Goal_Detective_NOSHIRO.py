@@ -13,6 +13,7 @@ def get_percentage(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     #cv2.imwrite("/home/mark1/Pictures/noshiro.jpg", hsv)
+    """
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
@@ -20,6 +21,7 @@ def get_percentage(frame):
     mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
+    """
     red_area = np.count_nonzero(mask)
     total_area = frame.shape[0] * frame.shape[1]
     percentage = (red_area / total_area) * 100
@@ -33,6 +35,7 @@ def get_block_number(frame):
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    """
     lower_red1 = np.array([0, 100, 50])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 50])
@@ -40,6 +43,7 @@ def get_block_number(frame):
     mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
+    """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if contours:
         largest = max(contours, key=cv2.contourArea)
@@ -73,6 +77,7 @@ def get_block_number_by_density(frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    """
     lower_red1 = np.array([0, 100, 100])
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([160, 100, 100])
@@ -80,6 +85,7 @@ def get_block_number_by_density(frame):
     mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     mask = cv2.bitwise_or(mask1, mask2)
+    """
     height, width = mask.shape
     block_width = width // 5
     red_ratios = []
@@ -104,7 +110,16 @@ def get_block_number_by_density(frame):
     else:
         print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
         return red_ratios.index(max_ratio) + 1
-        
+
+#マスクの作成
+lower_red1 = np.array([0, 100, 100])
+upper_red1 = np.array([10, 255, 255])
+lower_red2 = np.array([160, 100, 100])
+upper_red2 = np.array([180, 255, 255])
+mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+mask = cv2.bitwise_or(mask1, mask2)
+
 #モータの初期化
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
