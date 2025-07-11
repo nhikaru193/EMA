@@ -186,7 +186,6 @@ try:
         frame = picam2.capture_array()
         time.sleep(0.2)
         percentage = get_percentage(frame)
-        time.sleep(0.2)
         number = get_block_number_by_density(frame)
         time.sleep(0.2)
         # 判定出力
@@ -197,18 +196,22 @@ try:
             break
         elif number == 3:
             if percentage > 40:
+                print("petit_petitを1回実行します")
                 driver.petit_petit(1)
                 time.sleep(1.0)
                 
             elif percentage > 20:
+                print("petit_petitを3回実行します")
                 driver.petit_petit(3)
                 time.sleep(1.0)
                 
             elif percentage > 10:
-                driver.petit_petit(6)
+                print("petit_petitを5回実行します")
+                driver.petit_petit(5)
                 time.sleep(1.0)
                 
             else:
+                print("距離が遠いため、前身を行います")
                 following.follow_forward(driver, bno, 70, 2)
 
         elif number == 1:
