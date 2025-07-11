@@ -72,11 +72,21 @@ class Release:
                     print(f"\n🎉 着地判定成功！連続 {self.consecutive_checks} 回条件成立！")
                     return True
         except KeyboardInterrupt:
-            print(f"\n{self.current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}") # 中断時の最終データも表示
+            print(f"\n{self.current_time:<15.3f}"
+                  f"{elapsed_total:<12.1f}"
+                  f"{current_pressure if current_pressure is not None else '---':<15}"
+                  f"{initial_pressure if initial_pressure is not None else '---':<15}"
+                  f"{pressure_delta_from_initial if pressure_delta_from_initial is not None else '---':<15}"
+                  f"{acc_z if acc_z is not None else '---':<12}")
             print("\n\nプログラムがユーザーによって中断されました。")
             return False
         except Exception as e:
-            print(f"\n{self.current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}") # エラー時の最終データも表示
+            print(f"\n{self.current_time:<15.3f}"
+                  f"{elapsed_total:<12.1f}"
+                  f"{current_pressure if current_pressure is not None else '---':<15}"
+                  f"{initial_pressure if initial_pressure is not None else '---':<15}"
+                  f"{pressure_delta_from_initial if pressure_delta_from_initial is not None else '---':<15}"
+                  f"{acc_z if acc_z is not None else '---':<12}")
             print(f"\n\n🚨 エラーが発生しました: {e}")
             return False
         finally:
