@@ -23,7 +23,7 @@ class Release:
         self.initial_pressure = None
         
         
-    def check_landing(self, self.pressure_change_threshold, self.acc_z_threshold_abs, self.consecutive_checks, self.timeout):
+    def check_landing(self, pressure_change_threshold, acc_z_threshold_abs, consecutive_checks, timeout):
         BME280.init_bme280()
         BME280.read_compensate()
         print("\n🛬 着地判定開始...")
