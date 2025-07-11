@@ -71,7 +71,7 @@ class Amaging_GPS:
         dist = radius * c
         return dist
 
-    def navigate_to_goal(self):
+    def run(self):
         try:
             while True:
                 # 1. 状態把握
