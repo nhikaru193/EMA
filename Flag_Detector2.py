@@ -35,7 +35,7 @@ class FlagDetector:
         輪郭から頂点数と凸性(Solidity)を用いて図形を判別する。
         """
         shape_name = "不明"
-        epsilon = 0.04 * cv2.arcLength(contour, True) 
+        epsilon = 0.04 * cv2.arcLength(contour, True)
         #0.035の値を小さくすると輪郭がより詳細になり頂点数が増え、大きくするとより単純化されて頂点数が減る
         #T字や十字が長方形として認識されたら、0.02-0.04の間で調整する
         approx = cv2.approxPolyDP(contour, epsilon, True)
