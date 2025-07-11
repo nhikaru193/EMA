@@ -129,67 +129,40 @@ picam2.start()
 time.sleep(1)
 
 try:
-    """
-    print("対象物を画面内に収める")
-    #画面内に映っていない場合に探す
-    while True:
-        frame = picam2.capture_array()
-        percentage = get_percentage(frame)
-
-        if percentage > 5:
-            break
-
-        else:
-            driver.quick_right(0, 60)
-            driver.quick_right(60, 0)
-
-    
-    print("対象物を画面中央に収める")
-    #画面中央(横に五分割した中央)に収める
-    while True:
-        frame = picam2.capture_array()
-        time.sleep(1)
-        number = get_block_number_by_density(frame)
-        time.sleep(1)
-        
-        if number == 1:
-            driver.quick_left(0, 60)
-            driver.quick_left(60, 0)
-
-        elif number == 2:
-            driver.quick_left(0, 45)
-            driver.quick_left(45, 0)
-
-        elif number == 3:
-            break
-        
-        elif number == 4:
-            driver.quick_right(0, 45)
-            driver.quick_right(45, 0)
-            
-        else:
-            driver.quick_right(0, 60)
-            driver.quick_right(60, 0)
-        """
-
-    counter = 50
+    counter = 20
     print("ゴール誘導を開始します")
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
         #画面割合、場所検知
+        #タイムアウト()
         if counter <= 0:
             print("赤コーンが近くにありません。探索を行います")
-            counter = 50
+            counter = 20
             while True:
+                #照度条件が悪いかコーンが近くにないため、少し移動する。螺旋移動の一部をイメージ
                 print("探索中")
                 driver.changing_moving_forward(0, 90, 0, 70)
                 time.sleep(2)
                 driver.changing_moving_forward(90, 0, 70, 0)
-                frame = picam2.capture_array()
-                time.sleep(0.2)
-                percentage = get_percentage(frame)
+                before_heading = bno.get_heading()
+                delta_heading = 20
+                #少し移動した場所において全方位のコーン探索を行う。
+                while delta_heading > 5:
+                    print("この場所でのコーン探索を行います")
+                    after_heading = bno.get_heading()
+                    delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
+                    frame = picam2.capture_array()
+                    time.sleep(0.2)
+                    percentage = get_percentage(frame)
+                    if percentage > 15:
+                        print("赤コーンの探索に成功しました")
+                        break
+                    print("視野角内にコーンを検知できませんでした。左回頭を行います")
+                    driver.petit_left(0, 90)
+                    driver.motor_stop_brake()
+                    time.sleep(0.2)
                 if percentage > 15:
-                    print("赤コーンの探索に成功しました")
+                    print("探索プログラムを終えます")
                     break
                     
         frame = picam2.capture_array()
