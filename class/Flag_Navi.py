@@ -52,7 +52,7 @@ class FlagNavigator:
 
     def run_mission(self):
         """
-        全てのターゲットフラッグを探索し、接近するメインのタスクを実行します。
+        全てのターゲットフラッグを探索し、接近するメインのタスクを実行
         """
         # --- 全てのターゲットに対してループ ---
         for target_name in self.TARGET_SHAPES:
