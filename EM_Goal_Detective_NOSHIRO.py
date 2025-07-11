@@ -124,6 +124,9 @@ upper_red2 = np.array([180, 255, 255])
 left_a = 90
 right_a = 80
 
+#counterの最大値
+counter = counter_max
+
 #モータの初期化
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
@@ -148,7 +151,7 @@ picam2.start()
 time.sleep(1)
 
 try:
-    counter = 20
+    counter = counter_max
     print("ゴール誘導を開始します")
     #画面中央に写してからの誘導(画面外へ出ることはないと想定)
     while True:
@@ -156,7 +159,7 @@ try:
         #タイムアウト()
         if counter <= 0:
             print("赤コーンが近くにありません。探索を行います")
-            counter = 20
+            counter = counter_max
             while True:
                 #照度条件が悪いかコーンが近くにないため、少し移動する。螺旋移動の一部をイメージ
                 print("探索中")
@@ -202,7 +205,7 @@ try:
                 print("petit_petitを1回実行します")
                 driver.petit_petit(1)
                 time.sleep(1.0)
-                
+                counter = counter_max
                 
             elif percentage > 20:
                 print("petit_petitを3回実行します")
@@ -222,31 +225,29 @@ try:
             driver.petit_left(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
-            counter = 20
 
         elif number == 2:
             driver.petit_left(0, 90)
             driver.motor_stop_brake()
             time.sleep(1.0)
-            counter = 20
             if percentage < 50:
                 print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
+                counter = counter_max
             
         elif number == 4:
             driver.petit_right(0, 90)
             driver.motor_stop_brake()
             time.sleep(1.0)
-            counter = 20
             if percentage < 50:
                 print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
+                counter = counter_max
             
         elif number == 5:
             driver.petit_right(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
-            counter = 20
 
         elif number is None:
             driver.petit_left(0, 80)
