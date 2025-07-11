@@ -203,6 +203,7 @@ try:
             driver.motor_stop_brake()
             time.sleep(1.0)
             if percentage < 50:
+                print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 4:
@@ -210,6 +211,7 @@ try:
             driver.motor_stop_brake()
             time.sleep(1.0)
             if percentage < 50:
+                print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
             
         elif number == 5:
