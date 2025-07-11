@@ -12,9 +12,6 @@ driver = MotorDriver(
     STBY=21                      # STBYピン
 )
 
-# === 目標地点設定（[緯度, 経度]）===
-GOAL_LOCATION = [35.6586, 139.7454]  # 例：東京タワー
-
 # === GPSデータ取得（仮の実装）===
 TX_PIN = 17
 RX_PIN = 27
