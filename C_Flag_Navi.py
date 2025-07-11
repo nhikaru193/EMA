@@ -19,7 +19,7 @@ class FlagNavigator:
         # --- 設定値 ---
         self.TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] #, "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 25.0
-        turn_speed = 60
+        self.turn_speed = 60
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
@@ -70,8 +70,8 @@ class FlagNavigator:
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
                     while target_flag is None and search_count < 50: # タイムアウト設定
-                        self.driver.petit_right(0, turn_speed)
-                        self.driver.petit_right(turn_speed, 0)
+                        self.driver.petit_right(0, self.turn_speed)
+                        self.driver.petit_right(self.turn_speed, 0)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         detected_data = self.detector.detect()
@@ -91,13 +91,13 @@ class FlagNavigator:
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            self.driver.petit_right(0, turn_speed)
-                            self.driver.petit_right(turn_speed, 0)
+                            self.driver.petit_right(0, self.turn_speed)
+                            self.driver.petit_right(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         elif target_flag['location'] == '右':
-                            self.driver.petit_left(0, turn_speed)
-                            self.driver.petit_left(turn_speed, 0)
+                            self.driver.petit_left(0, self.turn_speed)
+                            self.driver.petit_left(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         
