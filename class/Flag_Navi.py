@@ -1,7 +1,6 @@
 import time
 import smbus
 import struct
-import following
 import cv2
 import math
 import numpy as np
