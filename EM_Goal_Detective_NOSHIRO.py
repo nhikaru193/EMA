@@ -161,8 +161,10 @@ try:
                     driver.petit_left(0, 90)
                     driver.motor_stop_brake()
                     time.sleep(0.2)
+                else:
+                    print("付近にはコーンを検知できなかったため、再度探索を行います")
                 if percentage > 15:
-                    print("探索プログラムを終えます")
+                    print("15%以上の赤面積を検知したため、探索プログラムを終えます")
                     break
                     
         frame = picam2.capture_array()
