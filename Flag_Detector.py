@@ -45,20 +45,21 @@ class FlagDetector:
         
         hull = cv2.convexHull(contour)
         solidity = 0
-        # 凸包の面積が0でないことを確認
-        if cv2.contourArea(hull) > 0:
-            solidity = float(cv2.contourArea(contour)) / cv2.contourArea(hull)
+        else:
+            # 凸包の面積が0でないことを確認
+            if cv2.contourArea(hull) > 0:
+                solidity = float(cv2.contourArea(contour)) / cv2.contourArea(hull)
 
-        if vertices == 3:
-            shape_name = "三角形"
-        elif vertices == 4 and solidity > 0.95:
-            shape_name = "長方形"
-        elif vertices == 8 and solidity < 0.9:
-            shape_name = "T字"
-        elif vertices == 12 and solidity < 0.75:
-            shape_name = "十字"
+            if vertices == 3:
+                shape_name = "三角形"
+            elif vertices == 4 and solidity > 0.95:
+                shape_name = "長方形"
+            elif vertices == 8 and solidity < 0.9:
+                shape_name = "T字"
+            elif vertices == 12 and solidity < 0.75:
+                shape_name = "十字"
             
-        return shape_name, approx
+            return shape_name, approx
 
     def detect(self):
         """
