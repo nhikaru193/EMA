@@ -161,6 +161,17 @@ def get_pressure():
     temp = bme280_compensate_t(dat_t)                     #ここでt_fineが更新
     
     return pres
+
+def get_pressure_and_temperature():
+    """BME280から気圧と温度を読み込み、補正して返す"""
+    dat = i2c.read_i2c_block_data(address, 0xF7, 8)
+    adc_p = (dat[0] << 16 | dat[1] << 8 | dat[2]) >> 4
+    adc_t = (dat[3] << 16 | dat[4] << 8 | dat[5]) >> 4
+    
+    temperature = bme280_compensate_t(adc_t)
+    pressure = bme280_compensate_p(adc_p)
+    return pressure, temperature
+
 """
 #BME280の初期化
 init_bme280()
