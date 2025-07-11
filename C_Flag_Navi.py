@@ -19,7 +19,7 @@ class FlagNavigator:
         # --- 設定値 ---
         self.TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] #, "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 25.0
-        self.turn_speed = 60
+        turn_speed = 60
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
