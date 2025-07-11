@@ -195,7 +195,7 @@ try:
 
         elif number == 1:
             driver.petit_right(0, 100)
-            driver.petit_right(100, 0)
+            driver.motor_stop_brake()
             time.sleep(1.0)
 
         elif number == 2:
@@ -217,9 +217,6 @@ try:
             driver.motor_stop_brake()
             time.sleep(1.0)
 
-        elif percentage >= 60:
-            print("percentageでのゴール判定")
-            break
         elif number is None:
             driver.petit_left(0, 80)
             driver.petit_left(80, 0)
