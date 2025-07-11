@@ -174,7 +174,7 @@ try:
                         break
                     print("視野角内にコーンを検知できませんでした。左回頭を行います")
                     driver.petit_left(0, 90)
-                    time.sleep(0.5)
+                    time.sleep(0.3)
                     driver.motor_stop_brake()
                     time.sleep(0.2)
                 else:
