@@ -98,9 +98,9 @@ class FlagDetector:
                 continue
 
             # 1. 縦横比をチェック (正方形に近いか？)
-            aspect_ratio = float(w) / h
-            if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
-                continue
+            #aspect_ratio = float(w) / h
+            #if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
+                #continue
 
             # 2. 矩形度をチェック (輪郭面積が外接矩形の面積に近いか？)
             #rect_area = w * h
