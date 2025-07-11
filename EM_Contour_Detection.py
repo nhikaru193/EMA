@@ -85,7 +85,15 @@ if __name__ == '__main__':
                             target_flag = find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
                             search_count += 1
-                
+                            print("視野角内にフラッグを検知できませんでした。左回頭を行います")
+                            driver.petit_left(0, 90)
+                            driver.motor_stop_brake()
+                            time.sleep(0.2)
+                            after_heading = bno.get_heading()
+                            delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
+                            detected_data = detector.detect()
+                            target_flag = find_target_flag(detected_data, target_name)
+                            
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
                 if target_flag is None:
                     print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
