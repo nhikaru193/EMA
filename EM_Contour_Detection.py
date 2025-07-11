@@ -73,9 +73,9 @@ if __name__ == '__main__':
                         right_a = 80
 
                         print("探索中")
-                        driver.changing_moving_forward(0, left_a, 0, right_a)
-                        time.sleep(2)
-                        driver.changing_moving_forward(left_a, 0, right_a, 0)
+                        #driver.changing_moving_forward(0, left_a, 0, right_a)
+                        #time.sleep(2)
+                        #driver.changing_moving_forward(left_a, 0, right_a, 0)
                         before_heading = bno.get_heading()
                         delta_heading = 20
                         #少し移動した場所において全方位の探索を行う。
