@@ -12,7 +12,7 @@ from Flag_Detector import FlagDetector
 import RPi.GPIO as GPIO
 
 # --- 設定値 ---
-TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] 
+TARGET_SHAPES = ["三角形", "長方形"] #, "T字", "十字"を追加する
 AREA_THRESHOLD_PERCENT = 20.0 
 
 def find_target_flag(detected_data, target_name):
