@@ -8,6 +8,7 @@ import RPi.GPIO as GPIO
 import math
 import numpy as np
 import cv2
+import pigpio
 from picamera2 import Picamera2
 from libcamera import Transform # TransformはPicamera2のバージョンによっては不要かもしれません
 
