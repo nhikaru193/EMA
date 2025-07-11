@@ -47,6 +47,7 @@ class FlagDetector:
             solidity = 0
         else:
             # 凸包の面積が0でないことを確認
+            hull = []
             if cv2.contourArea(hull) > 0:
                 solidity = float(cv2.contourArea(contour)) / cv2.contourArea(hull)
 
