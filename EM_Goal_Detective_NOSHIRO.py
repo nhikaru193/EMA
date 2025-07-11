@@ -120,6 +120,10 @@ upper_red1 = np.array([10, 255, 255])
 lower_red2 = np.array([160, 100, 100])
 upper_red2 = np.array([180, 255, 255])
 
+#探索時のモータ回転数
+left_a = 90
+right_a = 80
+
 #モータの初期化
 driver = MotorDriver(
     PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
@@ -156,9 +160,9 @@ try:
             while True:
                 #照度条件が悪いかコーンが近くにないため、少し移動する。螺旋移動の一部をイメージ
                 print("探索中")
-                driver.changing_moving_forward(0, 90, 0, 70)
+                driver.changing_moving_forward(0, left_a, 0, right_a)
                 time.sleep(2)
-                driver.changing_moving_forward(90, 0, 70, 0)
+                driver.changing_moving_forward(left_a, 0, right_a, 0)
                 before_heading = bno.get_heading()
                 delta_heading = 20
                 #少し移動した場所において全方位のコーン探索を行う。
@@ -172,7 +176,6 @@ try:
                         break
                     print("視野角内にコーンを検知できませんでした。左回頭を行います")
                     driver.petit_left(0, 90)
-                    time.sleep(0.3)
                     driver.motor_stop_brake()
                     time.sleep(0.2)
                     after_heading = bno.get_heading()
