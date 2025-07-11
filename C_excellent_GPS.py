@@ -75,7 +75,7 @@ class Amaging_GPS:
         try:
             while True:
                 # 1. 状態把握
-                (count, data) = self.pi.bb_serial_read(RX_PIN)
+                (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
                 
                 if count and data:
