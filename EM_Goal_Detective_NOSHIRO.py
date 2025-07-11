@@ -107,7 +107,7 @@ def get_block_number_by_density(frame):
 
     # 最も赤の密度が高いブロックの番号（1〜5）を返す
     max_ratio = max(red_ratios)
-    if max_ratio < 0.05:
+    if max_ratio < 0.08:
         print("❌ 赤色が検出されません（全ブロックで密度低）")
         return None  # 全体的に赤が少なすぎる場合
     else:
