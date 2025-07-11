@@ -42,9 +42,6 @@ try:
     print("停止")
     changing_servo_reverse(10, 7.5)
     """
-
-    set
-
 finally:
     pwm.stop()
     GPIO.cleanup()
