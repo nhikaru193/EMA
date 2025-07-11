@@ -98,9 +98,9 @@ class FlagDetector:
                 continue
 
             # 1. 縦横比をチェック (正方形に近いか？)
-            aspect_ratio = float(w) / h
-            if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
-                continue
+            #aspect_ratio = float(w) / h
+            #if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
+                #continue
 
             # 2. 矩形度をチェック (輪郭面積が外接矩形の面積に近いか？)
             #rect_area = w * h
@@ -117,7 +117,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
             
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 100, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
+            _, binary_roi = cv2.threshold(gray_roi, 90, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
