@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 if target_flag is None:
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
-                    while target_flag is None and search_count < 50: # タイムアウト設定
+                    while target_flag is None and search_count < 60: # タイムアウト設定
                         driver.petit_right(0, 70)
                         driver.petit_right(70, 0)
                         driver.motor_stop_brake()
