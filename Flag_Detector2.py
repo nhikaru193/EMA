@@ -78,7 +78,7 @@ class FlagDetector:
         # --- 1. 黒い領域を特定 ---
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 45]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
+        upper_black = np.array([180, 255, 60]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
         kernel = np.ones((5, 5), np.uint8)
         black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
@@ -98,9 +98,9 @@ class FlagDetector:
                 continue
 
             # 1. 縦横比をチェック (正方形に近いか？)
-            #aspect_ratio = float(w) / h
-            #if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
-                #continue
+            aspect_ratio = float(w) / h
+            if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
+                continue
 
             # 2. 矩形度をチェック (輪郭面積が外接矩形の面積に近いか？)
             #rect_area = w * h
@@ -117,7 +117,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
             
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 90, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
+            _, binary_roi = cv2.threshold(gray_roi, 80, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
             
             contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
