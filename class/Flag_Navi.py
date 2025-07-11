@@ -151,8 +151,6 @@ class FlagNavigator:
         GPIO.cleanup()
         cv2.destroyAllWindows()
 
---------------------------------
-
 # メインの実行ブロック
 if __name__ == '__main__':
     # FlagNavigatorクラスのインスタンスを作成
