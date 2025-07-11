@@ -43,8 +43,8 @@ class FlagDetector:
         if cv2.contourArea(contour) < 100:
             return "不明", None
         
-        hull = cv2.convexHull(contour)
-        solidity = 0
+            hull = cv2.convexHull(contour)
+            solidity = 0
         else:
             # 凸包の面積が0でないことを確認
             if cv2.contourArea(hull) > 0:
