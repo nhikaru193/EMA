@@ -13,27 +13,32 @@ class GDN:
         self.bno = bno
         self.picam2 = picam2
         self.counter_max = counter_max
+        self.lower_red1 = np.array([0, 100, 100])
+        self.upper_red1 = np.array([10, 255, 255])
+        self.lower_red2 = np.array([160, 100, 100])
+        self.upper_red2 = np.array([180, 255, 255])
         
     def get_percentage(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
         red_area = np.count_nonzero(mask)
         total_area = frame.shape[0] * frame.shape[1]
         percentage = (red_area / total_area) * 100
         print(f"検知割合は{percentage}%です")
+        return percentage
 
     def get_block_number_by_density(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
         height, width = mask.shape
         block_width = width // 5
@@ -55,17 +60,12 @@ class GDN:
         else:
             print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
             return red_ratios.index(max_ratio) + 1
-        return percentage
-
     
     def run(self):
-        lower_red1 = np.array([0, 100, 100])
-        upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([160, 100, 100])
-        upper_red2 = np.array([180, 255, 255])
         left_a = 90
         right_a = 80
         counter = self.counter_max
+        percentage = 0
         try:
             counter = self.counter_max
             print("ゴール誘導を開始します")
