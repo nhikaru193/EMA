@@ -1,1 +1,22 @@
+def main_sequence():
+    print("放出判定を行います")
+    getEM_release()
+    print("GPS通信を開始します")
+    get()
+    print("着地判定を行います")
+    getEM_land()
+    print("パラシュート回避を開始します")
+    getparakai()
+    print("GPS誘導を開始し、第1フラッグまで移動します")
+    getEM_excellent_gps()
+    print("フラッグ誘導を開始します")
+    getEM_Flag_Navigate()
+    print("物資を設置します")
+    getcamera()
+    print("ゴールまでGPS誘導させます")
+    getmotor()
+    print("ゴール検知を開始します")
+    getEM_Goal_Detective_NOSHIRO()
 
+if __name__ == "__main__":
+    main_sequence()
