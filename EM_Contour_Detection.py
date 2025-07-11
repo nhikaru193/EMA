@@ -62,15 +62,29 @@ if __name__ == '__main__':
                 if target_flag is None:
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
-                    while target_flag is None and search_count < 60: # タイムアウト設定
-                        driver.petit_right(0, 70)
-                        driver.petit_right(70, 0)
-                        driver.motor_stop_brake()
-                        time.sleep(2.0)
-                        
-                        detected_data = detector.detect()
-                        target_flag = find_target_flag(detected_data, target_name)
-                        search_count += 1
+                    while target_flag is None and search_count < 40: # タイムアウト設定
+                    
+                        #driver.petit_right(0, 70)
+                        #driver.petit_right(70, 0)
+                        #driver.motor_stop_brake()
+                        #time.sleep(2.0)
+
+                        left_a = 90
+                        right_a = 80
+
+                        print("探索中")
+                        driver.changing_moving_forward(0, left_a, 0, right_a)
+                        time.sleep(2)
+                        driver.changing_moving_forward(left_a, 0, right_a, 0)
+                        before_heading = bno.get_heading()
+                        delta_heading = 20
+                        #少し移動した場所において全方位の探索を行う。
+                        while delta_heading > 5:
+                            print("この場所での探索を行います")
+                            detected_data = detector.detect()
+                            target_flag = find_target_flag(detected_data, target_name)
+                            time.sleep(0.5)
+                            search_count += 1
                 
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
                 if target_flag is None:
