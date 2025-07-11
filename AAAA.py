@@ -33,6 +33,6 @@ time.sleep(1)
 
 GOAL = GDN(driver, bno, picam2, 30)
 
-GDN.run()
+GOAL.run()
 
 print("クラス呼び出し完了です")
