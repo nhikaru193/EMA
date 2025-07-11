@@ -215,19 +215,11 @@ try:
                 following.follow_forward(driver, bno, 70, 2)
 
         elif number == 1:
-            driver.petit_right(0, 100)
+            driver.petit_left(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
 
         elif number == 2:
-            driver.petit_right(0, 90)
-            driver.motor_stop_brake()
-            time.sleep(1.0)
-            if percentage < 50:
-                print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
-                following.follow_forward(driver, bno, 70, 1)
-            
-        elif number == 4:
             driver.petit_left(0, 90)
             driver.motor_stop_brake()
             time.sleep(1.0)
@@ -235,8 +227,16 @@ try:
                 print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
             
+        elif number == 4:
+            driver.petit_right(0, 90)
+            driver.motor_stop_brake()
+            time.sleep(1.0)
+            if percentage < 50:
+                print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
+                following.follow_forward(driver, bno, 70, 1)
+            
         elif number == 5:
-            driver.petit_left(0, 100)
+            driver.petit_right(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
 
