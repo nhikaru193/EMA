@@ -18,13 +18,14 @@ class Amaging_GPS:
         GOAL_THRESHOLD_M: float = 5.0,
         ANGLE_THRESHOLD_DEG: float = 15.0,
     ):
-        self.goal_location     = goal_location
+        self.GOAL_LOCATION     = goal_location
         self.GOAL_THRESHOLD_M  = GOAL_THRESHOLD_M
         self.ANGLE_THRESHOLD_DEG   = ANGLE_THRESHOLD_DEG
         self.driver = driver
         self.bno    = bno
         self.RX_PIN = 17
         self.BAUD = 9600
+        self.turn_speed = 90
         self.pi = pigpio.pi()
         if not self.pi.connected:
             raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
@@ -74,7 +75,7 @@ class Amaging_GPS:
         try:
             while True:
                 # 1. 状態把握
-                (count, data) = pi.bb_serial_read(RX_PIN)
+                (count, data) = self.pi.bb_serial_read(RX_PIN)
                 current_location = None
                 
                 if count and data:
@@ -107,34 +108,30 @@ class Amaging_GPS:
                     continue
     
                 # 2. 計算
-                dist_to_goal = self.get_distance_to_goal(current_location, GOAL_LOCATION)
-                bearing_to_goal = self.get_bearing_to_goal(current_location, GOAL_LOCATION)
+                dist_to_goal = self.get_distance_to_goal(current_location, self.GOAL_LOCATION)
+                bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
                 angle_error = (bearing_to_goal - heading + 360) % 360
     
                 print(f"[INFO] 距離:{dist_to_goal: >6.1f}m | 目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
     
                 # 3. ゴール判定
-                if dist_to_goal <= GOAL_THRESHOLD_M:
+                if dist_to_goal <= self.GOAL_THRESHOLD_M:
                     print(f"[GOAL] 目標地点に到達しました！ (距離: {dist_to_goal:.2f}m)")
                     self.driver.motor_stop_free()
                     break
     
                 # 4. 方向調整フェーズ
-                ANGLE_THRESHOLD_DEG = 20.0 # 許容する角度誤差（度）
-                if angle_error > ANGLE_THRESHOLD_DEG and angle_error < (360 - ANGLE_THRESHOLD_DEG):
-                    turn_speed = 40 # 回転速度は固定 (0-100)
-                    turn_duration = 0.15 + (min(angle_error, 360 - angle_error) / 180.0) * 0.2 #場所によって変える！！！
-    
+                if angle_error > self.ANGLE_THRESHOLD_DEG and angle_error < (360 - self.ANGLE_THRESHOLD_DEG):
+            
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
-                        print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
-                        self.driver.changing_left(0, turn_speed) 
-                        self.driver.changing_left(turn_speed, 0) 
-                        time.sleep(turn_duration)
+                        print(f"[TURN] 左に回頭します ")
+                        self.driver.petit_left(0, self.turn_speed) 
+                        self.driver.motor_stop_free()
+                        
                     else: # 時計回り（右）に回る方が近い
-                        print(f"[TURN] 右に回頭します ({turn_duration:.2f}秒)")
-                        self.driver.changing_right(0, turn_speed) 
-                        self.driver.changing_right(turn_speed, 0) 
-                        time.sleep(turn_duration)
+                        print(f"[TURN] 右に回頭します")
+                        self.driver.petit_right(0, self.turn_speed) 
+                        self.driver.motor_stop_free()
                     
                     self.driver.motor_stop_free() # 確実な停止
                     time.sleep(0.5) # 回転後の安定待ち
