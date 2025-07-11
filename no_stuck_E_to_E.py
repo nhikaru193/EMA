@@ -2,7 +2,7 @@ import time
 import threading
 import sys
 # 同じディレクトリにあるem_gps_datalink.pyをインポート
-from em_gps_datalink import EmGpsDatalink
+from GPS_communication import EmGpsDatalink
 
 # --- 擬似的なデバイス・センサー関数 ---
 # 実際の環境に合わせて実装してください
