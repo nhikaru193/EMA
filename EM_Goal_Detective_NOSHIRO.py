@@ -200,6 +200,7 @@ try:
                 driver.petit_petit(1)
                 time.sleep(1.0)
                 
+                
             elif percentage > 20:
                 print("petit_petitを3回実行します")
                 driver.petit_petit(3)
@@ -218,11 +219,13 @@ try:
             driver.petit_left(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
+            counter = 20
 
         elif number == 2:
             driver.petit_left(0, 90)
             driver.motor_stop_brake()
             time.sleep(1.0)
+            counter = 20
             if percentage < 50:
                 print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
@@ -231,6 +234,7 @@ try:
             driver.petit_right(0, 90)
             driver.motor_stop_brake()
             time.sleep(1.0)
+            counter = 20
             if percentage < 50:
                 print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
                 following.follow_forward(driver, bno, 70, 1)
@@ -239,6 +243,7 @@ try:
             driver.petit_right(0, 100)
             driver.motor_stop_brake()
             time.sleep(1.0)
+            counter = 20
 
         elif number is None:
             driver.petit_left(0, 80)
