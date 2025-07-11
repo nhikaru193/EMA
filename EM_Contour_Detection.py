@@ -8,7 +8,7 @@ import numpy as np
 from picamera2 import Picamera2
 from BNO055 import BNO055
 from motor import MotorDriver
-from Flag_Detector import FlagDetector
+from Flag_Detector2 import FlagDetector
 import RPi.GPIO as GPIO
 
 # --- 設定値 ---
