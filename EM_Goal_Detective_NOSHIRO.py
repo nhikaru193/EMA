@@ -125,7 +125,7 @@ left_a = 90
 right_a = 80
 
 #counterの最大値
-counter = counter_max
+counter_max = 5
 
 #モータの初期化
 driver = MotorDriver(
