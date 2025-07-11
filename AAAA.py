@@ -4,10 +4,13 @@ import time
 from picamera2 import Picamera2
 from motor import MotorDriver
 import camera
+import smbus
 import following
+import BME280
 from BNO055 import BNO055
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 from C_excellent_GPS import Amaging_GPS
+from C_release import Release
 
 #モータの初期化
 driver = MotorDriver(
@@ -33,11 +36,14 @@ picam2.start()
 time.sleep(1)
 
 #関数のインスタンス作成
-GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
+RELEASE = Release(bno)
+#GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 GOAL = GDN(driver, bno, picam2, 30)
 
 #実行文
+RELEASE.run()
+"""
 GPS.run()
 GOAL.run()
-
+"""
 print("クラス呼び出し完了です")
