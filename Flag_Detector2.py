@@ -42,7 +42,7 @@ class FlagDetector:
         vertices = len(approx)
 
         # 小さすぎる輪郭はノイズとして除外
-        if cv2.contourArea(contour) < 100:
+        if cv2.contourArea(contour) < 10:
             return "不明", None
         
         hull = cv2.convexHull(contour)
