@@ -23,14 +23,14 @@ class Release:
         self.initial_pressure = None
         
         
-    def check_landing(self, pressure_change_threshold, acc_z_threshold_abs, consecutive_checks, timeout):
+    def check_landing(self):
         BME280.init_bme280()
         BME280.read_compensate()
         print("\n🛬 着地判定開始...")
-        print(f"  初期気圧からの変化量閾値: >= {pressure_change_threshold:.2f} hPa")
-        print(f"  Z軸加速度絶対値閾値: > {acc_z_threshold_abs:.2f} m/s² (元の条件を維持)")
+        print(f"  初期気圧からの変化量閾値: >= {self.pressure_change_threshold:.2f} hPa")
+        print(f"  Z軸加速度絶対値閾値: > {self.acc_z_threshold_abs:.2f} m/s² (元の条件を維持)")
         print(f"  連続成立回数: {self.consecutive_checks}回")
-        print(f"  タイムアウト: {timeout}秒\n")
+        print(f"  タイムアウト: {self.timeout}秒\n")
         self.start_time = time.time()
         self.last_check_time = time.time()
         try:
@@ -78,12 +78,7 @@ class Release:
         finally:
             print("\n--- 判定処理終了 ---")
     def run(self):
-        is_landed = check_landing(
-            self.pressure_change_threshold=0.3, # 気圧の変化量閾値 (hPa)。最初に測定した気圧から0.3hPa以上の変化があったら条件成立
-            self.acc_z_threshold_abs=4.0,       # Z軸線形加速度の絶対値閾値 (m/s²)。元の値4.0を維持
-            self.consecutive_checks=3,          # 3回連続で条件が満たされたら着地とみなす
-            self.timeout=60                     # 30秒以内に判定が行われなければタイムアウトで強制成功
-        )
+        is_landed = self.check_landing()
         if is_landed:
             print("\n=== ローバーの放出を確認しました！ ===")
         else:
