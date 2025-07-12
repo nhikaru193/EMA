@@ -8,43 +8,21 @@ class ServoController:
     デューティサイクルを徐々に変化させたりする機能を提供します。
     """
 
-    def __init__(self, servo_pin=13, pwm_frequency=50):
-        """
-        ServoControllerのコンストラクタです。
+    def __init__(self, pi_instance, servo_pin=13, pwm_frequency=50): # pigpioインスタンスを受け取る
+    self.pi = pi_instance
+    self.servo_pin = servo_pin
+    self.pwm_frequency = pwm_frequency
 
-        Args:
-            servo_pin (int): サーボモーターが接続されているGPIOピンの番号 (BCMモード)。
-            pwm_frequency (int): PWM信号の周波数 (Hz)。標準的なサーボは50Hzを使用します。
-        """
-        self.servo_pin = servo_pin
-        self.pwm_frequency = pwm_frequency
-        self.pwm = None # PWMオブジェクトは後で初期化
-
-        # GPIOの初期設定
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.servo_pin, GPIO.OUT)
-
-        # PWMの初期化
-        self.pwm = GPIO.PWM(self.servo_pin, self.pwm_frequency)
-        self.pwm.start(0) # 初期デューティサイクルを0に設定してPWMを開始
-        print(f"GPIO{self.servo_pin} でサーボを初期化しました (周波数: {self.pwm_frequency}Hz)。")
-
+    self.pi.set_mode(self.servo_pin, pigpio.OUTPUT) # pigpioでOUTPUTに設定
+    # pigpioのソフトウェアPWMでサーボを制御
+    self.pi.set_PWM_frequency(self.servo_pin, self.pwm_frequency)
+    self.pi.set_PWM_range(self.servo_pin, 25000) # 0-25000の範囲 (pigpioのデューティサイクル範囲)
+    self.pi.set_PWM_dutycycle(self.servo_pin, 0) # 初期デューティサイクル (0-25000)
     def set_duty_cycle(self, duty_cycle):
-        """
-        サーボモーターのデューティサイクルを設定します。
-
-        Args:
-            duty_cycle (float): 設定するデューティサイクル値 (0.0 から 100.0)。
-                                一般的にサーボは2.5 (反時計回り最大) から 12.5 (時計回り最大) の範囲。
-        """
-        if not (0.0 <= duty_cycle <= 100.0):
-            print(f"警告: 不正なデューティサイクル値 ({duty_cycle}) です。0.0から100.0の範囲で指定してください。")
-            return
-
-        self.pwm.ChangeDutyCycle(duty_cycle)
-        # 短い遅延を入れてサーボが位置に到達するのを待つ
-        time.sleep(0.5)
-        print(f"デューティサイクルを {duty_cycle:.1f}% に設定しました。")
+    # RPi.GPIOの0-100%デューティサイクルをpigpioの0-25000に変換
+    pigpio_duty = int(duty_cycle / 100.0 * 25000)
+    self.pi.set_PWM_dutycycle(self.servo_pin, pigpio_duty)
+    time.sleep(0.5)
 
     def gradually_change_duty_cycle(self, start_duty, end_duty, steps=100, delay_per_step=0.1):
         """
@@ -65,10 +43,8 @@ class ServoController:
         print(f"デューティサイクル変化完了。最終値: {end_duty:.1f}%")
 
     def stop_pwm(self):
-        """
-        PWM信号の出力を停止し、サーボへの制御を終了します。
-        プログラム終了前に必ず呼び出してください。
-        """
+    self.pi.set_PWM_dutycycle(self.servo_pin, 0) # デューティサイクルを0に
+    self.pi.set_mode(self.servo_pin, pigpio.INPUT) # ピンを入力に戻す
         if self.pwm:
             self.pwm.stop()
             print("PWM信号を停止しました。")
