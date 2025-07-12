@@ -2,7 +2,8 @@ import time
 import math
 from BNO055 import BNO055
 import board               # CircuitPythonのハードウェア定義ライブラリ
-import adafruit_bme280     # Adafruit BME280ライブラリ
+# ★★★ ここを修正しました ★★★
+from adafruit_bme280 import BME280_I2C # adafruit_bme280 モジュールから BME280_I2C クラスを直接インポート
 
 def main():
     # BNO055センサーの初期化
@@ -16,7 +17,7 @@ def main():
     print("BNO055の初期化に成功しました。")
     # 加速度計を含む最適なフュージョンモードであるNDOFモードに設定
     bno.setMode(BNO055.OPERATION_MODE_NDOF)
-    time.sleep(1)
+    time.sleep(1) # モード設定が反映されるのを待つ
 
     # BME280センサーの初期化 (Adafruit ライブラリを使用)
     bme280_present = False
@@ -24,8 +25,8 @@ def main():
         i2c = board.I2C()  # デフォルトのI2Cバスを使用
 
         # ★★★ ここを修正しました ★★★
-        # 最新のAdafruitライブラリでの正しいクラス名を使用
-        bme280 = adafruit_bme280.BME280_I2C(i2c)
+        # BME280_I2C クラスを直接使用
+        bme280 = BME280_I2C(i2c)
         
         # オプション: 海面気圧を設定（高度計算に影響）
         # bme280.sea_level_pressure = 1013.25 
