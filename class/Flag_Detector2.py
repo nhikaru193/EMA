@@ -1,221 +1,180 @@
 import cv2
 import numpy as np
-from picamera2 import Picamera2
-from time import sleep
+import time
+from picamera2 import Picamera2 # Picamera2をインポート（外部から受け取るため）
 
 class FlagDetector:
     """
-    カメラ画像から黒い領域（フラッグ）を探し、その中に描かれた
-    特定の白い図形を検出し、フラッグの位置を判定するクラス。
+    カメラ画像からフラッグ（特定の形状と色）を検出し、その位置情報を提供するクラス。
     """
-    
-    def __init__(self, width=640, height=480, min_black_area=10):
+    # クラス定数 (必要に応じて調整)
+    WIDTH = 640
+    HEIGHT = 480
+    FRAMERATE = 30 # このクラスで使用するフレームレート
+
+    # HSV 色範囲 (例: 赤色)
+    LOWER_RED1 = np.array([0, 100, 100])
+    UPPER_RED1 = np.array([10, 255, 255])
+    LOWER_RED2 = np.array([160, 100, 100])
+    UPPER_RED2 = np.array([180, 255, 255])
+
+    # 形状判定用の閾値 (必要に応じて調整)
+    # 三角形
+    TRIANGLE_MIN_VERTICES = 3
+    TRIANGLE_MAX_VERTICES = 3
+    TRIANGLE_EPSILON_FACTOR = 0.04 # 形状近似の許容誤差
+    TRIANGLE_MIN_AREA_RATIO = 0.005 # 最小面積比率 (画像全体に対する割合)
+
+    # 長方形
+    RECTANGLE_MIN_VERTICES = 4
+    RECTANGLE_MAX_VERTICES = 4
+    RECTANGLE_EPSILON_FACTOR = 0.04 # 形状近似の許容誤差
+    RECTANGLE_ANGLE_TOLERANCE = 10 # 90度からの許容誤差
+    RECTANGLE_MIN_ASPECT_RATIO = 0.5 # 縦横比の最小値
+    RECTANGLE_MAX_ASPECT_RATIO = 2.0 # 縦横比の最大値
+    RECTANGLE_MIN_AREA_RATIO = 0.005 # 最小面積比率
+
+    # T字、十字などの複雑な形状は、さらに詳細な幾何学的判定が必要になります。
+    # 例: 面積、外接矩形との比較、重心、凸包など。
+    # 現状のコードでは単純な多角形近似のみをベースにしています。
+
+    def __init__(self, picam2_instance): # <--- ここが変わる！picam2_instanceを受け取る
         """
-        コンストラクタ（初期化処理）
+        FlagDetectorのコンストラクタです。
+        カメラを初期化し、検出パラメータを設定します。
+
+        Args:
+            picam2_instance (Picamera2): 既に初期化され、開始されているPicamera2のインスタンス。
         """
-        # --- 設定をインスタンス変数として保存 ---
-        self.width = width
-        self.height = height
-        self.min_black_area = min_black_area
+        self.picam2 = picam2_instance # <--- 外部から渡されたインスタンスを使う
         
-        # --- 検出結果を保持する変数を初期化 ---
-        self.last_image = None
-        self.detected_flags = []
+        # Picamera2の解像度とフレームレートは外部で設定済みという前提
+        # もしPicamera2のconfigが変更される可能性があるなら、
+        # self.picam2.configure(...) をここでも呼び出すが、
+        # メインスクリプトで一元管理している場合は不要。
+        # ここでは、既に設定済みであると仮定。
+        
+        # 画面サイズはインスタンスから取得
+        main_stream_config = self.picam2.camera_config['main']
+        self.width = main_stream_config['size'][0]
+        self.height = main_stream_config['size'][1]
+        self.screen_area = self.width * self.height # 画面全体のピクセル数
 
-        # --- カメラの準備 ---
-        self.camera = Picamera2()
-        config = self.camera.create_still_configuration(main={"size": (self.width, self.height)})
-        self.camera.configure(config)
-        self.camera.start()
-        print("カメラを初期化しました。")
-        sleep(2) # カメラの安定化待ち
+        print(f"✅ FlagDetector: インスタンス作成完了。カメラ設定は外部で管理されます。")
 
-    def _classify_shape(self, contour):
-        """
-        輪郭から頂点数と凸性(Solidity)を用いて図形を判別する。
-        """
-        shape_name = "不明"
-        epsilon = 0.04 * cv2.arcLength(contour, True)
-        #0.035の値を小さくすると輪郭がより詳細になり頂点数が増え、大きくするとより単純化されて頂点数が減る
-        #T字や十字が長方形として認識されたら、0.02-0.04の間で調整する
+    def _get_hsv_mask(self, frame_bgr):
+        """BGR画像から赤色HSVマスクを生成します。"""
+        hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
+        mask1 = cv2.inRange(hsv, self.LOWER_RED1, self.UPPER_RED1)
+        mask2 = cv2.inRange(hsv, self.LOWER_RED2, self.UPPER_RED2)
+        mask = cv2.bitwise_or(mask1, mask2)
+        return mask
+
+    def _approximate_shape(self, contour, epsilon_factor):
+        """輪郭を近似し、頂点数と形状名を返します。"""
+        epsilon = epsilon_factor * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
-        vertices = len(approx)
+        num_vertices = len(approx)
+        return approx, num_vertices
 
-        # 小さすぎる輪郭はノイズとして除外
-        if cv2.contourArea(contour) < 10:
-            return "不明", None
-        
-        hull = cv2.convexHull(contour)
-        solidity = 0
-        # 凸包の面積が0でないことを確認
-        if cv2.contourArea(hull) > 0:
-            solidity = float(cv2.contourArea(contour)) / cv2.contourArea(hull)
+    def _is_triangle(self, num_vertices, contour_area, min_area_ratio):
+        """三角形であるかを判定します。"""
+        return num_vertices == self.TRIANGLE_MIN_VERTICES and \
+               (contour_area / self.screen_area) >= min_area_ratio
 
-        if vertices == 3:
-            shape_name = "三角形"
-        elif vertices == 4 and solidity > 0.95:
-            shape_name = "長方形"
-        elif vertices == 8 and solidity < 0.9:
-            shape_name = "T字"
-        elif vertices == 12 and solidity < 0.75:
-            shape_name = "十字"
+    def _is_rectangle(self, num_vertices, approx, contour_area, min_area_ratio, angle_tolerance):
+        """長方形であるかを判定します。"""
+        if num_vertices == self.RECTANGLE_MIN_VERTICES and \
+           (contour_area / self.screen_area) >= min_area_ratio:
             
-        return shape_name, approx
-
-    def detect(self):
+            # 各辺が直交するかを角度で確認
+            # 簡略化のため、ここでは外接矩形が四角形であることを確認するだけにします。
+            # 厳密な長方形判定には、さらに各角度が90度に近いかのチェックが必要です。
+            # (例: approxから辺のベクトルを計算し、内積で角度を確認)
+            
+            # 外接矩形を計算し、縦横比をチェック
+            x, y, w, h = cv2.boundingRect(approx)
+            aspect_ratio = float(w) / h if h > 0 else 0
+            if self.RECTANGLE_MIN_ASPECT_RATIO <= aspect_ratio <= self.RECTANGLE_MAX_ASPECT_RATIO:
+                return True
+        return False
+        
+    def detect(self, save_debug_image=True, debug_image_path="/home/mark1/Pictures/flag_detection_debug.jpg"):
         """
-        メインの検出処理。画像を取得し、フラッグ、図形、位置を検出する。
+        カメラからフレームを取得し、フラッグを検出します。
+        検出されたフラッグ（形状、位置、輪郭）のリストを返します。
         """
-        self.last_image = self.camera.capture_array()
-        self.last_image = cv2.rotate(self.last_image, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        if self.last_image is None:
-            print("画像が取得できませんでした。")
+        frame_rgb = self.picam2.capture_array() # Picamera2はデフォルトでRGB形式のNumPy配列を返す
+        if frame_rgb is None:
+            print("FlagDetector: 画像キャプチャ失敗: フレームがNoneです。")
             return []
 
-        self.detected_flags = []
-        img = self.last_image.copy()
+        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+        blurred_frame = cv2.GaussianBlur(frame_bgr, (5, 5), 0)
+        red_mask = self._get_hsv_mask(blurred_frame)
 
-        # --- 1. 黒い領域を特定 ---
-        hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-        lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 60]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
-        black_mask = cv2.inRange(hsv, lower_black, upper_black)
-        kernel = np.ones((5, 5), np.uint8)
-        black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
-        black_contours, _ = cv2.findContours(black_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # 黒領域をだいたい正方形であるとする
-        valid_black_regions = []
-        for c in black_contours:
-            # 面積が小さすぎるものは除外
-            area = cv2.contourArea(c)
-            if area < self.min_black_area:
+        # 輪郭検出
+        contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        detected_flags = []
+        debug_frame = frame_bgr.copy() # デバッグ表示用
+
+        for contour in contours:
+            contour_area = cv2.contourArea(contour)
+            if contour_area < 50: # 小さすぎる輪郭は無視
                 continue
 
-            # 輪郭を囲む外接矩形を取得
-            x, y, w, h = cv2.boundingRect(c)
-            if w == 0 or h == 0:
+            # 輪郭の中心座標
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            else:
                 continue
 
-            # 1. 縦横比をチェック (正方形に近いか？)
-            #aspect_ratio = float(w) / h
-            #if not (0.7 < aspect_ratio < 1.4):  # 縦横比が0.7～1.4の範囲外なら除外
-                #continue
+            # 画面内の位置判定
+            location = "不明"
+            if cx < self.width / 3:
+                location = "左"
+            elif cx > 2 * self.width / 3:
+                location = "右"
+            else:
+                location = "中央"
 
-            # 2. 矩形度をチェック (輪郭面積が外接矩形の面積に近いか？)
-            #rect_area = w * h
-            #solidity = area / rect_area
-            #if solidity < 0.85: # 輪郭が外接矩形の85%未満なら、いびつな形として除外
-                #continue
+            # 形状近似と判定
+            approx_triangle, num_vertices_triangle = self._approximate_shape(contour, self.TRIANGLE_EPSILON_FACTOR)
+            approx_rectangle, num_vertices_rectangle = self._approximate_shape(contour, self.RECTANGLE_EPSILON_FACTOR)
+
+            current_flag_shapes = []
+            if self._is_triangle(num_vertices_triangle, contour_area, self.TRIANGLE_MIN_AREA_RATIO):
+                current_flag_shapes.append({'name': '三角形', 'approx_contour': approx_triangle})
+            if self._is_rectangle(num_vertices_rectangle, approx_rectangle, contour_area, self.RECTANGLE_MIN_AREA_RATIO, self.RECTANGLE_ANGLE_TOLERANCE):
+                current_flag_shapes.append({'name': '長方形', 'approx_contour': approx_rectangle})
             
-            # 全てのチェックを通過したものだけを有効な領域とする
-            valid_black_regions.append(c)
+            # T字、十字などの複雑な形状検出ロジックはここに追加
 
-        # --- 2. 各黒領域内で図形を探し、位置を特定 ---
-        for region_contour in valid_black_regions:
-            x, y, w, h = cv2.boundingRect(region_contour)
-            roi_img = img[y:y+h, x:x+w]
-            
-            gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 80, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
-            
-            contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            shapes_in_flag = []
-            for cnt in contours_in_roi:
-                shape_name, approx = self._classify_shape(cnt)
-                if shape_name != "不明" and approx is not None:
-                    approx_global = approx + (x, y)
-                    M_shape = cv2.moments(approx_global)
-                    cx_shape = int(M_shape["m10"] / M_shape["m00"]) if M_shape["m00"] != 0 else 0
-                    cy_shape = int(M_shape["m01"] / M_shape["m00"]) if M_shape["m00"] != 0 else 0
-                    shapes_in_flag.append({
-                        "name": shape_name,
-                        "contour": approx_global,
-                        "center": (cx_shape, cy_shape)
-                    })
-            
-            if shapes_in_flag:
-                # フラッグ（黒領域）自体の重心を計算
-                M_flag = cv2.moments(region_contour)
-                flag_cx = int(M_flag["m10"] / M_flag["m00"]) if M_flag["m00"] != 0 else 0
-
-                # 重心のx座標に基づいて位置を判定
-                location = ""
-                if flag_cx < self.width / 3:
-                    location = "左"
-                elif flag_cx < self.width * 2 / 3:
-                    location = "中央"
-                else:
-                    location = "右"
-
-                # 検出結果に、位置情報と図形情報を保存
-                self.detected_flags.append({
-                    "flag_contour": region_contour,
-                    "shapes": shapes_in_flag,
-                    "location": location
+            if current_flag_shapes:
+                detected_flags.append({
+                    'flag_contour': contour, # 元の輪郭も保存
+                    'location': location,
+                    'center_x': cx,
+                    'center_y': cy,
+                    'area': contour_area,
+                    'shapes': current_flag_shapes # 検出された形状のリスト
                 })
-        
-        print(f"{len(self.detected_flags)}個のフラッグを検出し、{sum(len(f['shapes']) for f in self.detected_flags)}個の図形を見つけました。")
-        return self.detected_flags
+                # デバッグ表示用に輪郭を描画
+                cv2.drawContours(debug_frame, [contour], -1, (0, 255, 0), 2) # 緑色で検出された輪郭
 
-    def draw_results(self, image_to_draw):
-        """
-        検出結果を渡された画像に描画する。
-        """
-        if not self.detected_flags:
-            return image_to_draw
+        if save_debug_image and detected_flags: # 何か検出された場合のみ保存
+            directory = os.path.dirname(debug_image_path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            cv2.imwrite(debug_image_path, debug_frame)
+            print(f"FlagDetector: デバッグ画像を保存しました: {debug_image_path}")
 
-        img = image_to_draw.copy()
-        for flag_info in self.detected_flags:
-            # 黒領域（フラッグ）の外枠を描画
-            cv2.drawContours(img, [flag_info["flag_contour"]], -1, (255, 0, 0), 3)
-            
-            # フラッグ内の各図形を描画
-            for shape_info in flag_info["shapes"]:
-                cv2.drawContours(img, [shape_info["contour"]], -1, (0, 255, 0), 2)
-                
-                bx, by, _, _ = cv2.boundingRect(shape_info["contour"])
-                label = f"{shape_info['name']} ({flag_info['location']})"
-                cv2.putText(img, label, (bx, by - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-        return img
-        
+        return detected_flags
+
     def close(self):
-        """
-        カメラリソースを解放する。
-        """
-        self.camera.close()
-        print("カメラを解放しました。")
-        
-# --- クラスの使い方 ---
-if __name__ == '__main__':
-    
-    detector = FlagDetector()
-
-    try:
-        # 検出処理を実行
-        detected_data = detector.detect()
-
-        # 検出結果をターミナルに表示
-        if detected_data:
-            print("\n--- 検出結果詳細 ---")
-            for i, flag in enumerate(detected_data):
-                shape_names = [s["name"] for s in flag["shapes"]]
-                print(f"フラッグ {i+1}: 位置={flag['location']}, 図形={', '.join(shape_names)}")
-        else:
-            print("フラッグが見つかりませんでした。")
-
-        # 元画像に検出結果を描画
-        if detector.last_image is not None:
-            result_image = detector.draw_results(detector.last_image)
-            
-            # OpenCVはBGR形式で表示するため色を変換して表示
-            display_image = cv2.cvtColor(result_image, cv2.COLOR_RGB2BGR)
-            cv2.imshow("Detected Shapes", display_image)
-            cv2.waitKey(0)
-    
-    finally:
-        # 終了処理
-        detector.close()
-        cv2.destroyAllWindows()
+        """FlagDetectorのクリーンアップ処理。Picamera2は外部で管理されるためここでは停止しない。"""
+        # self.picam2.stop() # Picamera2の停止はメインスクリプトで行う
+        print("FlagDetector: クリーンアップ完了。")
