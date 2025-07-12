@@ -2,33 +2,25 @@ import smbus
 import time
 from BNO055 import BNO055 # BNO055をインポート
 
-class RoverLandingDetector:
+class RoverLandingDetector: # land.py のクラス名に合わせてください
     """
     BME280気圧センサーとBNO055慣性測定ユニットを使用して、
     ローバーの着地を検出するためのクラスです。
-
-    着地条件は、気圧の変化量、線形加速度、角速度の各軸の絶対値が閾値以下になった場合に判定されます。
-    タイムアウト機能、連続チェック機能、およびBNO055キャリブレーション待機機能を含みます。
     """
-
-    # BME280のI2Cアドレスとバス設定
     BME280_ADDRESS = 0x76
-    I2C_BUS = 1
+    # I2C_BUS = 1 # この行は残しても消してもOKですが、使用されません
 
-    def __init__(self, pressure_change_threshold=0.1, acc_threshold_abs=0.5,
+    def __init__(self, bno_sensor, i2c_bus_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, # <--- ここが変わる！
                  gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60,
                  calibrate_bno055=True):
         """
         RoverLandingDetectorのコンストラクタです。
 
         Args:
-            pressure_change_threshold (float): 着地判定のための気圧の変化量閾値 (hPa)。
-                                               直前の気圧からの変化量がこの値以下になったら条件成立とみなします。
-            acc_threshold_abs (float): 着地判定のための線形加速度の絶対値閾値 (m/s²)。X, Y, Z軸それぞれでこの値以下になったら条件成立。
-            gyro_threshold_abs (float): 着地判定のための角速度の絶対値閾値 (°/s)。X, Y, Z軸それぞれでこの値以下になったら条件成立。
-            consecutive_checks (int): 着地判定が連続して成立する必要のある回数。
-            timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
-            calibrate_bno055 (bool): Trueの場合、BNO055の完全キャリブレーションを待機します。
+            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。 <--- 新しい引数
+            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。 <--- 新しい引数
+            pressure_change_threshold (float): ...
+            # ... その他の引数 ...
         """
         self.pressure_change_threshold = pressure_change_threshold
         self.acc_threshold_abs = acc_threshold_abs
@@ -37,8 +29,8 @@ class RoverLandingDetector:
         self.timeout = timeout
         self.calibrate_bno055 = calibrate_bno055
 
-        self.i2c = smbus.SMBus(self.I2C_BUS)
-        self.bno = BNO055()
+        self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
+        self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
 
         # BME280関連の補正データ (クラス内部でのみ使用)
         self._digT = []
@@ -51,6 +43,8 @@ class RoverLandingDetector:
         self.landing_count = 0
         self.start_time = None
         self.last_check_time = None
+
+    # ... 後続のメソッド (_init_bme280, _read_compensate_bme280 など) は変更なし ...
 
     def _init_bme280(self):
         """BME280センサーを初期化します。"""
