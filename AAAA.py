@@ -71,5 +71,5 @@ GPS_StoF.run()
 FLAG.run()
 GPS_FtoG.run()
 GOAL.run()
-"""
+
 print("クラス呼び出し完了です")
