@@ -12,7 +12,7 @@ import RPi.GPIO as GPIO
 
 class FlagNavigator:
     # --- クラスの初期化メソッド ---
-    def __init__(self):
+    def __init__(self, driver: MotorDriver, bno: BNO055):
         """
         ロボットのハードウェアと設定を初期化します。
         """
@@ -23,23 +23,11 @@ class FlagNavigator:
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
-        self.driver = MotorDriver(
-            PWMA=12, AIN1=23, AIN2=18,    # 左モーター
-            PWMB=19, BIN1=16, BIN2=26,    # 右モーター
-            STBY=21
-        )
+        self.driver = driver
         self.screen_area = self.detector.width * self.detector.height
         
         # === BNO055 初期化 ===
-        self.bno = BNO055()
-        if not self.bno.begin():
-            print("BNO055の初期化に失敗しました。")
-            exit(1) # 変えたほうがいいかも
-        time.sleep(1)
-        self.bno.setExternalCrystalUse(True)
-        self.bno.setMode(BNO055.OPERATION_MODE_NDOF)
-        time.sleep(1)
-        print("センサー類の初期化完了。")
+        self.bno = bno
 
     def find_target_flag(self, detected_data, target_name):
         """検出データから指定された図形(target_name)のフラッグを探して返す"""
