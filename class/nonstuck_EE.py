@@ -5,23 +5,17 @@ import board # Adafruit CircuitPython I2C (BNO055用)
 import busio # Adafruit CircuitPython I2C (BNO055用)
 import threading
 import smbus # BME280用
-
-# 外部クラスのインポート
-# 各クラスがそれぞれのファイルに保存されていることを前提
 from motor import MotorDriver
 from BNO055 import BNO055
 import following
 from Flag_Detector2 import FlagDetector
-# オリジナルのRoverLandingDetectorは「放出判定」としてそのまま利用
-from rover_landing_detector import RoverLandingDetector as EjectionDetector 
-# 新しい「着地安定性判定」として、元の着地判定ロジックをインポート
-from rover_landing_detector import RoverLandingDetector as LandingStabilityDetector 
-
-from gps_im920_communicator import GpsIm920Communicator # 修正版を使用
-from rover_gps_navigator import RoverGPSNavigator
-from flag_seeker import FlagSeeker
-from servo_controller import ServoController
-from red_cone_navigator import RedConeNavigator
+from release import RoverReleaseDetector 
+from land import RoverLandingDetector 
+from GPS_datalink import GpsIm920Communicator
+from excellent_gps import RoverGPSNavigator
+from Flagseeker import FlagSeeker
+from supplies_installtion import ServoController
+from Goal_Detective_Noshiro import RedConeNavigator
 from picamera2 import Picamera2
 
 import cv2
@@ -61,52 +55,6 @@ SERVO_PWM_FREQUENCY = 50
 # カメラ設定
 CAMERA_RESOLUTION = (640, 480)
 
-# --- ミッションステージのパラメータ ---
-# 放出判定ステージ (EjectionDetectorのデフォルト設定を使用)
-EJECTION_PRESSURE_CHANGE_THRESHOLD = 0.3 # hPa (初期気圧からの変化量)
-EJECTION_ACC_Z_THRESHOLD_ABS = 4.0 # m/s^2 (Z軸加速度絶対値)
-EJECTION_CONSECUTIVE_CHECKS = 3
-EJECTION_TIMEOUT_S = 60 # 秒
-
-# 着地安定性判定ステージ (LandingStabilityDetectorのデフォルト設定を使用)
-LANDING_STABILITY_PRESSURE_CHANGE_THRESHOLD = 0.1 # hPa (直前の気圧からの変化量)
-LANDING_STABILITY_ACC_THRESHOLD_ABS = 0.5 # m/s^2 (各軸の加速度絶対値)
-LANDING_STABILITY_GYRO_THRESHOLD_ABS = 0.5 # °/s (各軸の角速度絶対値)
-LANDING_STABILITY_CONSECUTIVE_CHECKS = 3
-LANDING_STABILITY_TIMEOUT_S = 120 # 秒
-
-# パラシュート回避ステージ
-PARACHUTE_AVOID_GOAL = [35.9248066, 139.9112360] # 回避後の進路目標 (例: GPS航行の初期地点など)
-PARACHUTE_AVOID_DISTANCE_M = 10.0 # この距離を進んで回避する
-
-# フラッグまでGPS誘導ステージ
-FLAG_GPS_GOAL_LOCATION = [35.9186248, 139.9112360] # フラッグ付近のGPS目標地点
-FLAG_GPS_THRESHOLD_M = 5.0 # ゴールとみなす距離 (メートル)
-FLAG_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 15.0 # 角度誤差許容範囲 (度)
-FLAG_GPS_TURN_SPEED = 45 # 回頭速度
-FLAG_GPS_MOVE_SPEED = 80 # 前進速度
-FLAG_GPS_MOVE_DURATION_S = 1.5 # 一回の前進時間 (秒)
-
-# フラッグ探索・追跡ステージ
-FLAG_TARGET_SHAPES = ["三角形", "長方形"] # 探索するフラッグの形状リスト
-FLAG_AREA_THRESHOLD_PERCENT = 20.0 # 接近完了とみなす画面占有率（パーセント）
-
-# 物資設置ステージ (サーボ動作のデューティサイクル例)
-SUPPLIES_INSTALL_DUTY_CYCLE = 4.0 # 物資を放出するサーボのデューティサイクル
-SUPPLIES_RETURN_DUTY_CYCLE = 7.5 # 物資設置後のサーボの初期位置デューティサイクル
-
-# ゴールまでGPS誘導ステージ
-GOAL_GPS_LOCATION = [35.9185000, 139.9110000] # 最終的なゴール地点
-GOAL_GPS_THRESHOLD_M = 1.0 # 最終ゴールとみなす距離 (メートル)
-GOAL_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 10.0 # 角度誤差許容範囲 (度)
-GOAL_GPS_TURN_SPEED = 40 # 回頭速度
-GOAL_GPS_MOVE_SPEED = 70 # 前進速度
-GOAL_GPS_MOVE_DURATION_S = 1.0 # 一回の前進時間 (秒)
-
-# ゴール検知ステージ (赤コーン追跡がゴール検知を兼ねる)
-RED_CONE_GOAL_PERCENTAGE = 90 # 赤コーンに到達したとみなす画面占有率
-RED_CONE_LOST_MAX_COUNT = 5 # コーンを見失う許容回数
-
 # --- グローバル変数 (インスタンスとスレッド) ---
 pi_instance = None
 bno_sensor_main = None
@@ -140,8 +88,8 @@ def wait_for_bno055_calibration(bno_sensor):
     while True:
         sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor.getCalibration()
         print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal} ", end='\r')
-        if gyro_cal == 3 and accel_cal == 3 and mag_cal == 3: # 全てレベル3を待機
-            print("\n✅ 主制御用BNO055全センサーキャリブレーション完了！")
+        if gyro_cal == 3: # 全てレベル3を待機
+            print("\n✅ 主制御用BNO055ジャイロセンサーキャリブレーション完了！")
             break
         time.sleep(0.5)
     print(f"キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
@@ -232,9 +180,9 @@ if __name__ == "__main__":
         print(f"✅ カメラ初期化完了。解像度: {CAMERA_RESOLUTION[0]}x{CAMERA_RESOLUTION[1]}")
 
         # --- 各機能クラスのインスタンス化 ---
-        # 1. 放出判定（EjectionDetector）
+        # 1. 放出判定（RoverReleaseDetector）
         # このRoverLandingDetectorは、気圧上昇と加速度上昇で「放出」を判定するロジック
-        ejection_detector = EjectionDetector(
+        ejection_detector = RoverReleaseDetector(
             # RoverLandingDetectorの__init__を修正し、bno_sensorとi2c_bus_instanceを引数で受け取るようにする
             bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
             i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
@@ -243,11 +191,11 @@ if __name__ == "__main__":
             consecutive_checks=EJECTION_CONSECUTIVE_CHECKS,
             timeout=EJECTION_TIMEOUT_S
         )
-        print("✅ EjectionDetector (放出判定用) インスタンス作成。")
+        print("✅ RoverReleaseDetector (放出判定用) インスタンス作成。")
 
-        # 2. 着地安定性判定（LandingStabilityDetector）
+        # 2. 着地安定性判定（RoverLandingDetector）
         # このRoverLandingDetectorは、気圧・加速度・角速度の「安定性」で「着地」を判定するロジック
-        landing_stability_detector = LandingStabilityDetector(
+        landing_stability_detector = RoverLandingDetector(
             bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
             i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
             pressure_change_threshold=LANDING_STABILITY_PRESSURE_CHANGE_THRESHOLD,
@@ -257,7 +205,7 @@ if __name__ == "__main__":
             timeout=LANDING_STABILITY_TIMEOUT_S,
             calibrate_bno055=False # メインでBNOキャリブレーションを行うため、ここではスキップ
         )
-        print("✅ LandingStabilityDetector (着地安定性判定用) インスタンス作成。")
+        print("✅ RoverLandingDetector (着地安定性判定用) インスタンス作成。")
 
         # GpsIm920Communicator
         gps_im920_comm = GpsIm920Communicator(
@@ -318,8 +266,6 @@ if __name__ == "__main__":
         print("✅ 全てのローバーコンポーネントの初期化完了。")
 
         # --- メインミッション開始 ---
-        # BNO055メインセンサーのキャリブレーション待機
-        wait_for_bno055_calibration(bno_sensor_main)
 
         # === フェーズ1: 放出判定 ===
         print("\n--- フェーズ1: 放出判定（気圧上昇と加速度上昇の検出）を開始します ---")
