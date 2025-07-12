@@ -126,15 +126,14 @@ class PA:
             
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
                         print(f"[TURN] 左に回頭します ")
-                        self.driver.petit_left(0, self.turn_speed) 
-                        self.driver.motor_stop_free()
+                        self.driver.petit_left(0, 90) 
+                        self.driver.motor_stop_brake()
                         
                     else: # 時計回り（右）に回る方が近い
                         print(f"[TURN] 右に回頭します")
-                        self.driver.petit_right(0, self.turn_speed) 
-                        self.driver.motor_stop_free()
-                    
-                    self.driver.motor_stop_free() # 確実な停止
+                        self.driver.petit_right(0, 90) 
+                        self.driver.motor_stop_brake()
+                
                     time.sleep(0.5) # 回転後の安定待ち
                     continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
     
