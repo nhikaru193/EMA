@@ -1,7 +1,7 @@
 import time
 import math
 from BNO055 import BNO055
-import BME280_sensor # BME280_sensor.py から BME280_sensor モジュールをインポート
+import BME280 # BME280_sensor.py から BME280_sensor モジュールをインポート
 
 def main():
     bno = BNO055()
