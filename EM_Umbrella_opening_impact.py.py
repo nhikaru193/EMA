@@ -2,75 +2,73 @@ import time
 import math
 import smbus
 
-# Assuming BNO055.py is correctly set up and in the same directory
+# BNO055.py ライブラリが同じディレクトリにあることを前提とします
 from BNO055 import BNO055
 
-# --- BME280 Global Variables and I2C Setup ---
-# t_fine is a global variable used by temperature, pressure, and humidity compensation
-t_fine = 0.0
-# Compensation parameters, read from the sensor's NVM (Non-Volatile Memory)
-digT = []
-digP = []
-digH = []
+# --- BME280 グローバル変数とI2C設定 ---
+t_fine = 0.0 # 温度、気圧、湿度補正の基礎となるグローバル変数
+digT = []    # 温度補正パラメータ
+digP = []    # 気圧補正パラメータ
+digH = []    # 湿度補正パラメータ
 
-# I2C bus and address settings
-i2c_bus = smbus.SMBus(1) # Raspberry Pi's I2C bus is typically 1
-bme280_address = 0x76 # Common I2C address for BME280. Verify with 'i2cdetect -y 1'.
+# I2Cバスとアドレス設定
+i2c_bus = smbus.SMBus(1) # Raspberry Pi の I2C バスは通常 1
+bme280_address = 0x76 # BME280 の一般的な I2C アドレス。'i2cdetect -y 1' で確認してください。
 
-# --- BME280 Initialization and Compensation Functions ---
+# --- BME280 初期化と補正関数群 ---
 
 def init_bme280():
-    """Initializes the BME280 sensor by writing configuration registers."""
-    # Set humidity oversampling (ctrl_hum register 0xF2) to x1
+    """BME280 センサーを設定レジスタに書き込むことで初期化します。"""
+    # 湿度オーバーサンプリング設定 (ctrl_hum レジスタ 0xF2) を x1 に
     i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01)
-    # Set temperature and pressure oversampling (ctrl_meas register 0xF4) to x1, Normal mode
+    # 温度と気圧のオーバーサンプリング設定 (ctrl_meas レジスタ 0xF4) を x1 に、ノーマルモード
     i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27)
-    # Set config register 0xF5: T_standby 1000ms, filter off, SPI 4-wire disable
+    # config レジスタ 0xF5 を設定: スタンバイ時間 1000ms, フィルターオフ, SPI 4-wire 無効
     i2c_bus.write_byte_data(bme280_address, 0xF5, 0xA0)
 
 def read_compensate():
     """
-    Reads the factory calibration (compensation) values from the BME280 sensor's NVM.
-    These values are crucial for converting raw ADC readings into meaningful physical units.
+    BME280 センサーの NVM (不揮発性メモリ) から工場出荷時の校正 (補正) 値を読み取ります。
+    これらの値は、生 ADC データを意味のある物理単位に変換するために不可欠です。
     """
-    global digT, digP, digH # Declare global to modify the lists
+    global digT, digP, digH # リストを変更するためにグローバル宣言
 
-    # Read temperature compensation values (reg 0x88 to 0x8D, 6 bytes)
+    # 温度補正値の読み取り (レジスタ 0x88 ～ 0x8D, 6 バイト)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
     digT = [
-        (dat_t[1] << 8) | dat_t[0], # digT1 (unsigned 16-bit)
-        (dat_t[3] << 8) | dat_t[2], # digT2 (signed 16-bit)
-        (dat_t[5] << 8) | dat_t[4]  # digT3 (signed 16-bit)
+        (dat_t[1] << 8) | dat_t[0], # digT1 (符号なし 16ビット)
+        (dat_t[3] << 8) | dat_t[2], # digT2 (符号付き 16ビット)
+        (dat_t[5] << 8) | dat_t[4]  # digT3 (符号付き 16ビット)
     ]
-    # Convert signed 16-bit values if necessary (digT2 and digT3)
+    # 符号付き 16ビット値が必要な場合に変換 (digT2 と digT3)
     for i in range(1, 3):
         if digT[i] >= 32768:
             digT[i] -= 65536
 
-    # Read pressure compensation values (reg 0x8E to 0x9F, 18 bytes)
+    # 気圧補正値の読み取り (レジスタ 0x8E ～ 0x9F, 18 バイト)
     dat_p = i2c_bus.read_i2c_block_data(bme280_address, 0x8E, 18)
     digP = [
-        (dat_p[1] << 8) | dat_p[0],   # digP1 (unsigned 16-bit)
-        (dat_p[3] << 8) | dat_p[2],   # digP2 (signed 16-bit)
-        (dat_p[5] << 8) | dat_p[4],   # digP3 (signed 16-bit)
-        (dat_p[7] << 8) | dat_p[6],   # digP4 (signed 16-bit)
-        (dat_p[9] << 8) | dat_p[8],   # digP5 (signed 16-bit)
-        (dat_p[11] << 8) | dat_p[10], # digP6 (signed 16-bit)
-        (dat_p[13] << 8) | dat_p[12], # digP7 (signed 16-bit)
-        (dat_p[15] << 8) | dat_p[14], # digP8 (signed 16-bit)
-        (dat_p[17] << 8) | dat_p[16]  # digP9 (signed 16-bit)
+        (dat_p[1] << 8) | dat_p[0],   # digP1 (符号なし 16ビット)
+        (dat_p[3] << 8) | dat_p[2],   # digP2 (符号付き 16ビット)
+        (dat_p[5] << 8) | dat_p[4],   # digP3 (符号付き 16ビット)
+        (dat_p[7] << 8) | dat_p[6],   # digP4 (符号付き 16ビット)
+        (dat_p[9] << 8) | dat_p[8],   # digP5 (符号付き 16ビット)
+        (dat_p[11] << 8) | dat_p[10], # digP6 (符号付き 16ビット)
+        (dat_p[13] << 8) | dat_p[12], # digP7 (符号付き 16ビット)
+        (dat_p[15] << 8) | dat_p[14], # digP8 (符号付き 16ビット)
+        (dat_p[17] << 8) | dat_p[16]  # digP9 (符号付き 16ビット)
     ]
-    # Convert signed 16-bit values if necessary (digP2 to digP9)
+    # 符号付き 16ビット値が必要な場合に変換 (digP2 ～ digP9)
     for i in range(1, 9):
         if digP[i] >= 32768:
             digP[i] -= 65536
 
-    # Read humidity compensation values (reg 0xA1 and 0xE1 to 0xE7, total 8 bytes)
+    # 湿度補正値の読み取り (レジスタ 0xA1 と 0xE1 ～ 0xE7, 合計 8 バイト)
     dh = i2c_bus.read_byte_data(bme280_address, 0xA1) # digH1
-    dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 to digH6
+    dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 ～ digH6
 
-    # Construct digH list with 6 elements
-    digH = [0] * 6 # Initialize with zeros to ensure correct size
+    # 6つの要素を持つ digH リストを構築
+    digH = [0] * 6 # 正しいサイズを確保するためにゼロで初期化
 
     digH[0] = dh # H1
     digH[1] = (dat_h[1] << 8) | dat_h[0] # H2
@@ -79,21 +77,20 @@ def read_compensate():
     digH[4] = (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F) # H5
     digH[5] = dat_h[6] # H6
 
-    # Convert signed values for humidity compensation (H2, H4, H5 are signed 16-bit; H6 is signed 8-bit)
+    # 湿度補正の符号付き値を変換 (H2, H4, H5 は符号付き 16ビット; H6 は符号付き 8ビット)
     if digH[1] >= 32768:
         digH[1] -= 65536
     if digH[3] >= 32768:
         digH[3] -= 65536
     if digH[4] >= 32768:
         digH[4] -= 65536
-    if digH[5] >= 128: # H6 is 8-bit signed
+    if digH[5] >= 128: # H6 は符号付き 8ビット
         digH[5] -= 256
 
 def bme280_compensate_t(adc_T):
-    """Calculates compensated temperature in degrees Celsius."""
+    """摂氏で補正された温度を計算します。"""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature (integer and floating-point versions)
-    # This implementation is a standard floating-point translation.
+    # Bosch BME280 データシート、セクション 4.2.3 温度の補正計算式 (浮動小数点バージョン) に基づく
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
     var2 = ((adc_T / 131072.0 - digT[0] / 8192.0) *
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
@@ -102,45 +99,48 @@ def bme280_compensate_t(adc_T):
     return temperature # Celsius
 
 def bme280_compensate_p(adc_P):
-    """Calculates compensated pressure in hPa."""
+    """hPa で補正された気圧を計算します。"""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for pressure (floating-point version)
+    # Bosch BME280 データシート、セクション 4.2.3 気圧の補正計算式 (浮動小数点バージョン) に基づく
+    # C 言語の公式サンプルコードに厳密に合わせた実装です。
     p = 0.0
     
     var1 = (t_fine / 2.0) - 64000.0
-    var2 = var1 * var1 * digP[5] / 32768.0
-    var2 = var2 + var1 * digP[4] * 2.0
-    var2 = var2 + digP[3] * 131072.0
-    var1 = (digP[2] * var1 * var1 / 524288.0) + (digP[1] * var1) / 32768.0
-    var1 = (1.0 + var1 / 32768.0) * digP[0]
+    var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
+    var2 = var2 + ((var1 * digP[4]) * 2.0)
+    var2 = (var2 / 4.0) + (digP[3] * 65536.0) # Corrected multiplication by 2^16
+    var1 = (((digP[2] * var1) / 262144.0) * var1) / 32768.0
+    var1 = (digP[1] * var1) / 2.0
+    var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # Corrected multiplication by 2^16
 
     if var1 == 0:
-        return 0 # Avoid division by zero
+        return 0 # ゼロ除算を避ける
 
-    p = 1048576.0 - adc_P
-    p = (p - (var2 / 4096.0)) * 6250.0 / var1
-    var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / (2^31)
-    var2 = (p * digP[7]) / 32768.0       # (p * digP8) / (2^15)
-    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 is added, then divided by 16
+    p = (1048576.0 - adc_P)
+    p = ((p - (var2 / 4096.0)) * 25.0) * (65536.0 / var1) # Corrected multiplication by 2^16 / var1
+    var1 = (digP[8] * (((p / 8192.0) * (p / 8192.0)) / 8192.0)) / 16.0 # Corrected divisions by 2^3
+    var2 = ((p / 256.0) * digP[7]) / 256.0 # Corrected divisions by 2^8
+    p = p + ((var1 + var2 + digP[6]) / 16.0) # digP7 を加えてから 16 で割る
 
-    return p / 100.0 # Convert Pa to hPa
+    return p / 100.0 # Pa を hPa に変換
 
 def bme280_compensate_h(adc_H):
-    """Calculates compensated humidity in %RH."""
+    """%RH で補正された湿度を計算します。"""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for humidity (floating-point version)
+    # Bosch BME280 データシート、セクション 4.2.3 湿度の補正計算式 (浮動小数点バージョン) に基づく
+    # C 言語の公式サンプルコードに厳密に合わせた実装です。
     
-    var_H = t_fine - 76800.0
+    var_H = (t_fine - 76800.0)
     
     var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
             (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
     
     var_H = var_H * (1.0 + (digH[0] / 67108864.0 * var_H * \
-            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] is H6
+            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] は H6
 
     humidity = var_H
     
-    # Final clamping to 0-100%
+    # 最終的な値を 0%～100% の範囲にクリッピング
     if humidity > 100.0:
         humidity = 100.0
     elif humidity < 0.0:
@@ -150,36 +150,36 @@ def bme280_compensate_h(adc_H):
 
 
 def bme280_read_data():
-    """Reads raw ADC values for pressure, temperature, and humidity, then compensates them."""
+    """気圧、温度、湿度の生の ADC 値を読み取り、それらを補正します。"""
     try:
-        # Read 8 bytes starting from 0xF7 (pressure_msb)
-        # Data order: pres_msb, pres_lsb, pres_xlsb, temp_msb, temp_lsb, temp_xlsb, hum_msb, hum_lsb
+        # 0xF7 (pressure_msb) から始まる 8 バイトを読み取る
+        # データ順序: pres_msb, pres_lsb, pres_xlsb, temp_msb, temp_lsb, temp_xlsb, hum_msb, hum_lsb
         data = i2c_bus.read_i2c_block_data(bme280_address, 0xF7, 8)
         
-        # --- DEBUG OUTPUT ---
+        # --- デバッグ出力 ---
         print(f"DEBUG_BME280_READ: Raw data read: {data}")
         print(f"DEBUG_BME280_READ: Length of raw data: {len(data)}")
-        # --- END DEBUG OUTPUT ---
+        # --- デバッグ出力ここまで ---
 
         if len(data) < 8:
             print(f"ERROR: BME280 read only {len(data)} bytes, expected 8 bytes.")
             raise IndexError("Not enough data read from BME280 for full compensation.")
 
-        # Extract 20-bit ADC values for pressure and temperature
+        # 気圧と温度の 20ビット ADC 値を抽出
         pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
         
-        # Extract 16-bit ADC value for humidity
+        # 湿度の 16ビット ADC 値を抽出
         hum_raw  = (data[6] << 8)  | data[7]
 
-        # Call compensation functions in the correct order (temperature first to set t_fine)
+        # 補正関数を正しい順序で呼び出す (t_fine を設定するため、温度が最初)
         temperature = bme280_compensate_t(temp_raw)
         pressure = bme280_compensate_p(pres_raw)
         humidity = bme280_compensate_h(hum_raw)
 
         return temperature, pressure, humidity
     except Exception as e:
-        # Re-raise the exception so main() can catch it and print the specific error
+        # メイン()関数で捕捉し、特定のエラーを表示できるように例外を再スロー
         raise e
 
 # --- メインプログラム ---
@@ -202,7 +202,7 @@ def main():
         print("BME280の初期化に成功しました。")
         bme280_present = True
         
-        # デバッグ: 補正値を確認するためにコメントアウトを外すことができます
+        # デバッグ: 補正値が正しく読み込まれているか確認するためにコメントアウトを外すことができます
         print(f"DEBUG: digT={digT}")
         print(f"DEBUG: digP={digP}")
         print(f"DEBUG: digH={digH}")
@@ -234,7 +234,7 @@ def main():
             lx, ly, lz = linear_accel 
             linear_accel_magnitude = math.hypot(lx, ly, lz)
 
-            # --- BME280データ取得 (BME280が利用可能な場合) ---
+            # --- BME280データ取得 (利用可能な場合) ---
             temperature = None
             pressure = None
             humidity = None
