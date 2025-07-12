@@ -69,13 +69,18 @@ class FlagNavigator:
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
                         
-                        GPS_StoF = Amaging_GPS(driver, bno, goal_location = [self.flag_lat, self.flag_lon])
-                        GPS_StoF.run()
+                        #GPS_StoF = Amaging_GPS(driver, bno, goal_location = [self.flag_lat, self.flag_lon])
+                        #GPS_StoF.run()
                         
                         detected_data = self.detector.detect()
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
                         search_count += 1
+
+                        """
+                        self.driver.petit_petit(9)
+                        
+                        """
                                 
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
                 if target_flag is None:
