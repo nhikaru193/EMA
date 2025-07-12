@@ -7,9 +7,10 @@ import threading
 import smbus # BME280用
 
 # 外部クラスのインポート
+# 各クラスがそれぞれのファイルに保存されていることを前提
 from motor import MotorDriver
 from BNO055 import BNO055
-import following
+import following # following.pyは関数群なのでインスタンス化は不要
 from Flag_Detector2 import FlagDetector
 from release import RoverReleaseDetector # 放出判定用
 from land import RoverLandingDetector # 着地安定性判定用
@@ -69,10 +70,10 @@ LANDING_STABILITY_GYRO_THRESHOLD_ABS = 0.5
 LANDING_STABILITY_CONSECUTIVE_CHECKS = 3
 LANDING_STABILITY_TIMEOUT_S = 120
 
-PARACHUTE_AVOID_GOAL = [35.9240852, 139.9112008]
+PARACHUTE_AVOID_GOAL = [35.9248066, 139.9112360]
 PARACHUTE_AVOID_DISTANCE_M = 10.0
 
-FLAG_GPS_GOAL_LOCATION = [35.9240852, 139.9112008]
+FLAG_GPS_GOAL_LOCATION = [35.9186248, 139.9112360]
 FLAG_GPS_THRESHOLD_M = 5.0
 FLAG_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 15.0
 FLAG_GPS_TURN_SPEED = 45
@@ -85,7 +86,7 @@ FLAG_AREA_THRESHOLD_PERCENT = 20.0
 SUPPLIES_INSTALL_DUTY_CYCLE = 4.0
 SUPPLIES_RETURN_DUTY_CYCLE = 7.5
 
-GOAL_GPS_LOCATION = [35.9241086, 139.9113731]
+GOAL_GPS_LOCATION = [35.9185000, 139.9110000]
 GOAL_GPS_THRESHOLD_M = 1.0
 GOAL_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 10.0
 GOAL_GPS_TURN_SPEED = 40
@@ -128,8 +129,8 @@ def wait_for_bno055_calibration(bno_sensor):
     while True:
         sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor.getCalibration()
         print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal} ", end='\r')
-        if gyro_cal == 3:
-            print("\n✅ 主制御用BNO055ジャイロセンサーキャリブレーション完了！")
+        if gyro_cal == 3 and accel_cal == 3 and mag_cal == 3: # 全てレベル3を待機
+            print("\n✅ 主制御用BNO055全センサーキャリブレーション完了！")
             break
         time.sleep(0.5)
     print(f"キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
@@ -149,7 +150,7 @@ def cleanup_all_resources():
         gps_im920_comm.stop()
         if gps_comm_thread and gps_comm_thread.is_alive():
             print("GPS通信スレッドの終了を待機中...")
-            gps_comm_thread.join(timeout=10)
+            gps_comm_thread.join(timeout=10) # 10秒待機
             if gps_comm_thread.is_alive():
                 print("警告: GPS通信スレッドがタイムアウト内に終了しませんでした。強制終了します。")
     
@@ -166,9 +167,9 @@ def cleanup_all_resources():
     if motor_driver:
         motor_driver.cleanup()
     if bno_sensor_main:
-        pass
+        pass # BNO055ライブラリには明示的なクローズがないことが多い
     if i2c_bus_main:
-        pass
+        pass # SMBusは明示的なクローズメソッドがないが、PythonのGCが管理する
     if pi_instance and pi_instance.connected:
         pi_instance.stop() # pigpioデーモンとの接続を切断
         print("pigpioデーモンとの接続を切断しました。")
@@ -178,6 +179,7 @@ def cleanup_all_resources():
     # pigpio.pi().stop() の後に呼ぶと RuntimeError が出る場合があります。
     # そのため、pigpioに完全に統一し、RPi.GPIOの設定関数を呼ばなければ、
     # RPi.GPIO.cleanup() は不要になります。
+    # ここでは、RPi.GPIO関連のピン設定はメインコードから排除済みのため、通常不要です。
     # GPIO.cleanup() # 必要であればコメントアウトを外す (ただし衝突注意)
     
     print("✅ 全てのシステムクリーンアップ完了。")
@@ -187,20 +189,21 @@ def cleanup_all_resources():
 # --- メインミッション実行ブロック ---
 if __name__ == "__main__":
     # --- プログラム起動時の防御的GPIOリセット ---
-    # pigpioを主に使うため、RPi.GPIOでのリセットは最小限にするか行わない。
-    # 代わりにpigpioで特定のピンをクリアする方が安全。
-    # ただし、RPi.GPIOが使われた過去がある場合、このブロックが役立つことがある。
+    # RPi.GPIO を主に使うわけではないため、これは最低限の防御策。
+    # pigpioがピンを確実に取得できるよう、RPi.GPIOの過去の占有をクリアする試み。
     try:
-        if not GPIO.getmode(): # GPIOモードが設定されていない場合
-            GPIO.setwarnings(False)
-            GPIO.setmode(GPIO.BCM) # 一時的にBCMモードを設定
-        GPIO.cleanup() # 全てのGPIOピンをクリーンアップ
-        print("✅ プログラム起動時にRPi.GPIOの強制クリーンアップを実行しました。")
+        # RPi.GPIOが何らかのモードで初期化されている場合、cleanupを試みる
+        if GPIO.getmode() is not None: # モードが設定されているかチェック
+            GPIO.setwarnings(False) # 警告を非表示に
+            GPIO.cleanup() # 全てのGPIOピンをクリーンアップ
+            print("✅ プログラム起動時にRPi.GPIOの強制クリーンアップを実行しました。")
+        else:
+            print("⚠️ RPi.GPIOのモードが設定されていません。強制クリーンアップはスキップされました。")
     except RuntimeError as e:
-        if "No channels have been set up yet!" not in str(e):
-            print(f"⚠️ RPi.GPIOの強制クリーンアップ中にRuntimeErrorが発生しました: {e}")
+        print(f"⚠️ RPi.GPIOの強制クリーンアップ中にRuntimeErrorが発生しました: {e}")
     except Exception as e:
         print(f"⚠️ RPi.GPIOの強制クリーンアップ中に予期せぬエラーが発生しました: {e}")
+
     try:
         # pigpioデーモンへの接続 (最初に実行)
         pi_instance = pigpio.pi()
@@ -219,7 +222,6 @@ if __name__ == "__main__":
         print(f"✅ BME280 I2Cバス (バス{BME280_I2C_BUS}) 初期化完了。")
 
         # MotorDriverの初期化
-        # MotorDriverクラスの内部実装がpigpioを使っていることを前提
         motor_driver = MotorDriver(
             PWMA=MOTOR_PINS['PWMA'], AIN1=MOTOR_PINS['AIN1'], AIN2=MOTOR_PINS['AIN2'],
             PWMB=MOTOR_PINS['PWMB'], BIN1=MOTOR_PINS['BIN1'], BIN2=MOTOR_PINS['BIN2'],
@@ -240,8 +242,8 @@ if __name__ == "__main__":
         # --- 各機能クラスのインスタンス化 (すべて共通リソースを渡すように修正済み) ---
         # 1. 放出判定（RoverReleaseDetector）
         ejection_detector = RoverReleaseDetector(
-            bno_sensor=bno_sensor_main,
-            i2c_bus_instance=i2c_bus_main,
+            bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
+            i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
             pressure_change_threshold=EJECTION_PRESSURE_CHANGE_THRESHOLD,
             acc_z_threshold_abs=EJECTION_ACC_Z_THRESHOLD_ABS,
             consecutive_checks=EJECTION_CONSECUTIVE_CHECKS,
@@ -251,8 +253,8 @@ if __name__ == "__main__":
 
         # 2. 着地安定性判定（RoverLandingDetector）
         landing_stability_detector = RoverLandingDetector(
-            bno_sensor=bno_sensor_main,
-            i2c_bus_instance=i2c_bus_main,
+            bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
+            i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
             pressure_change_threshold=LANDING_STABILITY_PRESSURE_CHANGE_THRESHOLD,
             acc_threshold_abs=LANDING_STABILITY_ACC_THRESHOLD_ABS,
             gyro_threshold_abs=LANDING_STABILITY_GYRO_THRESHOLD_ABS,
@@ -303,7 +305,7 @@ if __name__ == "__main__":
         
         # ServoController
         servo_controller_action = ServoController(
-            pi_instance=pi_instance,
+            pi_instance=pi_instance, # pigpioインスタンスを渡す
             servo_pin=SERVO_PIN_ACTION,
             pwm_frequency=SERVO_PWM_FREQUENCY
         )
