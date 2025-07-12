@@ -101,13 +101,12 @@ def bme280_compensate_t(adc_T):
 def bme280_compensate_p(adc_P):
     """hPa で補正された気圧を計算します。"""
     global t_fine
-    # *** 厳密にBME280データシートのC言語サンプルコードに合わせた気圧補正関数 ***
-    # This version attempts to mimic the exact order of operations and variable types
-    # as much as possible for floating-point calculations.
+    # --- Python での浮動小数点精度とデータシートの C 言語実装に厳密に合わせた気圧補正関数 ---
+    # 中間変数の型や計算順序が重要です。
     
     var1 = (t_fine / 2.0) - 64000.0
-    var2 = var1 * var1 * digP[5] / 32768.0
-    var2 = var2 + (var1 * digP[4] * 2.0)
+    var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
+    var2 = var2 + ((var1 * digP[4]) * 2.0)
     var2 = (var2 / 4.0) + (digP[3] * 65536.0) # digP3 * 2^16
     
     var1 = (((digP[2] * var1) / 262144.0) * var1) / 32768.0
@@ -118,30 +117,28 @@ def bme280_compensate_p(adc_P):
         return 0 # Avoid division by zero
 
     p = (1048576.0 - adc_P)
-    p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # This division by var1 is crucial
+    p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # この除算は非常に重要
 
     var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / 2^31
     var2 = (p * digP[7]) / 32768.0       # (digP8 * p) / 2^15
-    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 is added before final division by 16
+    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 を加えてから 16 で割る
 
-    return p / 100.0 # Convert Pa to hPa
+    return p / 100.0 # Pa を hPa に変換 (1 hPa = 100 Pa)
 
 def bme280_compensate_h(adc_H):
     """%RH で補正された湿度を計算します。"""
     global t_fine
-    # *** 厳密にBME280データシートのC言語サンプルコードに合わせた湿度補正関数 ***
-    # This version attempts to mimic the exact order of operations and variable types
-    # as much as possible for floating-point calculations.
+    # --- Python での浮動小数点精度とデータシートの C 言語実装に厳密に合わせた湿度補正関数 ---
     
-    var_H = (t_fine - 76800.0)
+    var_H = t_fine - 76800.0
     
     var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
             (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
     
     var_H = var_H * (1.0 + (digH[0] / 67108864.0 * var_H * \
-            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] is H6
+            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] は H6
 
-    humidity = var_H # The result is directly the humidity value
+    humidity = var_H # 結果が直接湿度値
 
     # 最終的な値を 0%～100% の範囲にクリッピング
     if humidity > 100.0:
