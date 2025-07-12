@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO # GPIO.cleanup()のために残しますが、直接のピン設定はpigpioで行います
+import RPi.GPIO as GPIO # GPIO.cleanup() のために残しますが、ピン設定はpigpioで行います
 import time
 import pigpio
 import board # Adafruit CircuitPython I2C (BNO055用)
@@ -11,12 +11,12 @@ from motor import MotorDriver
 from BNO055 import BNO055
 import following
 from Flag_Detector2 import FlagDetector
-from release import RoverReleaseDetector
-from land import RoverLandingDetector
+from release import RoverReleaseDetector # 放出判定用
+from land import RoverLandingDetector # 着地安定性判定用
 from GPS_datalink import GpsIm920Communicator
 from excellent_gps import RoverGPSNavigator
 from Flagseeker import FlagSeeker
-from supplies_installtion import ServoController # ServoController クラス
+from supplies_installtion import ServoController
 from Goal_Detective_Noshiro import RedConeNavigator
 from picamera2 import Picamera2
 
@@ -31,7 +31,7 @@ import os
 GPS_RX_PIN = 17
 GPS_BAUD_RATE = 9600
 
-# モータードライバピン設定 (MotorDriver内でpigpioを使っているはず)
+# モータードライバピン設定 (MotorDriverクラスの内部実装がpigpioを使用することを想定)
 MOTOR_PINS = {
     'PWMA': 12, 'AIN1': 23, 'AIN2': 18,
     'PWMB': 19, 'BIN1': 16, 'BIN2': 26,
@@ -48,7 +48,7 @@ BME280_ADDRESS = 0x76
 # IM920 無線通信設定
 IM920_PORT = '/dev/serial0'
 IM920_BAUD = 19200
-IM920_WIRELESS_CTRL_PIN = 22 # ワイヤレスグラウンド制御用GPIO
+IM920_WIRELESS_CTRL_PIN = 22 # ワイヤレスグラウンド制御用のGPIO22
 
 # サーボモーター設定
 SERVO_PIN_ACTION = 13
@@ -114,6 +114,7 @@ red_cone_navigator = None
 def wait_for_bno055_calibration(bno_sensor):
     """
     BNO055のキャリブレーションを待機します。
+    ここでは、メインで初期化されたBNOセンサーを対象とします。
     """
     print("⚙️ 主制御用BNO055キャリブレーション待機中...")
     if not bno_sensor.begin():
@@ -165,22 +166,42 @@ def cleanup_all_resources():
     if motor_driver:
         motor_driver.cleanup()
     if bno_sensor_main:
-        pass # BNO055ライブラリには明示的なクローズがないことが多い
+        pass
     if i2c_bus_main:
-        pass # SMBusは明示的なクローズメソッドがないが、PythonのGCが管理する
+        pass
     if pi_instance and pi_instance.connected:
         pi_instance.stop() # pigpioデーモンとの接続を切断
         print("pigpioデーモンとの接続を切断しました。")
     
-    # RPi.GPIOのクリーンアップは、pin_factory=pigpio.PiGPIOFactory()を使用しない限り不要
-    # pigpioのみを使用する場合、GPIO.cleanup()は呼び出しません
-    # GPIO.cleanup()
+    # RPi.GPIO.cleanup() は、pigpioを主に使う場合は基本不要ですが、
+    # 念のため最後に一度だけ呼んでおくことも可能です。ただし、
+    # pigpio.pi().stop() の後に呼ぶと RuntimeError が出る場合があります。
+    # そのため、pigpioに完全に統一し、RPi.GPIOの設定関数を呼ばなければ、
+    # RPi.GPIO.cleanup() は不要になります。
+    # GPIO.cleanup() # 必要であればコメントアウトを外す (ただし衝突注意)
+    
     print("✅ 全てのシステムクリーンアップ完了。")
     print("\n=== ローバーミッションシステムを終了します ===")
 
 
 # --- メインミッション実行ブロック ---
 if __name__ == "__main__":
+    # --- プログラム起動時の防御的GPIOリセット ---
+    # pigpioを主に使うため、RPi.GPIOでのリセットは最小限にするか行わない。
+    # 代わりにpigpioで特定のピンをクリアする方が安全。
+    # ただし、RPi.GPIOが使われた過去がある場合、このブロックが役立つことがある。
+    try:
+        # RPi.GPIOが既に何らかのモードで初期化されている場合、cleanupを試みる
+        # (ただし、pigpio使用中はsetmode/setupが重複するとエラーになるため注意が必要)
+        # RPi.GPIO.setmode(GPIO.BCM) # この行は通常、pigpioと併用するとエラーの原因になりやすい
+        # GPIO.cleanup()
+        # print("Pre-emptive RPi.GPIO.cleanup() attempted.")
+        pass # RPi.GPIOの強制クリーンアップは一旦削除
+    except RuntimeError:
+        pass
+    except Exception as e:
+        print(f"Error during pre-emptive RPi.GPIO cleanup: {e}")
+
     try:
         # pigpioデーモンへの接続 (最初に実行)
         pi_instance = pigpio.pi()
@@ -189,20 +210,12 @@ if __name__ == "__main__":
             sys.exit(1)
         print("✅ pigpioデーモンに接続しました。")
 
-        # RPi.GPIOをpigpioと連携させる場合、ここでpin_factoryを設定
-        # GPIO.setmode(GPIO.BCM) # 必要に応じて設定
-        # GPIO.setwarnings(False) # 警告を非表示にする
-
-        print("🚀 ローバーミッション制御スクリプトを開始しています...")
-
         # --- 共通リソースの初期化 (全てpigpio経由で操作されることを想定) ---
-        
         # BNO055センサーの初期化 (メイン制御用)
         bno_sensor_main = BNO055(address=BNO055_I2C_ADDRESS)
         print("✅ BNO055センサーインスタンス作成 (後続フェーズ用)。")
 
         # BME280 気圧センサー用のI2Cバス初期化
-        # RoverReleaseDetectorとRoverLandingDetectorが直接これを使うように修正
         i2c_bus_main = smbus.SMBus(BME280_I2C_BUS)
         print(f"✅ BME280 I2Cバス (バス{BME280_I2C_BUS}) 初期化完了。")
 
