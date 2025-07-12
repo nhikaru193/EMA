@@ -9,6 +9,7 @@ from BNO055 import BNO055
 from motor import MotorDriver
 from Flag_Detector2 import FlagDetector
 import RPi.GPIO as GPIO
+from C_excellent_GPS import Amaging_GPS
 
 class FlagNavigator:
     # --- クラスの初期化メソッド ---
@@ -20,6 +21,8 @@ class FlagNavigator:
         self.TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] #, "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 25.0
         self.turn_speed = 60
+        self.flag_lat = 35.9240852
+        self.flag_lon = 139.9112008
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
@@ -62,6 +65,13 @@ class FlagNavigator:
                         self.driver.petit_right(self.turn_speed, 0)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
+                        detected_data = self.detector.detect()
+                        target_flag = self.find_target_flag(detected_data, target_name)
+                        time.sleep(0.5)
+                        
+                        GPS_StoF = Amaging_GPS(driver, bno, goal_location = [self.flag_lat, self.flag_lon])
+                        GPS_StoF.run()
+                        
                         detected_data = self.detector.detect()
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
