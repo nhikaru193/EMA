@@ -67,8 +67,5 @@ GPS_FtoG.run()
 GOAL = GDN(bno, 30)
 GOAL.run()
 
-
-
 #実行文
-
 print("クラス呼び出し完了です")
