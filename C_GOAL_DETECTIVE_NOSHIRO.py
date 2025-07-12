@@ -8,10 +8,18 @@ import following
 from BNO055 import BNO055
 
 class GDN:
-    def __init__(self, driver: MotorDriver, bno: BNO055, picam2: Picamera2, counter_max: int=50):
-        self.driver = driver
+    def __init__(self, bno: BNO055, counter_max: int=50):
+        self.driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,
+            PWMB=19, BIN1=16, BIN2=26,
+            STBY=21
+        )
         self.bno = bno
-        self.picam2 = picam2
+        self.picam2 = Picamera2()
+        config = picam2.create_still_configuration(main={"size": (320, 480)})
+        picam2.configure(config)
+        picam2.start()
+        time.sleep(1)
         self.counter_max = counter_max
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
