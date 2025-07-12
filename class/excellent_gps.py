@@ -32,35 +32,24 @@ class RoverGPSNavigator:
     # BNO055 IMU
     BNO055_ADDRESS = 0x28
 
-    def __init__(self, goal_location, goal_threshold_m=5.0,
-                 angle_adjust_threshold_deg=20.0, turn_speed=40, move_speed=70, move_duration_s=8,
-                 kp=0.50, kd=0.15):
+    def __init__(self, driver_instance, bno_instance, pi_instance, rx_pin, gps_baud, # <--- ここに driver_instance を追加！
+                 goal_location, goal_threshold_m=5.0,
+                 angle_adjust_threshold_deg=20.0, turn_speed=40, move_speed=70, move_duration_s=8):
         """
         RoverGPSNavigatorのコンストラクタです。
-
-        Args:
-            goal_location (list): 目標地点の [緯度, 経度] (例: [35.9186248, 139.9081672])。
-            goal_threshold_m (float): 目標地点とみなす距離の閾値 (メートル)。
-            angle_adjust_threshold_deg (float): これ以上の角度誤差があれば回頭する閾値 (度)。
-            turn_speed (int): 回頭時のモーター速度 (0-100)。
-            move_speed (int): 前進時の基本速度 (0-100)。
-            move_duration_s (float): 一回の前進時間 (秒)。
-            kp (float): PD制御の比例ゲイン。
-            kd (float): PD制御の微分ゲイン。
         """
         self.GOAL_LOCATION = goal_location
         self.GOAL_THRESHOLD_M = goal_threshold_m
-        self.ANGLE_ADJUST_THRESHOLD_DEG = angle_adjust_threshold_deg # クラス外から変更できるように名前変更
+        self.ANGLE_ADJUST_THRESHOLD_DEG = angle_adjust_threshold_deg
         self.TURN_SPEED = turn_speed
         self.MOVE_SPEED = move_speed
         self.MOVE_DURATION_S = move_duration_s
 
-        self.Kp = kp
-        self.Kd = kd
-
-        self.driver = None
-        self.pi = None
-        self.bno = None
+        self.driver = driver_instance # <--- 外部から渡されたインスタンスを使用
+        self.bno = bno_instance       # <--- 外部から渡されたインスタンスを使用
+        self.pi = pi_instance         # <--- 外部から渡されたインスタンスを使用
+        self.RX_PIN = rx_pin          # <--- 外部から渡された引数を使用
+        self.GPS_BAUD = gps_baud      # <--- 外部から渡された引数を使用
 
         self._initialize_hardware()
 
@@ -90,8 +79,7 @@ class RoverGPSNavigator:
         err = self.pi.bb_serial_read_open(self.RX_PIN, self.GPS_BAUD, 8)
         if err != 0:
             print(f"🔴 ソフトUART RX の設定に失敗：GPIO={self.RX_PIN}, {self.GPS_BAUD}bps, エラーコード: {err}")
-            self.cleanup() # 失敗時はクリーンアップ
-            exit(1)
+            raise IOError("GPS UART open failed in RoverGPSNavigator")
         print(f"▶ ソフトUART RX を開始：GPIO={self.RX_PIN}, {self.GPS_BAUD}bps")
 
         # BNO055 初期化
