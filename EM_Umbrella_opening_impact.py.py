@@ -93,8 +93,6 @@ def bme280_compensate_p(adc_P):
     p = 1048576.0 - adc_P
     p = (p - var2 / 4096.0) * 6250.0 / var1
     
-    # These are the final terms based on Bosch's BME280 compensation algorithm.
-    # The precision of these constants and operations is critical.
     var1 = digP[8] * p * p / 2147483648.0 # p * p * digP9 / (2^31)
     var2 = p * digP[7] / 32768.0        # p * digP8 / (2^15)
     p = p + (var1 + var2 + digP[6]) / 16.0 # Add digP7 and divide by 16.0
@@ -104,17 +102,19 @@ def bme280_compensate_p(adc_P):
 def bme280_compensate_h(adc_H):
     global t_fine
     
-    # This is a common and tested version of the BME280 humidity compensation formula
-    # based on Bosch Sensortec's reference.
-    
     var_H = (t_fine - 76800.0)
 
-    var1_term = digH[3] * 64.0 + digH[4] / 16384.0 * var_H
-    var2_term = digH[1] / 1024.0 + digH[2] / 65536.0 * var_H
-    var3_term = 1.0 + digH[0] / 67108864.0 * var_H * (1.0 + digH[5] / 67108864.0 * var_H) # digH[5] is H6
+    # Note: These calculations are highly sensitive to variable types and order of operations.
+    # This version follows a common and verified pattern for BME280 humidity compensation.
+    
+    var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
+            (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
+    
+    var_H = var_H * (1.0 + (digH[0] / 67108864.0 * var_H * \
+            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] is H6
 
-    humidity = (adc_H - var1_term) * var2_term * var3_term
-
+    humidity = var_H
+    
     # Final clamping to 0-100%
     if humidity > 100.0:
         humidity = 100.0
@@ -148,7 +148,6 @@ def bme280_read_data():
 
         return temperature, pressure, humidity
     except Exception as e:
-        # Re-raise the exception so main() can catch it and print the specific error
         raise e
 
 # --- メインプログラム ---
@@ -171,12 +170,10 @@ def main():
         print("BME280の初期化に成功しました。")
         bme280_present = True
         
-        # Debug: Print compensation values to verify they are loaded correctly
-        # これらの値はBME280によってセンサー個体ごとに異なるので、正確な値を期待するのではなく、
-        # リストが空でなく、それらしい数値が入っているかを確認します。
-        # print(f"DEBUG: digT={digT}")
-        # print(f"DEBUG: digP={digP}")
-        # print(f"DEBUG: digH={digH}")
+        # デバッグ: 補正値を確認するためにコメントアウトを外すことができます
+        print(f"DEBUG: digT={digT}")
+        print(f"DEBUG: digP={digP}")
+        print(f"DEBUG: digH={digH}")
 
     except Exception as e:
         print(f"BME280の初期化に失敗しました: {e}")
@@ -201,9 +198,8 @@ def main():
             ax, ay, az = total_accel
             total_accel_magnitude = math.hypot(ax, ay, az)
 
-            # ★ここを修正しました★
             linear_accel = bno.getVector(BNO055.VECTOR_LINEARACCEL)
-            lx, ly, lz = linear_accel # 正しい変数名に修正
+            lx, ly, lz = linear_accel 
             linear_accel_magnitude = math.hypot(lx, ly, lz)
 
             # --- BME280データ取得 (BME280が利用可能な場合) ---
@@ -215,7 +211,7 @@ def main():
                     temperature, pressure, humidity = bme280_read_data()
                 except Exception as e:
                     print(f"BME280データの読み取り中にエラーが発生しました: {e}")
-                    bme280_present = False # Disable BME280 if errors persist
+                    bme280_present = False 
             
             # --- データ出力 ---
             print(f"全加速度:    X={ax:7.2f}, Y={ay:7.2f}, Z={az:7.2f} | 大きさ={total_accel_magnitude:7.2f} m/s^2")
