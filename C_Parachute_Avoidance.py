@@ -13,7 +13,7 @@ from BNO055 import BNO055
 import following
 
 class Parakai:
-    def __init__(self, goal_location :list):
+    def __init__(self, driver: MotorDriver, bno: BNO055, picam2: Picamera2, goal_location :list):
         # GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -37,10 +37,7 @@ class Parakai:
         time.sleep(1)
 
         # Picamera2
-        self.picam2 = Picamera2()
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"size":(640,480)}))
-        self.picam2.start()
-        time.sleep(2)
+        self.picam2 = picam2
 
         # Destination
         self.destination = goal_location
