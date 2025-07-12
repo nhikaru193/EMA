@@ -102,7 +102,7 @@ class FlagNavigator:
                         search_count += 1
                         
                         rotation_count = 0
-                        while rotation_count < 25:
+                        while target_flag is None and rotation_count < 25:
                             self.left_20_degree_rotation()
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
