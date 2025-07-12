@@ -2,38 +2,32 @@ import smbus
 import time
 from BNO055 import BNO055 # BNO055をインポート
 
-class RoverReleaseDetector:
+class RoverReleaseDetector: # release.py のクラス名に合わせてください
     """
     BME280気圧センサーとBNO055慣性測定ユニットを使用して、
     ローバーの放出を検出するためのクラスです。
-
-    放出条件は、初期気圧からの変化量とZ軸線形加速度の絶対値に基づいて判定されます。
-    タイムアウト機能と連続チェック機能を含みます。
     """
-
-    # BME280のI2Cアドレスとバス設定
     BME280_ADDRESS = 0x76
-    I2C_BUS = 1
+    # I2C_BUS = 1 # この行は残しても消してもOKですが、使用されません
 
-    def __init__(self, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0,
+    def __init__(self, bno_sensor, i2c_bus_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, # <--- ここが変わる！
                  consecutive_checks=3, timeout=60):
         """
         RoverReleaseDetectorのコンストラクタです。
 
         Args:
-            pressure_change_threshold (float): 放出判定のための気圧の変化量閾値 (hPa)。
-                                               最初に測定した気圧からこの値以上変化したら条件成立とみなします。
-            acc_z_threshold_abs (float): 放出判定のためのZ軸線形加速度の絶対値閾値 (m/s²)。
-            consecutive_checks (int): 放出判定が連続して成立する必要のある回数。
-            timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
+            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。 <--- 新しい引数
+            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。 <--- 新しい引数
+            pressure_change_threshold (float): ...
+            # ... その他の引数 ...
         """
         self.pressure_change_threshold = pressure_change_threshold
         self.acc_z_threshold_abs = acc_z_threshold_abs
         self.consecutive_checks = consecutive_checks
         self.timeout = timeout
 
-        self.i2c = smbus.SMBus(self.I2C_BUS)
-        self.bno = BNO055()
+        self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
+        self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
 
         # BME280関連の補正データ (クラス内部でのみ使用)
         self._digT = []
@@ -46,6 +40,8 @@ class RoverReleaseDetector:
         self.landing_count = 0
         self.start_time = None
         self.last_check_time = None
+
+    # ... 後続のメソッド (_init_bme280, _read_compensate_bme280 など) は変更なし ...
 
     def _init_bme280(self):
         """BME280センサーを初期化します。"""
