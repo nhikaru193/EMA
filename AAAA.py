@@ -10,14 +10,18 @@ import BME280
 from BNO055 import BNO055
 from C_release import Release
 from C_Landing_Detective import Landing
-
+from C_Parachute_Avoidance import Parakai
 from C_Flag_Navi import FlagNavigator
 from C_excellent_GPS import Amaging_GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import fusing
 import struct
 import RPi.GPIO as GPIO
-
+import math
+import numpy
+from Flag_Detector2 import FlagDetector
+import pigpio
+import busio
 
 #モータの初期化
 driver = MotorDriver(
@@ -44,17 +48,20 @@ time.sleep(1)
 #関数のインスタンス作成
 RELEASE = Release(bno)
 LAND = Landing(driver, bno)
+AVOIDANCE = Parakai(goal_location = [x, y])
+GPS_StoF = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 FLAG = FLAGNAVIGATOR()
-#GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
+GPS_FtoG = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 GOAL = GDN(driver, bno, picam2, 30)
 
 
 #実行文
-LAND.run()
-"""
 RELEASE.run()
+LAND.run()
+AVOIDANCE.run()
+GPS_StoF.run()
 FLAG.run()
-GPS.run()
+GPS_FtoG.run()
 GOAL.run()
 """
 print("クラス呼び出し完了です")
