@@ -25,8 +25,9 @@ class Landing:
         #heading着地判定
         while True:
             current_time = time.time()
+            delta_time = current_time - self.start_time
             before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            print(f"t = {current_time}||heading = {before_heading}")
+            print(f"t = {delta_time}||heading = {before_heading}")
             time.sleep(1)
             after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
@@ -39,7 +40,6 @@ class Landing:
             else:
                 self.h_counter = max_counter
                 print("着地判定失敗。再度判定を行います")
-            delta_time = current_time - self.start_time
             if delta_time > self.timeout:
                 print("方位角:timeoutによる着地判定")
                 break
@@ -54,8 +54,9 @@ class Landing:
         #気圧着地判定
         while True:
             current_time = time.time()
+            delta_time = current_time - self.start_time
             before_pressure = BME280.get_pressure()
-            print(f"t = {current_time}||pressure = {before_pressure}")
+            print(f"t = {delta_time}||pressure = {before_pressure}")
             time.sleep(5)
             after_pressure = BME280.get_pressure()
             delta_pressure = after_pressure - before_pressure
@@ -68,7 +69,6 @@ class Landing:
             else:
                 self.p_counter = max_counter
                 print("着地判定失敗。再度判定を行います")
-            delta_time = current_time - self.start_time
             if delta_time > self.timeout:
                 print("気圧:timeoutによる着地判定")
                 break
