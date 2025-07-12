@@ -16,36 +16,46 @@ bme280_address = 0x76 # BME280のアドレス
 # --- BME280 初期化と補正関数群 ---
 
 def init_bme280():
-    i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01) # humidity oversampling x1
-    i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27) # temp/pres oversampling x1, Normal mode
-    i2c_bus.write_byte_data(bme280_address, 0xF5, 0xA0) # standby time 1000ms, filter off
+    # センサー設定
+    # 0xF2 (ctrl_hum): oversampling x1
+    i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01)
+    # 0xF4 (ctrl_meas): Temp/Pres oversampling x1, Normal mode
+    i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27)
+    # 0xF5 (config): T_standby 1000ms, filter off, SPI 4-wire
+    i2c_bus.write_byte_data(bme280_address, 0xF5, 0xA0)
 
 def read_compensate():
     global digT, digP, digH
     
-    # Read temperature compensation values
+    # 温度補正値の読み取り (0x88-0x8D)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
     digT = [
-        (dat_t[1] << 8) | dat_t[0],
-        (dat_t[3] << 8) | dat_t[2],
-        (dat_t[5] << 8) | dat_t[4]
+        (dat_t[1] << 8) | dat_t[0], # digT1 (unsigned 16-bit)
+        (dat_t[3] << 8) | dat_t[2], # digT2 (signed 16-bit)
+        (dat_t[5] << 8) | dat_t[4]  # digT3 (signed 16-bit)
     ]
-    for i in range(1, 3): # digT2, digT3 are signed
+    for i in range(1, 3): # digT2 and digT3 are signed
         if digT[i] >= 32768:
             digT[i] -= 65536
             
-    # Read pressure compensation values
+    # 気圧補正値の読み取り (0x8E-0x9F)
     dat_p = i2c_bus.read_i2c_block_data(bme280_address, 0x8E, 18)
     digP = [
-        (dat_p[1] << 8) | dat_p[0], (dat_p[3] << 8) | dat_p[2], (dat_p[5] << 8) | dat_p[4],
-        (dat_p[7] << 8) | dat_p[6], (dat_p[9] << 8) | dat_p[8], (dat_p[11] << 8) | dat_p[10],
-        (dat_p[13] << 8) | dat_p[12], (dat_p[15] << 8) | dat_p[14], (dat_p[17] << 8) | dat_p[16]
+        (dat_p[1] << 8) | dat_p[0],   # digP1 (unsigned 16-bit)
+        (dat_p[3] << 8) | dat_p[2],   # digP2 (signed 16-bit)
+        (dat_p[5] << 8) | dat_p[4],   # digP3 (signed 16-bit)
+        (dat_p[7] << 8) | dat_p[6],   # digP4 (signed 16-bit)
+        (dat_p[9] << 8) | dat_p[8],   # digP5 (signed 16-bit)
+        (dat_p[11] << 8) | dat_p[10], # digP6 (signed 16-bit)
+        (dat_p[13] << 8) | dat_p[12], # digP7 (signed 16-bit)
+        (dat_p[15] << 8) | dat_p[14], # digP8 (signed 16-bit)
+        (dat_p[17] << 8) | dat_p[16]  # digP9 (signed 16-bit)
     ]
     for i in range(1, 9): # digP2 to digP9 are signed
         if digP[i] >= 32768:
             digP[i] -= 65536
 
-    # Read humidity compensation values
+    # 湿度補正値の読み取り (0xA1 and 0xE1 to 0xE7)
     dh = i2c_bus.read_byte_data(bme280_address, 0xA1) # digH1
     dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 to digH6
 
@@ -70,6 +80,7 @@ def read_compensate():
 
 def bme280_compensate_t(adc_T):
     global t_fine
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
     var2 = ((adc_T / 131072.0 - digT[0] / 8192.0) *
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
@@ -79,33 +90,33 @@ def bme280_compensate_t(adc_T):
 
 def bme280_compensate_p(adc_P):
     global t_fine
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for pressure
     p = 0.0
-    var1 = t_fine / 2.0 - 64000.0
-    var2 = var1 * var1 * digP[5] / 32768.0
-    var2 = var2 + var1 * digP[4] * 2.0
-    var2 = var2 + digP[3] * 131072.0
-    var1 = (digP[2] * var1 * var1 / 524288.0 + digP[1] * var1) / 32768.0
+    var1 = t_fine - 128000.0
+    var2 = var1 * var1 * digP[5]
+    var2 = var2 + (var1 * digP[4] * 131072.0)
+    var2 = var2 + (digP[3] * 3.4359738368e9) # digP3 * (2^32)
+    var1 = (digP[2] * var1 * var1 / 524288.0) + (digP[1] * var1) / 32768.0
     var1 = (1.0 + var1 / 32768.0) * digP[0]
 
     if var1 == 0:
-        return 0
+        return 0 # Avoid division by zero
 
     p = 1048576.0 - adc_P
-    p = (p - var2 / 4096.0) * 6250.0 / var1
-    
-    var1 = digP[8] * p * p / 2147483648.0 # p * p * digP9 / (2^31)
-    var2 = p * digP[7] / 32768.0        # p * digP8 / (2^15)
-    p = p + (var1 + var2 + digP[6]) / 16.0 # Add digP7 and divide by 16.0
+    p = (p - (var2 / 4096.0)) * 6250.0 / var1
+    var1 = (digP[8] * p * p) / 2147483648.0 # digP9 * p^2 / (2^31)
+    var2 = (p * digP[7]) / 32768.0       # digP8 * p / (2^15)
+    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 is added, then divided by 16
 
     return p / 100.0 # Convert Pa to hPa
 
 def bme280_compensate_h(adc_H):
     global t_fine
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for humidity
+    # This formula is often translated slightly differently across examples.
+    # This version is a common and robust one.
     
     var_H = (t_fine - 76800.0)
-
-    # Note: These calculations are highly sensitive to variable types and order of operations.
-    # This version follows a common and verified pattern for BME280 humidity compensation.
     
     var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
             (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
@@ -127,6 +138,7 @@ def bme280_compensate_h(adc_H):
 def bme280_read_data():
     """Reads raw ADC values for pressure, temperature, and humidity, then compensates them."""
     try:
+        # Read 8 bytes starting from 0xF7 (pressure_msb)
         data = i2c_bus.read_i2c_block_data(bme280_address, 0xF7, 8)
         
         # --- DEBUG OUTPUT ---
@@ -138,16 +150,21 @@ def bme280_read_data():
             print(f"ERROR: BME280 read only {len(data)} bytes, expected 8 bytes.")
             raise IndexError("Not enough data read from BME280 for full compensation.")
 
+        # Extract 20-bit ADC values for pressure and temperature
         pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
+        
+        # Extract 16-bit ADC value for humidity
         hum_raw  = (data[6] << 8)  | data[7]
 
+        # Call compensation functions in the correct order (temperature first to set t_fine)
         temperature = bme280_compensate_t(temp_raw)
         pressure = bme280_compensate_p(pres_raw)
         humidity = bme280_compensate_h(hum_raw)
 
         return temperature, pressure, humidity
     except Exception as e:
+        # Re-raise the exception so main() can catch it and print the specific error
         raise e
 
 # --- メインプログラム ---
