@@ -1,62 +1,55 @@
 import RPi.GPIO as GPIO
 import time
+# pigpioは直接は使いませんが、pi_instanceを受け取るためインポートの必要はありません
+# import pigpio # <- この行は必要ないかもしれません
 
 class ServoController:
     """
     RPi.GPIOとPWMを使用してサーボモーターを制御するクラス。
-    主に特定のデューティサイクルを設定したり、
-    デューティサイクルを徐々に変化させたりする機能を提供します。
     """
 
-    def __init__(self, pi_instance, servo_pin=13, pwm_frequency=50): # pigpioインスタンスを受け取る
-    self.pi = pi_instance
-    self.servo_pin = servo_pin
-    self.pwm_frequency = pwm_frequency
+    def __init__(self, pi_instance, servo_pin=13, pwm_frequency=50): # <- ここに引数 pi_instance がある
+        # ここから下の行は、すべて init メソッドの定義の一部として
+        # 正しくインデントされている必要があります (通常は4スペース)
+        self.pi = pi_instance # <- この行が 12行目だと仮定します
 
-    self.pi.set_mode(self.servo_pin, pigpio.OUTPUT) # pigpioでOUTPUTに設定
-    # pigpioのソフトウェアPWMでサーボを制御
-    self.pi.set_PWM_frequency(self.servo_pin, self.pwm_frequency)
-    self.pi.set_PWM_range(self.servo_pin, 25000) # 0-25000の範囲 (pigpioのデューティサイクル範囲)
-    self.pi.set_PWM_dutycycle(self.servo_pin, 0) # 初期デューティサイクル (0-25000)
+        self.servo_pin = servo_pin
+        self.pwm_frequency = pwm_frequency
+
+        # RPi.GPIOのPWMを初期化
+        # メインスクリプトでGPIO.setmode(GPIO.BCM) が呼ばれている前提
+        # GPIO.setup(self.servo_pin, GPIO.OUT) # RPi.GPIOのsetupは不要 (PWMが内部で行うかpigpioで管理)
+
+        self.pwm = GPIO.PWM(self.servo_pin, self.pwm_frequency)
+        self.pwm.start(0) # 初期デューティサイクルを0に設定してPWMを開始
+        print(f"GPIO{self.servo_pin} でサーボを初期化しました (周波数: {self.pwm_frequency}Hz)。")
+
     def set_duty_cycle(self, duty_cycle):
-    # RPi.GPIOの0-100%デューティサイクルをpigpioの0-25000に変換
-    pigpio_duty = int(duty_cycle / 100.0 * 25000)
-    self.pi.set_PWM_dutycycle(self.servo_pin, pigpio_duty)
-    time.sleep(0.5)
+        if not (0.0 <= duty_cycle <= 100.0):
+            print(f"警告: 不正なデューティサイクル値 ({duty_cycle}) です。0.0から100.0の範囲で指定してください。")
+            return
+        self.pwm.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.5)
+        print(f"デューティサイクルを {duty_cycle:.1f}% に設定しました。")
 
-    def gradually_change_duty_cycle(self, start_duty, end_duty, steps=100, delay_per_step=0.1):
-        """
-        サーボのデューティサイクルを`start_duty`から`end_duty`まで徐々に変化させます。
-        これにより、滑らかな動きを実現できます。
-
-        Args:
-            start_duty (float): 変化開始時のデューティサイクル。
-            end_duty (float): 変化終了時のデューティサイクル。
-            steps (int): 変化を分割するステップ数。
-            delay_per_step (float): 各ステップ間の遅延時間 (秒)。
-        """
+    def gradually_change_duty_cycle(self, start_duty, end_duty, steps=50, delay_per_step=0.05):
         print(f"デューティサイクルを {start_duty:.1f}% から {end_duty:.1f}% へ徐々に変化させます。")
-        for i in range(steps + 1): # start_dutyとend_dutyを含むようにsteps+1回ループ
+        for i in range(steps + 1):
             current_duty = start_duty + (end_duty - start_duty) * i / steps
             self.pwm.ChangeDutyCycle(current_duty)
             time.sleep(delay_per_step)
         print(f"デューティサイクル変化完了。最終値: {end_duty:.1f}%")
 
     def stop_pwm(self):
-    self.pi.set_PWM_dutycycle(self.servo_pin, 0) # デューティサイクルを0に
-    self.pi.set_mode(self.servo_pin, pigpio.INPUT) # ピンを入力に戻す
         if self.pwm:
             self.pwm.stop()
             print("PWM信号を停止しました。")
 
     def cleanup(self):
-        """
-        GPIOピンをクリーンアップし、全てのサーボ制御を終了します。
-        プログラム終了時に呼び出す必要があります。
-        """
         self.stop_pwm()
-        GPIO.cleanup()
-        print("GPIOをクリーンアップしました。")
+        # GPIO.cleanup()はメインスクリプトで一括して行う
+        # ここでGPIO.cleanup()を呼ぶと、他のモジュールがまだGPIOを使いたい場合に競合する
+        print("ServoController: クリーンアップ完了。")
 
 import RPi.GPIO as GPIO
 import time
