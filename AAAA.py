@@ -41,7 +41,7 @@ time.sleep(1)
 
 #関数のインスタンス作成
 RELEASE = Release(bno)
-LAND = LANDING(driver, bno)
+LAND = Landing(driver, bno)
 #GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 GOAL = GDN(driver, bno, picam2, 30)
 
