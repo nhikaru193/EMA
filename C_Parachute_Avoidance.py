@@ -13,7 +13,7 @@ from BNO055 import BNO055
 import following
 
 class Parakai:
-    def __init__(self, driver: MotorDriver, bno: BNO055, picam2: Picamera2, goal_location :list):
+    def __init__(self, bno: BNO055, picam2: Picamera2, goal_location :list):
         # GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -31,7 +31,7 @@ class Parakai:
         self.pi.bb_serial_read_open(self.RX_PIN, 9600, 8)
 
         # BNO055
-        
+        self.picam2 = picam2
         self.bno = bno
          """
         self.bno = BNO055(address=0x28)
@@ -151,7 +151,7 @@ class Parakai:
         self.pi.bb_serial_read_close(self.RX_PIN)
         self.pi.stop()
         self.picam2.close()
-        GPIO.cleanup()
+        self.driver.cleanup()
 
 if __name__ == '__main__':
     rover = RoverControl()
