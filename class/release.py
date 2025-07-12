@@ -2,7 +2,7 @@ import smbus
 import time
 from BNO055 import BNO055 # BNO055をインポート
 
-class RoverLandingDetector:
+class RoverLReleaseDetector:
     """
     BME280気圧センサーとBNO055慣性測定ユニットを使用して、
     ローバーの放出を検出するためのクラスです。
@@ -18,7 +18,7 @@ class RoverLandingDetector:
     def __init__(self, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0,
                  consecutive_checks=3, timeout=60):
         """
-        RoverLandingDetectorのコンストラクタです。
+        RoverLReleaseDetectorのコンストラクタです。
 
         Args:
             pressure_change_threshold (float): 放出判定のための気圧の変化量閾値 (hPa)。
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     # BNO055.py がこのスクリプトと同じディレクトリにあることを確認してください。
     
     # Detectorインスタンスを作成し、閾値とタイムアウトを設定します。
-    detector = RoverLandingDetector(
+    detector = RoverLReleaseDetector(
         pressure_change_threshold=0.3, # 気圧の変化量閾値 (hPa)。最初に測定した気圧から0.3hPa以上の変化があったら条件成立
         acc_z_threshold_abs=4.0,       # Z軸線形加速度の絶対値閾値 (m/s²)。
         consecutive_checks=3,          # 3回連続で条件が満たされたら放出とみなす
