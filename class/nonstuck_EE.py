@@ -6,8 +6,7 @@ import busio # Adafruit CircuitPython I2C (BNO055用)
 import threading
 import smbus # BME280用
 
-# 外部クラスのインポート
-# 各クラスがそれぞれのファイルに保存されていることを前提
+# 外部クラスのインポート (各クラスがそれぞれのファイルに存在することを前提)
 from motor import MotorDriver
 from BNO055 import BNO055
 import following
@@ -17,7 +16,7 @@ from land import RoverLandingDetector # 着地安定性判定用
 from GPS_datalink import GpsIm920Communicator
 from excellent_gps import RoverGPSNavigator
 from Flagseeker import FlagSeeker
-from supplies_installtion import ServoController
+from supplies_installtion import ServoController # ServoController クラス
 from Goal_Detective_Noshiro import RedConeNavigator
 from picamera2 import Picamera2
 
@@ -191,7 +190,7 @@ def cleanup_all_resources():
 # --- メインミッション実行ブロック ---
 if __name__ == "__main__":
     # ここから try ブロックの開始
-    try:  # この try は if __name__ == "__main__": の直下で一段インデントされているべき
+    try: # この try は if __name__ == "__main__": の直下で一段インデントされているべき
         print("🚀 ローバーミッション制御スクリプトを開始しています...")
 
         # --- 共通リソースの初期化 ---
@@ -204,6 +203,7 @@ if __name__ == "__main__":
 
         # BNO055センサーの初期化 (後続フェーズ用)
         bno_sensor_main = BNO055(address=BNO055_I2C_ADDRESS)
+        # BNOセンサーのbegin()はwait_for_bno055_calibration()で呼ばれる
         print("✅ BNO055センサーインスタンス作成 (後続フェーズ用)。")
 
         # BME280 気圧センサー用のI2Cバス初期化
