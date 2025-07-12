@@ -31,6 +31,10 @@ class Landing:
             current_time = time.time()
             delta_time = current_time - self.start_time
             before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+            if before_heading is None:
+                print("BNO055の値が取得できませんでした")
+                time.sleep(1)
+                continue
             print(f"t = {delta_time}||heading = {before_heading}")
             time.sleep(1)
             after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
