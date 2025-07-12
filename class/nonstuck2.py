@@ -191,17 +191,16 @@ if __name__ == "__main__":
     # 代わりにpigpioで特定のピンをクリアする方が安全。
     # ただし、RPi.GPIOが使われた過去がある場合、このブロックが役立つことがある。
     try:
-        # RPi.GPIOが既に何らかのモードで初期化されている場合、cleanupを試みる
-        # (ただし、pigpio使用中はsetmode/setupが重複するとエラーになるため注意が必要)
-        # RPi.GPIO.setmode(GPIO.BCM) # この行は通常、pigpioと併用するとエラーの原因になりやすい
-        # GPIO.cleanup()
-        # print("Pre-emptive RPi.GPIO.cleanup() attempted.")
-        pass # RPi.GPIOの強制クリーンアップは一旦削除
-    except RuntimeError:
-        pass
+        if not GPIO.getmode(): # GPIOモードが設定されていない場合
+            GPIO.setwarnings(False)
+            GPIO.setmode(GPIO.BCM) # 一時的にBCMモードを設定
+        GPIO.cleanup() # 全てのGPIOピンをクリーンアップ
+        print("✅ プログラム起動時にRPi.GPIOの強制クリーンアップを実行しました。")
+    except RuntimeError as e:
+        if "No channels have been set up yet!" not in str(e):
+            print(f"⚠️ RPi.GPIOの強制クリーンアップ中にRuntimeErrorが発生しました: {e}")
     except Exception as e:
-        print(f"Error during pre-emptive RPi.GPIO cleanup: {e}")
-
+        print(f"⚠️ RPi.GPIOの強制クリーンアップ中に予期せぬエラーが発生しました: {e}")
     try:
         # pigpioデーモンへの接続 (最初に実行)
         pi_instance = pigpio.pi()
