@@ -8,19 +8,23 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
     ローバーの着地を検出するためのクラスです。
     """
     BME280_ADDRESS = 0x76
-    # I2C_BUS = 1 # この行は残しても消してもOKですが、使用されません
+    I2C_BUS = 1 # BME280のアドレス
 
-    def __init__(self, bno_sensor, i2c_bus_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, # <--- ここが変わる！
+    def __init__(self, bno_sensor, i2c_bus_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5,
                  gyro_threshold_abs=0.5, consecutive_checks=3, timeout=60,
                  calibrate_bno055=True):
         """
         RoverLandingDetectorのコンストラクタです。
 
         Args:
-            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。 <--- 新しい引数
-            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。 <--- 新しい引数
-            pressure_change_threshold (float): ...
-            # ... その他の引数 ...
+            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。
+            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。
+            pressure_change_threshold (float): 着地判定のための気圧の変化量閾値 (hPa)。
+            acc_threshold_abs (float): 着地判定のための線形加速度の絶対値閾値 (m/s²)。
+            gyro_threshold_abs (float): 着地判定のための角速度の絶対値閾値 (°/s)。
+            consecutive_checks (int): 着地判定が連続して成立する必要のある回数。
+            timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
+            calibrate_bno055 (bool): Trueの場合、BNO055の完全キャリブレーションを待機します。
         """
         self.pressure_change_threshold = pressure_change_threshold
         self.acc_threshold_abs = acc_threshold_abs
@@ -28,11 +32,10 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
         self.consecutive_checks = consecutive_checks
         self.timeout = timeout
         self.calibrate_bno055 = calibrate_bno055
+        
+        # 外部から渡されたインスタンスをここで一度だけ代入する
         self.bno = bno_sensor
         self.i2c = i2c_bus_instance
-
-        self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
-        self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
 
         # BME280関連の補正データ (クラス内部でのみ使用)
         self._digT = []
@@ -46,10 +49,9 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
         self.start_time = None
         self.last_check_time = None
 
-    # ... 後続のメソッド (_init_bme280, _read_compensate_bme280 など) は変更なし ...
-
     def _init_bme280(self):
         """BME280センサーを初期化します。"""
+        # I2Cバスは__init__で受け取ったものを使うので、ここでsmbus.SMBus()は呼ばない
         self.i2c.write_byte_data(self.BME280_ADDRESS, 0xF2, 0x01)
         self.i2c.write_byte_data(self.BME280_ADDRESS, 0xF4, 0x27)
         self.i2c.write_byte_data(self.BME280_ADDRESS, 0xF5, 0xA0)
@@ -122,7 +124,6 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
         """
         着地条件を監視し、着地判定を行います。
         タイムアウトした場合、条件成立回数に関わらず着地成功とみなします。
-        BNO055のキャリブレーションは行わないオプションもありますが、精度が低下する可能性があります。
 
         Returns:
             bool: 着地が成功した場合はTrue、それ以外はFalseを返します。
@@ -131,30 +132,16 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
         self._init_bme280()
         self._read_compensate_bme280()
 
-        if not self.bno.begin():
-            print("🔴 BNO055 の初期化に失敗しました。プログラムを終了します。")
-            return False
+        # BNO055のbegin()や設定はメインスクリプトで行われることを前提とする
+        # ここでは再初期化や再設定は行わない
+        # if not self.bno.begin(): ... は削除またはコメントアウト
+        # self.bno.setExternalCrystalUse(True) ... は削除またはコメントアウト
+        # self.bno.setMode(BNO055.OPERATION_MODE_NDOF) ... は削除またはコメントアウト
 
-        self.bno.setExternalCrystalUse(True)
-        self.bno.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードを明示的に設定
+        # BNO055 キャリブレーション待機は、メインスクリプトで一元管理されるため、ここでは実施しない
+        # if self.calibrate_bno055: ... は削除またはコメントアウト
+        print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。センサーデータの精度が低下する可能性があります。")
 
-        # --- BNO055 キャリブレーション待機 ---
-        if self.calibrate_bno055:
-            print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-            print("    (ジャイロ、加速度、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
-            calibration_start_time = time.time()
-            while True:
-                sys, gyro, accel, mag = self.bno.getCalibration()
-                print(f"    現在のキャリブレーション状態 → システム:{sys}, ジャイロ:{gyro}, 加速度:{accel}, 地磁気:{mag} ", end='\r')
-                
-                # ジャイロ、加速度、地磁気が全てレベル3になるまで待つ
-                if gyro == 3 and accel == 3 and mag == 3:
-                    print("\n✅ BNO055 キャリブレーション完了！")
-                    break
-                time.sleep(0.5) # 0.5秒ごとに状態を確認
-            print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
-        else:
-            print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。センサーデータの精度が低下する可能性があります。")
 
         print("🛬 着地判定を開始します...")
         print(f"  気圧変化量閾値: < {self.pressure_change_threshold:.2f} hPa")
