@@ -14,19 +14,21 @@ def main():
         return
 
     print("BNO055の初期化に成功しました。")
-    # BNO055をNDOFモードに設定 (加速度計、ジャイロスコープ、磁力計のデータフュージョン)
+    # 加速度計を含む最適なフュージョンモードであるNDOFモードに設定
     bno.setMode(BNO055.OPERATION_MODE_NDOF)
-    time.sleep(1) # モード設定が反映されるのを待つ
+    time.sleep(1)
 
     # BME280センサーの初期化 (Adafruit ライブラリを使用)
     bme280_present = False
     try:
-        i2c = board.I2C()  # デフォルトのI2Cバスを初期化
-        # BME280のアドレスが0x76であることを仮定。もし0x77なら 'address=0x77' を追加
-        bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c) 
+        i2c = board.I2C()  # デフォルトのI2Cバスを使用
+
+        # ★★★ ここを修正しました ★★★
+        # 最新のAdafruitライブラリでの正しいクラス名を使用
+        bme280 = adafruit_bme280.BME280_I2C(i2c)
         
-        # オプション: 高度な設定（必要に応じてコメントを外して調整）
-        # bme280.sea_level_pressure = 1013.25 # 海面気圧を設定 (高度計算に影響)
+        # オプション: 海面気圧を設定（高度計算に影響）
+        # bme280.sea_level_pressure = 1013.25 
 
         print("BME280の初期化に成功しました。")
         bme280_present = True
