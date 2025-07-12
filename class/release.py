@@ -25,6 +25,8 @@ class RoverReleaseDetector: # release.py のクラス名に合わせてくださ
         self.acc_z_threshold_abs = acc_z_threshold_abs
         self.consecutive_checks = consecutive_checks
         self.timeout = timeout
+        self.bno = bno_sensor
+        self.i2c = i2c_bus_instance
 
         self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
         self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
