@@ -12,12 +12,11 @@ from motor import MotorDriver
 from BNO055 import BNO055
 import following
 
-class RoverControl:
-    def __init__(self):
+class Parakai:
+    def __init__(self, goal_location :list):
         # GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-
         # Motor
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,
@@ -44,7 +43,7 @@ class RoverControl:
         time.sleep(2)
 
         # Destination
-        self.destination = (35.9248066, 139.9112360)
+        self.destination = goal_location
 
     def run(self):
         try:
