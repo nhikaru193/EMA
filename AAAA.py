@@ -46,12 +46,20 @@ picam2.start()
 time.sleep(1)
 
 #関数のインスタンス作成
-RELEASE = Release(bno)
-LAND = Landing(driver, bno)
-AVOIDANCE = Parakai(goal_location = [x, y])
-GPS_StoF = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
-FLAG = FLAGNAVIGATOR()
-GPS_FtoG = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
+RELEASE = Release(bno) #ok
+LAND = Landing(driver, bno) 
+AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [x, y]) #ok
+GPS_StoF = Amaging_GPS(driver, bno, goal_location = [x ,y])
+FLAG = FLAGNAVIGATOR(driver, bno)
+GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [x ,y])
+
+# カメラ初期化と設定
+picam2 = Picamera2()
+config = picam2.create_still_configuration(main={"size": (320, 240)})
+picam2.configure(config)
+picam2.start()
+time.sleep(1)
+
 GOAL = GDN(driver, bno, picam2, 30)
 
 
