@@ -41,10 +41,10 @@ class FlagNavigator:
         return None
 
     def left_90_degree_rotation(self):
-        before_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
         target_heading = (before_heading - 90) % 360
         while True:
-            current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
             if abs delta_heading <= 5:
                 break
