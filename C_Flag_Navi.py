@@ -49,7 +49,7 @@ class FlagNavigator:
                     return flag
         return None
 
-    def run_mission(self):
+    def run(self):
         """
         全てのターゲットフラッグを探索し、接近するメインのタスクを実行
         """
