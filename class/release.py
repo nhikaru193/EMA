@@ -8,28 +8,30 @@ class RoverReleaseDetector: # release.py のクラス名に合わせてくださ
     ローバーの放出を検出するためのクラスです。
     """
     BME280_ADDRESS = 0x76
-    # I2C_BUS = 1 # この行は残しても消してもOKですが、使用されません
+    # I2C_BUS = 1 # この行は残しても消してもOKですが、このクラス内では使用されません
 
-    def __init__(self, bno_sensor, i2c_bus_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, # <--- ここが変わる！
+    def __init__(self, bno_sensor, i2c_bus_instance, # <--- ここに引数を追加！
+                 pressure_change_threshold=0.3, acc_z_threshold_abs=4.0,
                  consecutive_checks=3, timeout=60):
         """
         RoverReleaseDetectorのコンストラクタです。
 
         Args:
-            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。 <--- 新しい引数
-            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。 <--- 新しい引数
-            pressure_change_threshold (float): ...
-            # ... その他の引数 ...
+            bno_sensor (BNO055): 既に初期化されたBNO055センサーのインスタンス。
+            i2c_bus_instance (smbus.SMBus): 既に初期化されたSMBusのインスタンス。
+            pressure_change_threshold (float): 放出判定のための気圧の変化量閾値 (hPa)。
+            acc_z_threshold_abs (float): 放出判定のためのZ軸線形加速度の絶対値閾値 (m/s²)。
+            consecutive_checks (int): 放出判定が連続して成立する必要のある回数。
+            timeout (int): 判定を打ち切るタイムアウト時間 (秒)。
         """
         self.pressure_change_threshold = pressure_change_threshold
         self.acc_z_threshold_abs = acc_z_threshold_abs
         self.consecutive_checks = consecutive_checks
         self.timeout = timeout
+        
+        # 外部から渡されたインスタンスを使用
         self.bno = bno_sensor
         self.i2c = i2c_bus_instance
-
-        self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
-        self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
 
         # BME280関連の補正データ (クラス内部でのみ使用)
         self._digT = []
@@ -42,8 +44,6 @@ class RoverReleaseDetector: # release.py のクラス名に合わせてくださ
         self.landing_count = 0
         self.start_time = None
         self.last_check_time = None
-
-    # ... 後続のメソッド (_init_bme280, _read_compensate_bme280 など) は変更なし ...
 
     def _init_bme280(self):
         """BME280センサーを初期化します。"""
@@ -128,12 +128,12 @@ class RoverReleaseDetector: # release.py のクラス名に合わせてくださ
         self._init_bme280()
         self._read_compensate_bme280()
 
-        if not self.bno.begin():
-            print("🔴 BNO055 の初期化に失敗しました。プログラムを終了します。")
-            return False
+        # BNO055のbegin()はメインで呼ばれていることを前提とし、ここでは呼ばない
+        # self.bno.begin() # <--- この行は削除またはコメントアウト！
 
-        self.bno.setExternalCrystalUse(True)
-        self.bno.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードを明示的に設定
+        # BNO055の設定もメインで行われていることを前提とする
+        # self.bno.setExternalCrystalUse(True) # <--- この行は削除またはコメントアウト！
+        # self.bno.setMode(BNO055.OPERATION_MODE_NDOF) # <--- この行は削除またはコメントアウト！
 
         print("\n⚠️ BNO055 のキャリブレーションはスキップされました。線形加速度の精度が低下する可能性があります。")
 
@@ -207,34 +207,12 @@ class RoverReleaseDetector: # release.py のクラス名に合わせてくださ
                     return True # 放出判定成功で関数を終了
 
         except KeyboardInterrupt:
-            # プログラムが中断された際の最終行表示
-            print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{self.initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
             print("\n\nプログラムがユーザーによって中断されました。")
             return False
         except Exception as e:
-            # エラー発生時の最終行表示
-            print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{self.initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
             print(f"\n\n🚨 エラーが発生しました: {e}")
             return False
         finally:
             print("\n--- 判定処理を終了します ---")
 
-
-# --- 実行例 ---
-if __name__ == '__main__':
-    # BNO055.py がこのスクリプトと同じディレクトリにあることを確認してください。
-    
-    # Detectorインスタンスを作成し、閾値とタイムアウトを設定します。
-    detector = RoverReleaseDetector(
-        pressure_change_threshold=0.3, # 気圧の変化量閾値 (hPa)。最初に測定した気圧から0.3hPa以上の変化があったら条件成立
-        acc_z_threshold_abs=4.0,       # Z軸線形加速度の絶対値閾値 (m/s²)。
-        consecutive_checks=3,          # 3回連続で条件が満たされたら放出とみなす
-        timeout=60                     # 60秒以内に判定が行われなければタイムアウトで強制成功
-    )
-
-    is_landed = detector.check_landing()
-
-    if is_landed:
-        print("\n=== ローバーの放出を確認しました！ ===")
-    else:
-        print("\n=== ローバーの放出は確認できませんでした。 ===")
+# if __name__ == '__main__': ブロックは削除済み (メインスクリプトで管理するため)
