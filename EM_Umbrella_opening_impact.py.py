@@ -106,8 +106,6 @@ def bme280_compensate_h(adc_H):
     
     # This is a common and tested version of the BME280 humidity compensation formula
     # based on Bosch Sensortec's reference.
-    # Note: 'var_H' in some examples is just an intermediate variable.
-    # The coefficients are digH[0] to digH[5] (corresponding to H1 to H6).
     
     var_H = (t_fine - 76800.0)
 
@@ -174,6 +172,8 @@ def main():
         bme280_present = True
         
         # Debug: Print compensation values to verify they are loaded correctly
+        # これらの値はBME280によってセンサー個体ごとに異なるので、正確な値を期待するのではなく、
+        # リストが空でなく、それらしい数値が入っているかを確認します。
         # print(f"DEBUG: digT={digT}")
         # print(f"DEBUG: digP={digP}")
         # print(f"DEBUG: digH={digH}")
@@ -201,8 +201,9 @@ def main():
             ax, ay, az = total_accel
             total_accel_magnitude = math.hypot(ax, ay, az)
 
+            # ★ここを修正しました★
             linear_accel = bno.getVector(BNO055.VECTOR_LINEARACCEL)
-            lx, ly, lz = linear_acc/Users/kuri/Downloads/kuri/Desktop/BME280_BNO055/main.pyel
+            lx, ly, lz = linear_accel # 正しい変数名に修正
             linear_accel_magnitude = math.hypot(lx, ly, lz)
 
             # --- BME280データ取得 (BME280が利用可能な場合) ---
