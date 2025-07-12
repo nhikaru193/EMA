@@ -52,7 +52,7 @@ RELEASE.run()
 LAND = Landing(driver, bno) 
 LAND.run()
 
-AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE = Parakai(bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
 AVOIDANCE.run()
 
 GPS_StoF = Amaging_GPS(driver, bno, goal_location = [35.9240852, 139.9112008])
