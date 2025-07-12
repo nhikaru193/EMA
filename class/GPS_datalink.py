@@ -1,6 +1,7 @@
 import serial
 import time
 import pigpio
+import math # mathモジュールが必要なのでインポート追加
 
 class GpsIm920Communicator:
     """
@@ -31,7 +32,21 @@ class GpsIm920Communicator:
         self._running = False # スレッドの実行状態を制御するフラグ
         self._activated = False # ハードウェアがアクティブ化されたかを示すフラグ
 
-        # __init__からはsetupメソッドの呼び出しを削除
+    def _convert_to_decimal(self, coord, direction):
+        """
+        度分（ddmm.mmmm）形式を10進数に変換します。
+        """
+        if not coord: return 0.0 # 空文字列の場合の対応を追加
+        if direction in ['N', 'S']:
+            degrees = int(coord[:2])
+            minutes = float(coord[2:])
+        else:
+            degrees = int(coord[:3])
+            minutes = float(coord[3:])
+        decimal = degrees + minutes / 60
+        if direction in ['S', 'W']:
+            decimal *= -1
+        return decimal
 
     def _setup_gpio_and_uart(self):
         """GPIOピンとソフトウェアUARTを設定します。"""
@@ -177,7 +192,7 @@ class GpsIm920Communicator:
         まずループを停止し、その後内部リソースをクリーンアップします。
         """
         self.stop() # まず通信ループを停止
-        # スレッドが終了するのを待つ (RoverMissionController側でjoinするため、ここではフラグ設定のみ)
+        # スレッドが終了するのを待つ (メインスクリプト側でjoinするため、ここではフラグ設定のみ)
         self.turn_wireless_ground_off() # 明示的にOFFにする
         self._cleanup_internal_resources()
 
