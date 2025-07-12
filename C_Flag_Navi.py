@@ -46,7 +46,7 @@ class FlagNavigator:
         while True:
             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
-            if abs delta_heading <= 5:
+            if abs(delta_heading) <= 5:
                 break
             elif delta_heading < -5:
                 self.driver.petit_left(0, 90)
