@@ -55,6 +55,52 @@ SERVO_PWM_FREQUENCY = 50
 # カメラ設定
 CAMERA_RESOLUTION = (640, 480)
 
+# --- ミッションステージのパラメータ ---
+# 放出判定ステージ (EjectionDetectorのデフォルト設定を使用)
+EJECTION_PRESSURE_CHANGE_THRESHOLD = 0.3 # hPa (初期気圧からの変化量)
+EJECTION_ACC_Z_THRESHOLD_ABS = 4.0 # m/s^2 (Z軸加速度絶対値)
+EJECTION_CONSECUTIVE_CHECKS = 3
+EJECTION_TIMEOUT_S = 60 # 秒
+
+# 着地安定性判定ステージ (LandingStabilityDetectorのデフォルト設定を使用)
+LANDING_STABILITY_PRESSURE_CHANGE_THRESHOLD = 0.1 # hPa (直前の気圧からの変化量)
+LANDING_STABILITY_ACC_THRESHOLD_ABS = 0.5 # m/s^2 (各軸の加速度絶対値)
+LANDING_STABILITY_GYRO_THRESHOLD_ABS = 0.5 # °/s (各軸の角速度絶対値)
+LANDING_STABILITY_CONSECUTIVE_CHECKS = 3
+LANDING_STABILITY_TIMEOUT_S = 120 # 秒
+
+# パラシュート回避ステージ
+PARACHUTE_AVOID_GOAL = [35.9248066, 139.9112360] # 回避後の進路目標 (例: GPS航行の初期地点など)
+PARACHUTE_AVOID_DISTANCE_M = 10.0 # この距離を進んで回避する
+
+# フラッグまでGPS誘導ステージ
+FLAG_GPS_GOAL_LOCATION = [35.9186248, 139.9112360] # フラッグ付近のGPS目標地点
+FLAG_GPS_THRESHOLD_M = 5.0 # ゴールとみなす距離 (メートル)
+FLAG_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 15.0 # 角度誤差許容範囲 (度)
+FLAG_GPS_TURN_SPEED = 45 # 回頭速度
+FLAG_GPS_MOVE_SPEED = 80 # 前進速度
+FLAG_GPS_MOVE_DURATION_S = 1.5 # 一回の前進時間 (秒)
+
+# フラッグ探索・追跡ステージ
+FLAG_TARGET_SHAPES = ["三角形", "長方形"] # 探索するフラッグの形状リスト
+FLAG_AREA_THRESHOLD_PERCENT = 20.0 # 接近完了とみなす画面占有率（パーセント）
+
+# 物資設置ステージ (サーボ動作のデューティサイクル例)
+SUPPLIES_INSTALL_DUTY_CYCLE = 4.0 # 物資を放出するサーボのデューティサイクル
+SUPPLIES_RETURN_DUTY_CYCLE = 7.5 # 物資設置後のサーボの初期位置デューティサイクル
+
+# ゴールまでGPS誘導ステージ
+GOAL_GPS_LOCATION = [35.9185000, 139.9110000] # 最終的なゴール地点
+GOAL_GPS_THRESHOLD_M = 1.0 # 最終ゴールとみなす距離 (メートル)
+GOAL_GPS_ANGLE_ADJUST_THRESHOLD_DEG = 10.0 # 角度誤差許容範囲 (度)
+GOAL_GPS_TURN_SPEED = 40 # 回頭速度
+GOAL_GPS_MOVE_SPEED = 70 # 前進速度
+GOAL_GPS_MOVE_DURATION_S = 1.0 # 一回の前進時間 (秒)
+
+# ゴール検知ステージ (赤コーン追跡がゴール検知を兼ねる)
+RED_CONE_GOAL_PERCENTAGE = 90 # 赤コーンに到達したとみなす画面占有率
+RED_CONE_LOST_MAX_COUNT = 5 # コーンを見失う許容回数
+
 # --- グローバル変数 (インスタンスとスレッド) ---
 pi_instance = None
 bno_sensor_main = None
