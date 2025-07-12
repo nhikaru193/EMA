@@ -95,7 +95,7 @@ class FlagNavigator:
                     """ 
                         
                     while target_flag is None and search_count < 70:
-                        self.driver.petit_petit(9)
+                        self.driver.petit_petit(2)
                         detected_data = self.detector.detect()
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
