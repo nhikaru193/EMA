@@ -45,7 +45,7 @@ class FlagNavigator:
         target_heading = (before_heading - 20) % 360
         while True:
             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
+            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
             if abs(delta_heading) <= 3:
                 break
             elif delta_heading < -3:
