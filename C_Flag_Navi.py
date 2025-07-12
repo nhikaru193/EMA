@@ -46,12 +46,12 @@ class FlagNavigator:
         while True:
             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
-            if abs(delta_heading) <= 5:
+            if abs(delta_heading) <= 3:
                 break
-            elif delta_heading < -5:
+            elif delta_heading < -3:
                 self.driver.petit_left(0, 90)
                 self.driver.motor_stop_brake()
-            elif delta_heading > 5:
+            elif delta_heading > 3:
                 self.driver.petit_right(0, 90)
                 self.driver.motor_stop_brake()
             
@@ -75,6 +75,7 @@ class FlagNavigator:
                 if target_flag is None:
                     print(f"[{target_name}] が見つかりません。回転して探索します。")
                     search_count = 0
+                    """
                     while target_flag is None and search_count < 50: # タイムアウト設定
                         self.driver.petit_right(0, self.turn_speed)
                         self.driver.petit_right(self.turn_speed, 0)
@@ -91,8 +92,8 @@ class FlagNavigator:
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
                         search_count += 1
-
-                        """
+                    """ 
+                        
                     while target_flag is None and search_count < 70:
                         self.driver.petit_petit(9)
                         detected_data = self.detector.detect()
@@ -100,13 +101,13 @@ class FlagNavigator:
                         time.sleep(0.5)
                         search_count += 1
                         
+                        rotation_count = 0
                         while rotation_count < 25:
                             self.left_20_degree_rotation()
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
                             rotation_count += 1
-                        """
                                 
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
                 if target_flag is None:
@@ -170,9 +171,9 @@ class FlagNavigator:
         print("\n---====== 全ての目標の探索が完了しました ======---")
 
     def cleanup(self):
-        """
-        プログラム終了時にリソースを解放します。
-        """
+        
+        #プログラム終了時にリソースを解放します。
+        
         print("--- 制御を終了します ---")
         self.driver.cleanup()
         self.detector.close()
