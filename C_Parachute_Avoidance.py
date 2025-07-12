@@ -64,7 +64,8 @@ class Parakai:
             print(f"Error: {e}")
             self.driver.motor_stop_brake()
         finally:
-            self._cleanup()
+            self.driver.cleanup()
+            self.picam2.close()
 
     def _get_gps(self):
         end = time.time()+5
