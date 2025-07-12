@@ -27,15 +27,20 @@ class Parakai:
         # GPS
         self.RX_PIN = 17
         self.pi = pigpio.pi()
+        self.pi.bb_serial_read_close(self.RX_PIN)   #追加
         self.pi.bb_serial_read_open(self.RX_PIN, 9600, 8)
 
         # BNO055
+        
+        self.bno = bno
+         """
         self.bno = BNO055(address=0x28)
         self.bno.begin()
         self.bno.setMode(BNO055.OPERATION_MODE_NDOF)
         self.bno.setExternalCrystalUse(True)
         time.sleep(1)
-
+        """
+        
         # Picamera2
         self.picam2 = picam2
 
