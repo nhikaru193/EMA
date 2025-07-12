@@ -48,16 +48,21 @@ class GpsIm920Communicator:
             decimal *= -1
         return decimal
 
+    # GPS_datalink.py の GpsIm920Communicator クラス内
+
     def _setup_gpio_and_uart(self):
         """GPIOピンとソフトウェアUARTを設定します。"""
-        # --- ここを修正します ---
         # wireless_ctrl_pin (GPIO22) は、システム起動時などに既にOUTPUTに設定されている可能性があるので、
         # set_modeは呼ばずに、直接writeでLOWにするだけにする。
-        # bb_serial_read_openはUARTピンの設定を行うのでそのまま残す。
-
-        # self.pi.set_mode(self.wireless_ctrl_pin, pigpio.OUTPUT) # この行を削除またはコメントアウト！
         self.pi.write(self.wireless_ctrl_pin, 0) # GPIO22をLOW (OFF) に初期設定 (モードは既存を利用)
         print(f"GPIO{self.wireless_ctrl_pin} をLOWに初期化しました（モードは既存のまま）。")
+
+        # --- ここから追加/修正 ---
+        # rx_pin (GPIO17) を明示的に入力モードに設定してからソフトウェアUARTを開く
+        # これにより、pigpioがピンの制御を確実に引き継ぐことを試みる
+        self.pi.set_mode(self.rx_pin, pigpio.INPUT)
+        print(f"GPIO{self.rx_pin} をINPUTモードに設定しました。")
+        # --- ここまで追加/修正 ---
 
         err = self.pi.bb_serial_read_open(self.rx_pin, self.gps_baud, 8)
         if err != 0:
