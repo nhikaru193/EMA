@@ -62,8 +62,8 @@ class Release:
                     abs(acc_z) > self.acc_z_threshold_abs                 
                 )
                 if is_landing_condition_met:
-                    landing_count += 1
-                    print(f"\n💡 条件成立！連続判定中: {landing_count}/{self.consecutive_checks} 回")
+                    self.landing_count += 1
+                    print(f"\n💡 条件成立！連続判定中: {self.landing_count}/{self.consecutive_checks} 回")
                 else:
                     if self.landing_count > 0:
                         print(f"\n--- 条件不成立。カウントリセット ({self.landing_count} -> 0) ---")
