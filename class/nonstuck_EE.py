@@ -104,7 +104,7 @@ RED_CONE_LOST_MAX_COUNT = 5 # コーンを見失う許容回数
 # --- グローバル変数 (インスタンスとスレッド) ---
 pi_instance = None
 bno_sensor_main = None
-i2c_bus_main = None # メインで管理するI2Cバス
+i2c_bus_main = None 
 motor_driver = None
 picam2_instance = None
 gps_im920_comm = None
@@ -184,7 +184,6 @@ def cleanup_all_resources():
     print("✅ 全てのシステムクリーンアップ完了。")
     print("\n=== ローバーミッションシステムを終了します ===")
 
-
 # --- メインミッション実行ブロック ---
 if __name__ == "__main__":
     try:
@@ -196,16 +195,16 @@ if __name__ == "__main__":
         if not pi_instance.connected:
             print("🔴 pigpioデーモンに接続できません。'sudo pigpiod'を実行してください。")
             sys.exit(1)
-        print("✅ pigpioデーモンに接続しました。")
+        print("✅ pigpioデーmonに接続しました。")
 
-        # BNO055センサーの初期化 (RoverLandingDetectorもこのBNOを使用)
+        # BNO055センサーの初期化 (他のフェーズ用。RoverReleaseDetector/RoverLandingDetectorは独自に初期化する)
         bno_sensor_main = BNO055(address=BNO055_I2C_ADDRESS)
         # BNOセンサーのbegin()はwait_for_bno055_calibration()で呼ばれる
-        print("✅ BNO055センサーインスタンス作成。")
+        print("✅ BNO055センサーインスタンス作成 (後続フェーズ用)。")
 
-        # BME280 気圧センサー用のI2Cバス初期化
-        i2c_bus_main = smbus.SMBus(BME280_I2C_BUS)
-        print(f"✅ BME280 I2Cバス (バス{BME280_I2C_BUS}) 初期化完了。")
+        # BME280 気圧センサー用のI2Cバス初期化 (RoverReleaseDetector/RoverLandingDetectorは内部で直接I2Cバスを初期化するため、この変数は利用されない)
+        # i2c_bus_main = smbus.SMBus(BME280_I2C_BUS) # この行も不要なのでコメントアウトまたは削除
+        # print(f"✅ BME280 I2Cバス (バス{BME280_I2C_BUS}) 初期化完了 (後続フェーズ用)。")
 
         # MotorDriverの初期化
         motor_driver = MotorDriver(
@@ -226,12 +225,9 @@ if __name__ == "__main__":
         print(f"✅ カメラ初期化完了。解像度: {CAMERA_RESOLUTION[0]}x{CAMERA_RESOLUTION[1]}")
 
         # --- 各機能クラスのインスタンス化 ---
-        # 1. 放出判定（RoverReleaseDetector）
-        # このRoverLandingDetectorは、気圧上昇と加速度上昇で「放出」を判定するロジック
+        # 1. 放出判定（RoverReleaseDetector）：**オリジナルのままのコンストラクタを使用**
+        # RoverReleaseDetectorは自身の内部でBNO055とSMBusを初期化します。
         ejection_detector = RoverReleaseDetector(
-            # RoverLandingDetectorの__init__を修正し、bno_sensorとi2c_bus_instanceを引数で受け取るようにする
-            bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
-            i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
             pressure_change_threshold=EJECTION_PRESSURE_CHANGE_THRESHOLD,
             acc_z_threshold_abs=EJECTION_ACC_Z_THRESHOLD_ABS,
             consecutive_checks=EJECTION_CONSECUTIVE_CHECKS,
@@ -239,11 +235,9 @@ if __name__ == "__main__":
         )
         print("✅ RoverReleaseDetector (放出判定用) インスタンス作成。")
 
-        # 2. 着地安定性判定（RoverLandingDetector）
-        # このRoverLandingDetectorは、気圧・加速度・角速度の「安定性」で「着地」を判定するロジック
+        # 2. 着地安定性判定（RoverLandingDetector）：**オリジナルのままのコンストラクタを使用**
+        # RoverLandingDetectorは自身の内部でBNO055とSMBusを初期化します。
         landing_stability_detector = RoverLandingDetector(
-            bno_sensor=bno_sensor_main,       # メインのBNO055インスタンスを渡す
-            i2c_bus_instance=i2c_bus_main,    # メインのI2Cバスインスタンスを渡す
             pressure_change_threshold=LANDING_STABILITY_PRESSURE_CHANGE_THRESHOLD,
             acc_threshold_abs=LANDING_STABILITY_ACC_THRESHOLD_ABS,
             gyro_threshold_abs=LANDING_STABILITY_GYRO_THRESHOLD_ABS,
@@ -253,7 +247,7 @@ if __name__ == "__main__":
         )
         print("✅ RoverLandingDetector (着地安定性判定用) インスタンス作成。")
 
-        # GpsIm920Communicator
+        # GpsIm920Communicator は、ここではインスタンス化のみで、後で activate() を呼ぶ
         gps_im920_comm = GpsIm920Communicator(
             pi_instance=pi_instance,
             rx_pin=GPS_RX_PIN,
@@ -263,13 +257,14 @@ if __name__ == "__main__":
             im920_baud=IM920_BAUD,
             target_node_id=0x0003
         )
+        # GPS通信用のスレッドを準備 (activated後にstartされる)
         gps_comm_thread = threading.Thread(target=gps_im920_comm.start_communication_loop, daemon=True)
         print("✅ GpsIm920Communicator インスタンスとスレッド準備完了。")
 
         # RoverGPSNavigator
         gps_navigator = RoverGPSNavigator(
             driver_instance=motor_driver,
-            bno_instance=bno_sensor_main,
+            bno_instance=bno_sensor_main, # RoverMissionControllerで作成したBNOインスタンスを渡す
             pi_instance=pi_instance,
             rx_pin=GPS_RX_PIN,
             gps_baud=GPS_BAUD_RATE,
@@ -310,6 +305,11 @@ if __name__ == "__main__":
         print("✅ RedConeNavigator インスタンス作成。")
 
         print("✅ 全てのローバーコンポーネントの初期化完了。")
+
+    except Exception as e:
+        print(f"\n🚨 ミッション中に予期せぬエラーが発生しました: {e}")
+    finally:
+        cleanup_all_resources()
 
         # --- メインミッション開始 ---
 
