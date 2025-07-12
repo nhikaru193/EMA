@@ -6,10 +6,9 @@ import smbus
 from BNO055 import BNO055
 
 # --- BME280 グローバル変数とI2C設定 ---
-t_fine = 0.0 # 温度、気圧、湿度補正の基礎となるグローバル変数
-digT = []    # 温度補正パラメータ
+t_fine = 0.0 # 気圧補正に必要なので残します
+digT = []    # 気圧補正に必要なので残します
 digP = []    # 気圧補正パラメータ
-digH = []    # 湿度補正パラメータ
 
 # I2Cバスとアドレス設定
 i2c_bus = smbus.SMBus(1) # Raspberry Pi の I2C バスは通常 1
@@ -19,7 +18,7 @@ bme280_address = 0x76 # BME280 の一般的な I2C アドレス。'i2cdetect -y 
 
 def init_bme280():
     """BME280 センサーを設定レジスタに書き込むことで初期化します。"""
-    # 湿度オーバーサンプリング設定 (ctrl_hum レジスタ 0xF2) を x1 に
+    # 湿度オーバーサンプリング設定 (ctrl_hum レジスタ 0xF2) を x1 に (気圧補正のためには不要だが、BME280の標準設定として残す)
     i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01)
     # 温度と気圧のオーバーサンプリング設定 (ctrl_meas レジスタ 0xF4) を x1 に、ノーマルモード (0x27)
     i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27)
@@ -29,9 +28,9 @@ def init_bme280():
 def read_compensate():
     """
     BME280 センサーの NVM から工場出荷時の校正 (補正) 値を読み取ります。
-    digT, digP, digH リストを直接代入する形に修正済みです。
+    digT, digP リストを直接代入する形に修正済みです。
     """
-    global digT, digP, digH 
+    global digT, digP # digH は不要なので削除
 
     # 温度補正値の読み取り (レジスタ 0x88 ～ 0x8D, 6 バイト)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
@@ -63,31 +62,11 @@ def read_compensate():
         if digP[i] >= 32768:
             digP[i] -= 65536
 
-    # 湿度補正値の読み取り (レジスタ 0xA1 と 0xE1 ～ 0xE7, 合計 8 バイト)
-    dh = i2c_bus.read_byte_data(bme280_address, 0xA1) # digH1
-    dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 ～ digH6
+    # digH の読み取りは不要なので削除 (しかし、センサーが正しく動作するために digH レジスタの設定は init_bme280() に残っています)
 
-    digH = [ # digH リストを直接代入
-        dh, # H1
-        (dat_h[1] << 8) | dat_h[0], # H2
-        dat_h[2], # H3
-        (dat_h[3] << 4) | (dat_h[4] & 0x0F), # H4
-        (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F), # H5
-        dat_h[6] # H6
-    ]
-
-    # 湿度補正の符号付き値を変換 (H2, H4, H5 は符号付き 16ビット; H6 は符号付き 8ビット)
-    if digH[1] >= 32768: # H2
-        digH[1] -= 65536
-    if digH[3] >= 32768: # H4
-        digH[3] -= 65536
-    if digH[4] >= 32768: # H5
-        digH[4] -= 65536
-    if digH[5] >= 128: # H6 は符号付き 8ビット
-        digH[5] -= 256
 
 def bme280_compensate_t(adc_T):
-    """摂氏で補正された温度を計算します。"""
+    """摂氏で補正された温度を計算します。気圧補正に t_fine が必要なので、この関数は残します。"""
     global t_fine
     # Bosch BME280 データシート、セクション 4.2.3 温度の補正計算式 (浮動小数点バージョン) に基づく
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
@@ -95,59 +74,39 @@ def bme280_compensate_t(adc_T):
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
     t_fine = var1 + var2
     temperature = t_fine / 5120.0
-    return temperature # Celsius
+    return temperature # Celsius (ここでは戻り値は主に t_fine のため)
 
 def bme280_compensate_p(adc_P):
     """hPa で補正された気圧を計算します。"""
     global t_fine
-    # *** 最終版：Pythonでの浮動小数点精度とデータシートの C 言語実装に厳密に合わせた気圧補正関数 ***
-    # これは、複数の実績ある smbus BME280 ライブラリ実装と比較して再検証したものです。
+    # --- Python での浮動小数点精度とデータシートの C 言語実装に厳密に合わせた気圧補正関数 ---
+    # このバージョンは、Pythonでの大規模な浮動小数点計算の課題に対処するために再調整されました。
     
     var1 = (t_fine / 2.0) - 64000.0
-    var2 = var1 * var1 * digP[5] / 32768.0
-    var2 = var2 + var1 * digP[4] * 2.0
-    var2 = (var2 / 4.0) + (digP[3] * 65536.0)
-    var1 = (digP[2] * var1 * var1 / 524288.0 + digP[1] * var1) / 32768.0
-    var1 = (1.0 + var1 / 32768.0) * digP[0]
+    var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
+    var2 = var2 + ((var1 * digP[4]) * 2.0)
+    var2 = (var2 / 4.0) + (digP[3] * 65536.0) # digP3 * 2^16
+    
+    var1 = (((digP[2] * var1) / 262144.0) * var1) / 32768.0
+    var1 = (digP[1] * var1) / 2.0
+    var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # digP1 * 2^16
 
     if var1 == 0:
         return 0 # ゼロ除算を避ける
 
-    p = 1048576.0 - adc_P
-    p = ((p - var2 / 4096.0) * 6250.0) / var1
+    p = (1048576.0 - adc_P)
+    p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # この除算は非常に重要
 
-    var1 = (digP[8] * p * p) / 2147483648.0 # digP9 * p^2 / 2^31
-    var2 = (p * digP[7]) / 32768.0       # digP8 * p / 2^15
+    var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / 2^31
+    var2 = (p * digP[7]) / 32768.0       # (digP8 * p) / 2^15
     p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 を加えてから 16 で割る
 
     return p / 100.0 # Pa を hPa に変換 (1 hPa = 100 Pa)
 
-def bme280_compensate_h(adc_H):
-    """%RH で補正された湿度を計算します。"""
-    global t_fine
-    # *** 最終版：Pythonでの浮動小数点精度とデータシートの C 言語実装に厳密に合わせた湿度補正関数 ***
-    
-    var_H = t_fine - 76800.0
-    
-    var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
-            (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
-    
-    var_H = var_H * (1.0 + (digH[0] / 67108864.0 * var_H * \
-            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] は H6
+# 湿度補正関数は使用しないため削除
 
-    humidity = var_H # 結果が直接湿度値
-
-    # 最終的な値を 0%～100% の範囲にクリッピング
-    if humidity > 100.0:
-        humidity = 100.0
-    elif humidity < 0.0:
-        humidity = 0.0
-    
-    return humidity # %RH
-
-
-def bme280_read_data():
-    """気圧、温度、湿度の生の ADC 値を読み取り、それらを補正します。"""
+def bme280_read_data_pressure_only():
+    """気圧の生の ADC 値を読み取り、それを補正します。温度の生データも読み込み、t_fine を更新します。"""
     try:
         # 0xF7 (pressure_msb) から始まる 8 バイトを読み取る
         # データ順序: pres_msb, pres_lsb, pres_xlsb, temp_msb, temp_lsb, temp_xlsb, hum_msb, hum_lsb
@@ -162,19 +121,18 @@ def bme280_read_data():
             print(f"ERROR: BME280 read only {len(data)} bytes, expected 8 bytes.")
             raise IndexError("Not enough data read from BME280 for full compensation.")
 
-        # 気圧と温度の 20ビット ADC 値を抽出 (19:4, 11:4, 3:4)
+        # 気圧と温度の 20ビット ADC 値を抽出
         pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
         
-        # 湿度の 16ビット ADC 値を抽出
-        hum_raw  = (data[6] << 8)  | data[7]
+        # 温度補正関数を呼び出し、t_fine を更新します (気圧補正に必要)
+        # 温度の値自体は返しませんが、t_fine の計算のために呼び出します。
+        bme280_compensate_t(temp_raw) 
 
-        # 補正関数を正しい順序で呼び出す (t_fine を設定するため、温度が最初)
-        temperature = bme280_compensate_t(temp_raw)
+        # 気圧を補正
         pressure = bme280_compensate_p(pres_raw)
-        humidity = bme280_compensate_h(hum_raw)
-
-        return temperature, pressure, humidity
+        
+        return pressure
     except Exception as e:
         # メイン()関数で捕捉し、特定のエラーを表示できるように例外を再スロー
         raise e
@@ -202,7 +160,8 @@ def main():
         # デバッグ: 補正値が正しく読み込まれているか確認するためにコメントアウトを外すことができます
         print(f"DEBUG: digT={digT}")
         print(f"DEBUG: digP={digP}")
-        print(f"DEBUG: digH={digH}")
+        # digH は気圧のみの場合不要なので削除
+        # print(f"DEBUG: digH={digH}") 
 
     except Exception as e:
         print(f"BME280の初期化に失敗しました: {e}")
@@ -217,7 +176,7 @@ def main():
     print("  全加速度 [X, Y, Z] (重力込み) | 大きさ")
     print("  直線加速度 [X, Y, Z] (重力なし) | 大きさ")
     if bme280_present:
-        print("  気圧 [hPa] | 温度 [°C] | 湿度 [%]")
+        print("  気圧 [hPa]") # 表示形式から温度と湿度を削除
     print("-" * 50)
 
     try:
@@ -232,12 +191,10 @@ def main():
             linear_accel_magnitude = math.hypot(lx, ly, lz)
 
             # --- BME280データ取得 (利用可能な場合) ---
-            temperature = None
             pressure = None
-            humidity = None
             if bme280_present:
                 try:
-                    temperature, pressure, humidity = bme280_read_data()
+                    pressure = bme280_read_data_pressure_only()
                 except Exception as e:
                     print(f"BME280データの読み取り中にエラーが発生しました: {e}")
                     bme280_present = False 
@@ -247,7 +204,7 @@ def main():
             print(f"直線加速度: X={lx:7.2f}, Y={ly:7.2f}, Z={lz:7.2f} | 大きさ={linear_accel_magnitude:7.2f} m/s^2")
             
             if bme280_present:
-                output_bme = f"気圧: {pressure:7.2f} hPa | 温度: {temperature:6.2f} °C | 湿度: {humidity:6.2f} %"
+                output_bme = f"気圧: {pressure:7.2f} hPa" # 温度と湿度を削除
                 print(output_bme)
             
             print("-" * 50)
