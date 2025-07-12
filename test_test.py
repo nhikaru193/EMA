@@ -9,6 +9,7 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import following
 import cv2
 import camera
+from BNO055 import BNO055
 
 bno = BNO055()
 bno.begin()
