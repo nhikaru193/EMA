@@ -12,7 +12,6 @@ import following
 class Amaging_GPS:
     def __init__(
         self,
-        driver:MotorDriver,
         bno: BNO055,
         goal_location: list,
         GOAL_THRESHOLD_M: float = 5.0,
@@ -21,7 +20,11 @@ class Amaging_GPS:
         self.GOAL_LOCATION     = goal_location
         self.GOAL_THRESHOLD_M  = GOAL_THRESHOLD_M
         self.ANGLE_THRESHOLD_DEG   = ANGLE_THRESHOLD_DEG
-        self.driver = driver
+        self.driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,
+            PWMB=19, BIN1=16, BIN2=26,
+            STBY=21
+        )
         self.bno    = bno
         self.RX_PIN = 17
         self.BAUD = 9600
