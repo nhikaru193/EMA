@@ -75,3 +75,4 @@ class Landing:
         print("着地判定正常終了。テグス溶断シーケンスに入ります")
         time.sleep(3)
         #fusing.circuit()
+        print("テグス溶断を完了しました")
