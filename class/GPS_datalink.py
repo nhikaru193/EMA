@@ -50,10 +50,14 @@ class GpsIm920Communicator:
 
     def _setup_gpio_and_uart(self):
         """GPIOピンとソフトウェアUARTを設定します。"""
-        # GPIOを出力に設定し、ワイヤレスグラウンドはまだLOWのまま
-        self.pi.set_mode(self.wireless_ctrl_pin, pigpio.OUTPUT)
-        self.pi.write(self.wireless_ctrl_pin, 0) 
-        print(f"GPIO{self.wireless_ctrl_pin} をOUTPUTに設定し、LOWに初期化しました。")
+        # --- ここを修正します ---
+        # wireless_ctrl_pin (GPIO22) は、システム起動時などに既にOUTPUTに設定されている可能性があるので、
+        # set_modeは呼ばずに、直接writeでLOWにするだけにする。
+        # bb_serial_read_openはUARTピンの設定を行うのでそのまま残す。
+
+        # self.pi.set_mode(self.wireless_ctrl_pin, pigpio.OUTPUT) # この行を削除またはコメントアウト！
+        self.pi.write(self.wireless_ctrl_pin, 0) # GPIO22をLOW (OFF) に初期設定 (モードは既存を利用)
+        print(f"GPIO{self.wireless_ctrl_pin} をLOWに初期化しました（モードは既存のまま）。")
 
         err = self.pi.bb_serial_read_open(self.rx_pin, self.gps_baud, 8)
         if err != 0:
