@@ -78,7 +78,7 @@ class FlagDetector:
         # --- 1. 黒い領域を特定 ---
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 25]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
+        upper_black = np.array([180, 255, 20]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
         kernel = np.ones((5, 5), np.uint8)
         black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
