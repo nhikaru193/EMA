@@ -48,10 +48,10 @@ time.sleep(1)
 #関数のインスタンス作成
 RELEASE = Release(bno) #ok
 LAND = Landing(driver, bno) 
-AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [x, y]) #ok
-GPS_StoF = Amaging_GPS(driver, bno, goal_location = [x ,y])
+AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
+GPS_StoF = Amaging_GPS(driver, bno, goal_location = [35.9240852, 139.9112008])
 FLAG = FLAGNAVIGATOR(driver, bno)
-GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [x ,y])
+GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [35.9241086 ,139.9113731])
 
 # カメラ初期化と設定
 picam2 = Picamera2()
