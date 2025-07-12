@@ -2,10 +2,13 @@ import cv2
 import numpy as np
 import time
 from picamera2 import Picamera2
-from motor import MotorDriver
-from BNO055 import BNO055
+from motor import MotorDriver # MotorDriverクラス (型ヒント用、直接は使わない)
+from BNO055 import BNO055 # BNO055クラス (型ヒント用、直接は使わない)
 from Flag_Detector2 import FlagDetector # Flag_Detector2 クラス
 import RPi.GPIO as GPIO # GPIOクリーンアップのため
+
+import following # <- この行は FlagSeeker のメソッド内で使用されるため、ここでインポートしておきます。
+                 #    もし FlagSeeker のメソッド内で直接呼び出されている場合は重複になりません。
 
 class FlagSeeker:
     """
@@ -39,7 +42,9 @@ class FlagSeeker:
         self.picam2 = picam2_instance
 
         # FlagDetectorの初期化 (picam2_instanceを渡す)
+        # FlagDetectorの__init__もpicam2_instanceを受け取るように修正されている必要があります
         self.detector = FlagDetector(picam2_instance=self.picam2)
+        
         # 画面サイズ (FlagDetectorから取得)
         self.screen_area = self.detector.width * self.detector.height
         print(f"✅ FlagSeeker: カメラ解像度: {self.detector.width}x{self.detector.height}, 画面総ピクセル数: {self.screen_area}")
@@ -74,11 +79,8 @@ class FlagSeeker:
                         max_search_attempts = 40 # 探索回転の最大試行回数
 
                         # 少し前進してから全方位探索を行うロジック
-                        # `following.follow_forward` は外部モジュール
-                        print("FlagSeeker: 探索のため少し前進します。")
-                        # 速度と時間については適宜調整してください
                         # following.pyのfollow_forwardがdriverとbnoを直接受け取ることを前提
-                        import following # 再度インポートを確認
+                        print("FlagSeeker: 探索のため少し前進します。")
                         following.follow_forward(self.driver, self.bno, base_speed=60, duration_time=1.0) 
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -88,7 +90,12 @@ class FlagSeeker:
                         rotation_time_per_step = 0.2 # 1回の旋回時間
                         turn_speed = 70 # 旋回速度
                         
-                        for step in range(max_search_attempts): # max_search_attempts を回転ステップ数として使う
+                        # 最大旋回ステップ数を調整（約360度回るため）
+                        # 1回の petit_left(0, 70) で約5-10度回転すると仮定
+                        approx_angle_per_step = 7 # 1ステップあたりの概算角度 (要調整)
+                        max_rotation_steps = int(360 / approx_angle_per_step) + 5 # 余裕を持たせる
+
+                        for step in range(max_rotation_steps):
                             # 検出を試みる
                             detected_data = self.detector.detect()
                             target_flag = self._find_target_flag_in_data(detected_data, target_name)
@@ -96,9 +103,10 @@ class FlagSeeker:
                                 print(f"FlagSeeker: 回転中に [{target_name}] を見つけました！")
                                 break # ターゲットが見つかったので、回転ループを抜ける
                             
-                            print(f"FlagSeeker: 視野角内に [{target_name}] を検知できませんでした。左回頭を行います (ステップ {step+1})")
+                            print(f"FlagSeeker: 視野角内に [{target_name}] を検知できませんでした。左回頭を行います (ステップ {step+1}/{max_rotation_steps})")
                             self.driver.petit_left(0, turn_speed) # 左旋回開始
-                            self.driver.petit_left(turn_speed, 0) # MotorDriverの petit_left が2引数バージョンならこちら
+                            # MotorDriverの petit_left は、pigpioベースのMotorDriverに修正済みであることを前提
+                            self.driver.petit_left(turn_speed, 0) 
                             self.driver.motor_stop_brake()
                             time.sleep(rotation_time_per_step) # 短く回頭
                             time.sleep(0.2) # 停止してセンサー安定化
@@ -116,12 +124,12 @@ class FlagSeeker:
                             turn_speed_adjust = 60 # 調整時の旋回速度
                             if target_flag['location'] == '左':
                                 self.driver.petit_right(0, turn_speed_adjust) # 右に小刻み旋回
-                                self.driver.petit_right(turn_speed_adjust, 0) # MotorDriverの petit_right が2引数バージョンならこちら
+                                self.driver.petit_right(turn_speed_adjust, 0)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5) # 短い待機
                             elif target_flag['location'] == '右':
                                 self.driver.petit_left(0, turn_speed_adjust) # 左に小刻み旋回
-                                self.driver.petit_left(turn_speed_adjust, 0) # MotorDriverの petit_left が2引数バージョンならこちら
+                                self.driver.petit_left(turn_speed_adjust, 0)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5) # 短い待機
                             
@@ -152,7 +160,6 @@ class FlagSeeker:
                                 # しきい値未満なら、PD制御で直進しつつフラッグを追従して前進
                                 print(f"FlagSeeker: 目標に接近するため前進します。")
                                 # `following.follow_forward`にdriverとbnoを渡す
-                                import following # 再度インポートを確認
                                 following.follow_forward(self.driver, self.bno, base_speed=40, duration_time=1.0)
                                 self.driver.motor_stop_brake() # 短い前進後に停止
                                 time.sleep(0.2) # 停止してセンサー安定化
