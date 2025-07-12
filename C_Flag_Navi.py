@@ -182,11 +182,34 @@ class FlagNavigator:
 
 # メインの実行ブロック
 if __name__ == '__main__':
-    # FlagNavigatorクラスのインスタンスを作成
-    robot = FlagNavigator()
+    # --- 各クラスのインスタンスを作成 ---
+    # 1. モータードライバの初期化
+    driver = MotorDriver()
+
+    # 2. BNO055（9軸センサー）の初期化
     try:
-        # メインのミッションを実行
+        bno = BNO055()
+        if not bno.begin():
+            raise RuntimeError("BNO055の起動に失敗しました。接続を確認してください。")
+        # 必要に応じてキャリブレーションステータスの確認などをここに追加
+        print("BNO055の準備ができました。")
+    except Exception as e:
+        print(f"BNO055の初期化中にエラーが発生しました: {e}")
+        # BNO055が使えない場合はプログラムを終了
+        driver.cleanup()
+        GPIO.cleanup()
+        exit()
+
+    # --- メインクラスのインスタンスを作成し、実行 ---
+    # 3. FlagNavigatorにdriverとbnoを渡してインスタンス化
+    robot = FlagNavigator(driver=driver, bno=bno)
+
+    try:
+        # 4. メインの処理を実行
         robot.run()
+    except KeyboardInterrupt:
+        # Ctrl+Cが押されたら、安全に終了処理を行う
+        print("\nプログラムが中断されました。")
     finally:
-        # 成功してもエラーが発生しても、必ずクリーンアップ処理を実行
+        # 5. 終了処理（クリーンアップ）を呼び出す
         robot.cleanup()
