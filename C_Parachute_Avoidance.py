@@ -33,7 +33,7 @@ class Parakai:
         # BNO055
         self.picam2 = picam2
         self.bno = bno
-         """
+        """
         self.bno = BNO055(address=0x28)
         self.bno.begin()
         self.bno.setMode(BNO055.OPERATION_MODE_NDOF)
