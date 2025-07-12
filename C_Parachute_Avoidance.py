@@ -7,7 +7,6 @@ import numpy as np
 import cv2
 from picamera2 import Picamera2
 import math
-
 from motor import MotorDriver
 from BNO055 import BNO055
 import following
