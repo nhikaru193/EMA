@@ -128,8 +128,8 @@ def wait_for_bno055_calibration(bno_sensor):
     while True:
         sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor.getCalibration()
         print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal} ", end='\r')
-        if gyro_cal == 3 and accel_cal == 3 and mag_cal == 3:
-            print("\n✅ 主制御用BNO055全センサーキャリブレーション完了！")
+        if gyro_cal == 3:
+            print("\n✅ 主制御用BNO055ジャイロセンサーキャリブレーション完了！")
             break
         time.sleep(0.5)
     print(f"キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
