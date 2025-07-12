@@ -186,7 +186,7 @@ if __name__ == '__main__':
     robot = FlagNavigator()
     try:
         # メインのミッションを実行
-        robot.run_mission()
+        robot.run()
     finally:
         # 成功してもエラーが発生しても、必ずクリーンアップ処理を実行
         robot.cleanup()
