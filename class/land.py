@@ -28,6 +28,8 @@ class RoverLandingDetector: # land.py のクラス名に合わせてください
         self.consecutive_checks = consecutive_checks
         self.timeout = timeout
         self.calibrate_bno055 = calibrate_bno055
+        self.bno = bno_sensor
+        self.i2c = i2c_bus_instance
 
         self.i2c = i2c_bus_instance # <--- 外部から渡されたインスタンスを使う
         self.bno = bno_sensor       # <--- 外部から渡されたインスタンスを使う
