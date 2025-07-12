@@ -11,6 +11,11 @@ from BNO055 import BNO055
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 from C_excellent_GPS import Amaging_GPS
 from C_release import Release
+from C_Landing_Detective import Landing
+import fusing
+import struct
+import RPi.GPIO as GPIO
+
 
 #モータの初期化
 driver = MotorDriver(
@@ -28,7 +33,6 @@ time.sleep(1)
 bno.setExternalCrystalUse(True)
 
 # カメラ初期化と設定
-#color.init_camera()
 picam2 = Picamera2()
 config = picam2.create_still_configuration(main={"size": (320, 240)})
 picam2.configure(config)
@@ -37,12 +41,14 @@ time.sleep(1)
 
 #関数のインスタンス作成
 RELEASE = Release(bno)
+LAND = LANDING(driver, bno)
 #GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 GOAL = GDN(driver, bno, picam2, 30)
 
 #実行文
-RELEASE.run()
+LAND.run()
 """
+RELEASE.run()
 GPS.run()
 GOAL.run()
 """
