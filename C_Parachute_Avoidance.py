@@ -30,7 +30,7 @@ class Parakai:
         self.pi.bb_serial_read_open(self.RX_PIN, 9600, 8)
         self.bno = bno
         # Picamera2
-        self.picam2 = Picamera2
+        self.picam2 = Picamera2()
         config = self.picam2.create_still_configuration(main={"size": (320, 480)})
         self.picam2.configure(config)
         self.picam2.start()
