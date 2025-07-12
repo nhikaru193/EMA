@@ -8,10 +8,12 @@ import smbus
 import following
 import BME280
 from BNO055 import BNO055
-from C_GOAL_DETECTIVE_NOSHIRO import GDN
-from C_excellent_GPS import Amaging_GPS
 from C_release import Release
 from C_Landing_Detective import Landing
+
+from C_Flag_Navi import FlagNavigator
+from C_excellent_GPS import Amaging_GPS
+from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import fusing
 import struct
 import RPi.GPIO as GPIO
@@ -42,13 +44,16 @@ time.sleep(1)
 #関数のインスタンス作成
 RELEASE = Release(bno)
 LAND = Landing(driver, bno)
+FLAG = FLAGNAVIGATOR()
 #GPS = Amaging_GPS(driver, bno, GOAL_LOCATION=[x ,y])
 GOAL = GDN(driver, bno, picam2, 30)
+
 
 #実行文
 LAND.run()
 """
 RELEASE.run()
+FLAG.run()
 GPS.run()
 GOAL.run()
 """
