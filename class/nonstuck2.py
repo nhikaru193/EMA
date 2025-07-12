@@ -304,6 +304,7 @@ if __name__ == "__main__":
         
         # ServoController
         servo_controller_action = ServoController(
+            pi_instance=pi_instance,
             servo_pin=SERVO_PIN_ACTION,
             pwm_frequency=SERVO_PWM_FREQUENCY
         )
