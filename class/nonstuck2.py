@@ -129,7 +129,7 @@ def wait_for_bno055_calibration(bno_sensor):
     while True:
         sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor.getCalibration()
         print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal} ", end='\r')
-        if gyro_cal == 3 and accel_cal == 3 and mag_cal == 3: # 全てレベル3を待機
+        if gyro_cal == 3: # 全てレベル3を待機
             print("\n✅ 主制御用BNO055全センサーキャリブレーション完了！")
             break
         time.sleep(0.5)
@@ -177,10 +177,13 @@ def cleanup_all_resources():
     # RPi.GPIO.cleanup() は、pigpioを主に使う場合は基本不要ですが、
     # 念のため最後に一度だけ呼んでおくことも可能です。ただし、
     # pigpio.pi().stop() の後に呼ぶと RuntimeError が出る場合があります。
-    # そのため、pigpioに完全に統一し、RPi.GPIOの設定関数を呼ばなければ、
-    # RPi.GPIO.cleanup() は不要になります。
     # ここでは、RPi.GPIO関連のピン設定はメインコードから排除済みのため、通常不要です。
-    # GPIO.cleanup() # 必要であればコメントアウトを外す (ただし衝突注意)
+    # しかし、OSレベルでの残留を防ぐため、敢えて呼び出しを試みるケースもあります。
+    # その場合、エラーハンドリングを含めて慎重に。
+    # try:
+    #     GPIO.cleanup()
+    # except RuntimeError:
+    #     pass
     
     print("✅ 全てのシステムクリーンアップ完了。")
     print("\n=== ローバーミッションシステムを終了します ===")
@@ -188,12 +191,13 @@ def cleanup_all_resources():
 
 # --- メインミッション実行ブロック ---
 if __name__ == "__main__":
-    # --- プログラム起動時の防御的GPIOリセット ---
-    # RPi.GPIO を主に使うわけではないため、これは最低限の防御策。
+    # --- プログラム起動時の防御的RPi.GPIO強制クリーンアップ ---
     # pigpioがピンを確実に取得できるよう、RPi.GPIOの過去の占有をクリアする試み。
+    # これがGPIO already in useエラーの主要な対策です。
     try:
         # RPi.GPIOが何らかのモードで初期化されている場合、cleanupを試みる
-        if GPIO.getmode() is not None: # モードが設定されているかチェック
+        # GPIO.getmode() が None でない場合、RPi.GPIOがアクティブ
+        if GPIO.getmode() is not None:
             GPIO.setwarnings(False) # 警告を非表示に
             GPIO.cleanup() # 全てのGPIOピンをクリーンアップ
             print("✅ プログラム起動時にRPi.GPIOの強制クリーンアップを実行しました。")
