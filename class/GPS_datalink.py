@@ -48,24 +48,23 @@ class GpsIm920Communicator:
             decimal *= -1
         return decimal
 
-    # GPS_datalink.py の GpsIm920Communicator クラス内
-
     def _setup_gpio_and_uart(self):
         """GPIOピンとソフトウェアUARTを設定します。"""
         # wireless_ctrl_pin (GPIO22) は、システム起動時などに既にOUTPUTに設定されている可能性があるので、
         # set_modeは呼ばずに、直接writeでLOWにするだけにする。
-        self.pi.write(self.wireless_ctrl_pin, 0) # GPIO22をLOW (OFF) に初期設定 (モードは既存を利用)
+        # GPIO22のモードがOUTPUTであることを前提とする。
+        self.pi.write(self.wireless_ctrl_pin, 0) # GPIO22をLOW (OFF) に初期設定
         print(f"GPIO{self.wireless_ctrl_pin} をLOWに初期化しました（モードは既存のまま）。")
 
-        # --- ここから追加/修正 ---
         # rx_pin (GPIO17) を明示的に入力モードに設定してからソフトウェアUARTを開く
         # これにより、pigpioがピンの制御を確実に引き継ぐことを試みる
-        self.pi.set_mode(self.rx_pin, pigpio.INPUT)
+        self.pi.set_mode(self.rx_pin, pigpio.INPUT) # <-- この行が追加されました
         print(f"GPIO{self.rx_pin} をINPUTモードに設定しました。")
-        # --- ここまで追加/修正 ---
 
         err = self.pi.bb_serial_read_open(self.rx_pin, self.gps_baud, 8)
         if err != 0:
+            # エラーコードを具体的に表示することで、デバッグ情報が増える
+            print(f"🔴 ソフトUART RX の設定に失敗しました！エラーコード: {err}")
             raise IOError(f"ソフトUART RX の設定に失敗しました (エラーコード: {err})")
         print(f"▶ ソフトUART RX を開始：GPIO={self.rx_pin}, {self.gps_baud}bps")
 
