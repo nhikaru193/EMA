@@ -44,6 +44,7 @@ class Release:
                 if elapsed_total > self.timeout:
                     print(f"{self.current_time:<15.3f}{elapsed_total:<12.1f}{'TIMEOUT':<15}{'':<15}{'':<15}{'':<12}")
                     print(f"\n⏰ タイムアウト ({self.timeout}秒経過)。条件成立回数 {self.landing_count} 回でしたが、強制的に着地判定を成功とします。")
+                    break
                 if (self.current_time - self.last_check_time) < 0.2:
                     time.sleep(0.01)
                     continue
