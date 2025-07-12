@@ -49,22 +49,22 @@ time.sleep(1)
 RELEASE = Release(bno) #ok
 RELEASE.run()
 
-LAND = Landing(driver, bno) 
+LAND = Landing(bno) 
 LAND.run()
 
-AVOIDANCE = Parakai(bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE = Parakai(bno, goal_location = [35.9240852, 139.9112008]) #ok
 AVOIDANCE.run()
 
-GPS_StoF = Amaging_GPS(driver, bno, goal_location = [35.9240852, 139.9112008])
+GPS_StoF = Amaging_GPS(bno, goal_location = [35.9240852, 139.9112008])
 GPS_StoF.run()
 
-FLAG = FLAGNAVIGATOR(driver, bno)
+FLAG = FLAGNAVIGATOR(bno)
 FLAG.run()
 
-GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [35.9241086 ,139.9113731])
+GPS_FtoG = Amaging_GPS(bno, goal_location = [35.9241086 ,139.9113731])
 GPS_FtoG.run()
 
-GOAL = GDN(driver, bno, picam2, 30)
+GOAL = GDN(bno, 30)
 GOAL.run()
 
 
