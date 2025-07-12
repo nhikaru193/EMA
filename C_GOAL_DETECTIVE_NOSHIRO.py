@@ -16,9 +16,9 @@ class GDN:
         )
         self.bno = bno
         self.picam2 = Picamera2()
-        config = picam2.create_still_configuration(main={"size": (320, 480)})
-        picam2.configure(config)
-        picam2.start()
+        config = self.picam2.create_still_configuration(main={"size": (320, 480)})
+        self.picam2.configure(config)
+        self.picam2.start()
         time.sleep(1)
         self.counter_max = counter_max
         self.lower_red1 = np.array([0, 100, 100])
