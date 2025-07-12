@@ -90,7 +90,7 @@ def read_compensate():
 def bme280_compensate_t(adc_T):
     """摂氏で補正された温度を計算します。"""
     global t_fine
-    # Bosch BME280 データシート、セクション 4.2.3 温度の補正計算式 (浮動小数点バージョン) に基づく
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature (floating-point version)
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
     var2 = ((adc_T / 131072.0 - digT[0] / 8192.0) *
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
@@ -101,34 +101,37 @@ def bme280_compensate_t(adc_T):
 def bme280_compensate_p(adc_P):
     """hPa で補正された気圧を計算します。"""
     global t_fine
-    # Bosch BME280 データシート、セクション 4.2.3 気圧の補正計算式 (浮動小数点バージョン) に基づく
-    # C 言語の公式サンプルコードに厳密に合わせた実装です。
-    p = 0.0
+    # *** 厳密にBME280データシートのC言語サンプルコードに合わせた気圧補正関数 ***
+    # This version attempts to mimic the exact order of operations and variable types
+    # as much as possible for floating-point calculations.
     
     var1 = (t_fine / 2.0) - 64000.0
-    var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
-    var2 = var2 + ((var1 * digP[4]) * 2.0)
-    var2 = (var2 / 4.0) + (digP[3] * 65536.0) # Corrected multiplication by 2^16
+    var2 = var1 * var1 * digP[5] / 32768.0
+    var2 = var2 + (var1 * digP[4] * 2.0)
+    var2 = (var2 / 4.0) + (digP[3] * 65536.0) # digP3 * 2^16
+    
     var1 = (((digP[2] * var1) / 262144.0) * var1) / 32768.0
     var1 = (digP[1] * var1) / 2.0
-    var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # Corrected multiplication by 2^16
+    var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # digP1 * 2^16
 
     if var1 == 0:
-        return 0 # ゼロ除算を避ける
+        return 0 # Avoid division by zero
 
     p = (1048576.0 - adc_P)
-    p = ((p - (var2 / 4096.0)) * 25.0) * (65536.0 / var1) # Corrected multiplication by 2^16 / var1
-    var1 = (digP[8] * (((p / 8192.0) * (p / 8192.0)) / 8192.0)) / 16.0 # Corrected divisions by 2^3
-    var2 = ((p / 256.0) * digP[7]) / 256.0 # Corrected divisions by 2^8
-    p = p + ((var1 + var2 + digP[6]) / 16.0) # digP7 を加えてから 16 で割る
+    p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # This division by var1 is crucial
 
-    return p / 100.0 # Pa を hPa に変換
+    var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / 2^31
+    var2 = (p * digP[7]) / 32768.0       # (digP8 * p) / 2^15
+    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 is added before final division by 16
+
+    return p / 100.0 # Convert Pa to hPa
 
 def bme280_compensate_h(adc_H):
     """%RH で補正された湿度を計算します。"""
     global t_fine
-    # Bosch BME280 データシート、セクション 4.2.3 湿度の補正計算式 (浮動小数点バージョン) に基づく
-    # C 言語の公式サンプルコードに厳密に合わせた実装です。
+    # *** 厳密にBME280データシートのC言語サンプルコードに合わせた湿度補正関数 ***
+    # This version attempts to mimic the exact order of operations and variable types
+    # as much as possible for floating-point calculations.
     
     var_H = (t_fine - 76800.0)
     
@@ -136,10 +139,10 @@ def bme280_compensate_h(adc_H):
             (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
     
     var_H = var_H * (1.0 + (digH[0] / 67108864.0 * var_H * \
-            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] は H6
+            (1.0 + digH[5] / 67108864.0 * var_H))) # digH[5] is H6
 
-    humidity = var_H
-    
+    humidity = var_H # The result is directly the humidity value
+
     # 最終的な値を 0%～100% の範囲にクリッピング
     if humidity > 100.0:
         humidity = 100.0
@@ -156,7 +159,7 @@ def bme280_read_data():
         # データ順序: pres_msb, pres_lsb, pres_xlsb, temp_msb, temp_lsb, temp_xlsb, hum_msb, hum_lsb
         data = i2c_bus.read_i2c_block_data(bme280_address, 0xF7, 8)
         
-        # --- デバッグ出力 ---
+        # --- DEBUG OUTPUT ---
         print(f"DEBUG_BME280_READ: Raw data read: {data}")
         print(f"DEBUG_BME280_READ: Length of raw data: {len(data)}")
         # --- デバッグ出力ここまで ---
