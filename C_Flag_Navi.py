@@ -79,13 +79,13 @@ class FlagNavigator:
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
-                            self.driver.petit_right(0, self.turn_speed)
-                            self.driver.petit_right(self.turn_speed, 0)
+                            self.driver.petit_left(0, self.turn_speed)
+                            self.driver.petit_left(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         elif target_flag['location'] == '右':
-                            self.driver.petit_left(0, self.turn_speed)
-                            self.driver.petit_left(self.turn_speed, 0)
+                            self.driver.petit_right(0, self.turn_speed)
+                            self.driver.petit_right(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         
