@@ -12,7 +12,7 @@ from BNO055 import BNO055
 import following
 
 class Parakai:
-    def __init__(self, bno: BNO055, picam2: Picamera2, goal_location :list):
+    def __init__(self, bno: BNO055, goal_location :list):
         # GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -32,16 +32,13 @@ class Parakai:
         # BNO055
         self.picam2 = picam2
         self.bno = bno
-        """
-        self.bno = BNO055(address=0x28)
-        self.bno.begin()
-        self.bno.setMode(BNO055.OPERATION_MODE_NDOF)
-        self.bno.setExternalCrystalUse(True)
-        time.sleep(1)
-        """
         
         # Picamera2
-        self.picam2 = picam2
+        self.picam2 = Picamera2
+        config = picam2.create_still_configuration(main={"size": (320, 480)})
+        picam2.configure(config)
+        picam2.start()
+        time.sleep(1)
 
         # Destination
         self.destination = goal_location
