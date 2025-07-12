@@ -1,7 +1,7 @@
 import time
 import math
 from BNO055 import BNO055
-import BME280 # BME280_sensor.py から BME280_sensor モジュールをインポート
+import BME280 # BME280.py から BME280 モジュールをインポート
 
 def main():
     bno = BNO055()
@@ -17,15 +17,15 @@ def main():
 
     bme280_present = False
     try:
-        BME280_sensor.init_bme280()    # BME280_sensor モジュール内の関数を呼び出す
-        BME280_sensor.read_compensate() # BME280_sensor モジュール内の関数を呼び出す
+        BME280.init_bme280()    # BME280 モジュール内の関数を呼び出す
+        BME280.read_compensate() # BME280 モジュール内の関数を呼び出す
         print("BME280の初期化に成功しました。")
         bme280_present = True
         
         # デバッグ: 補正値が正しく読み込まれているか確認
-        # BME280_sensor モジュール内のグローバル変数にアクセス
-        print(f"DEBUG: digT={BME280_sensor.digT}")
-        print(f"DEBUG: digP={BME280_sensor.digP}")
+        # BME280 モジュール内のグローバル変数にアクセス
+        print(f"DEBUG: digT={BME280.digT}")
+        print(f"DEBUG: digP={BME280.digP}")
         # 湿度関連は使わないので digH は表示しない
 
     except Exception as e:
@@ -59,7 +59,7 @@ def main():
             pressure = None
             if bme280_present:
                 try:
-                    pressure = BME280_sensor.get_pressure_only() # BME280_sensor モジュール内の関数を呼び出す
+                    pressure = BME280.get_pressure_only() # BME280 モジュール内の関数を呼び出す
                 except Exception as e:
                     print(f"BME280データの読み取り中にエラーが発生しました: {e}")
                     bme280_present = False 
