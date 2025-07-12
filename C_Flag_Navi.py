@@ -40,6 +40,21 @@ class FlagNavigator:
                     return flag
         return None
 
+    def left_90_degree_rotation(self):
+        before_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+        target_heading = (before_heading - 90) % 360
+        while True:
+            current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+            delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
+            if abs delta_heading <= 5:
+                break
+            elif delta_heading < -5:
+                self.driver.petit_left(0, 90)
+                self.driver.motor_stop_brake()
+            elif delta_heading > 5:
+                self.driver.petit_right(0, 90)
+                self.driver.motor_stop_brake()
+            
     def run(self):
         """
         全てのターゲットフラッグを探索し、接近するメインのタスクを実行
