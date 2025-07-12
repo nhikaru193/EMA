@@ -89,4 +89,4 @@ class Landing:
             print("テグス溶断の再起動を終了しました")
         
         print("着地判定+溶断回路動作の終了です")
-        
+        sef.driver.cleanup()
