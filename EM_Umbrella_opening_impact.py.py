@@ -21,33 +21,33 @@ def init_bme280():
     """BME280 センサーを設定レジスタに書き込むことで初期化します。"""
     # 湿度オーバーサンプリング設定 (ctrl_hum レジスタ 0xF2) を x1 に
     i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01)
-    # 温度と気圧のオーバーサンプリング設定 (ctrl_meas レジスタ 0xF4) を x1 に、ノーマルモード
+    # 温度と気圧のオーバーサンプリング設定 (ctrl_meas レジスタ 0xF4) を x27 (温度x1, 気圧x1, ノーマルモード) に
     i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27)
-    # config レジスタ 0xF5 を設定: スタンバイ時間 1000ms, フィルターオフ, SPI 4-wire 無効
+    # config レジスタ 0xF5 を設定: T_standby 1000ms, filter off, SPI 4-wire 無効
     i2c_bus.write_byte_data(bme280_address, 0xF5, 0xA0)
 
 def read_compensate():
     """
-    BME280 センサーの NVM (不揮発性メモリ) から工場出荷時の校正 (補正) 値を読み取ります。
-    これらの値は、生 ADC データを意味のある物理単位に変換するために不可欠です。
+    BME280 センサーの NVM から工場出荷時の校正 (補正) 値を読み取ります。
+    digT, digP, digH リストを直接代入する形に修正しました。
     """
-    global digT, digP, digH # リストを変更するためにグローバル宣言
+    global digT, digP, digH 
 
     # 温度補正値の読み取り (レジスタ 0x88 ～ 0x8D, 6 バイト)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
-    digT = [
+    digT = [ # digT リストを直接代入
         (dat_t[1] << 8) | dat_t[0], # digT1 (符号なし 16ビット)
         (dat_t[3] << 8) | dat_t[2], # digT2 (符号付き 16ビット)
         (dat_t[5] << 8) | dat_t[4]  # digT3 (符号付き 16ビット)
     ]
     # 符号付き 16ビット値が必要な場合に変換 (digT2 と digT3)
-    for i in range(1, 3):
+    for i in range(1, 3): # range(1, 3) で digT[1] と digT[2] を処理
         if digT[i] >= 32768:
             digT[i] -= 65536
 
     # 気圧補正値の読み取り (レジスタ 0x8E ～ 0x9F, 18 バイト)
     dat_p = i2c_bus.read_i2c_block_data(bme280_address, 0x8E, 18)
-    digP = [
+    digP = [ # digP リストを直接代入
         (dat_p[1] << 8) | dat_p[0],   # digP1 (符号なし 16ビット)
         (dat_p[3] << 8) | dat_p[2],   # digP2 (符号付き 16ビット)
         (dat_p[5] << 8) | dat_p[4],   # digP3 (符号付き 16ビット)
@@ -59,7 +59,7 @@ def read_compensate():
         (dat_p[17] << 8) | dat_p[16]  # digP9 (符号付き 16ビット)
     ]
     # 符号付き 16ビット値が必要な場合に変換 (digP2 ～ digP9)
-    for i in range(1, 9):
+    for i in range(1, 9): # range(1, 9) で digP[1] から digP[8] を処理
         if digP[i] >= 32768:
             digP[i] -= 65536
 
@@ -67,22 +67,25 @@ def read_compensate():
     dh = i2c_bus.read_byte_data(bme280_address, 0xA1) # digH1
     dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 ～ digH6
 
-    # 6つの要素を持つ digH リストを構築
-    digH = [0] * 6 # 正しいサイズを確保するためにゼロで初期化
-
-    digH[0] = dh # H1
-    digH[1] = (dat_h[1] << 8) | dat_h[0] # H2
-    digH[2] = dat_h[2] # H3
-    digH[3] = (dat_h[3] << 4) | (dat_h[4] & 0x0F) # H4
-    digH[4] = (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F) # H5
-    digH[5] = dat_h[6] # H6
+    digH = [ # digH リストを直接代入
+        dh, # H1
+        (dat_h[1] << 8) | dat_h[0], # H2
+        dat_h[2], # H3
+        (dat_h[3] << 4) | (dat_h[4] & 0x0F), # H4
+        (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F), # H5
+        dat_h[6] # H6
+    ]
 
     # 湿度補正の符号付き値を変換 (H2, H4, H5 は符号付き 16ビット; H6 は符号付き 8ビット)
-    if digH[1] >= 32768:
+    if digH[1] >= 32768: # H2
         digH[1] -= 65536
-    if digH[3] >= 32768:
+    # digH[3] と digH[4] の符号付き変換
+    # あなたの元のコード `for i in range(3, 4): if digH[i] >= 32768: digH[i] -= 65536` は digH[3] のみ
+    # 私の提供した最終コードでは個別に処理していました。
+    # ここでは、データシートと一致するよう個別にチェックします。
+    if digH[3] >= 32768: # H4
         digH[3] -= 65536
-    if digH[4] >= 32768:
+    if digH[4] >= 32768: # H5
         digH[4] -= 65536
     if digH[5] >= 128: # H6 は符号付き 8ビット
         digH[5] -= 256
@@ -90,7 +93,7 @@ def read_compensate():
 def bme280_compensate_t(adc_T):
     """摂氏で補正された温度を計算します。"""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature (floating-point version)
+    # Bosch BME280 データシート、セクション 4.2.3 温度の補正計算式 (浮動小数点バージョン) に基づく
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
     var2 = ((adc_T / 131072.0 - digT[0] / 8192.0) *
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
@@ -102,7 +105,7 @@ def bme280_compensate_p(adc_P):
     """hPa で補正された気圧を計算します。"""
     global t_fine
     # --- Python での浮動小数点精度とデータシートの C 言語実装に厳密に合わせた気圧補正関数 ---
-    # 中間変数の型や計算順序が重要です。
+    # このバージョンは、Pythonでの大規模な浮動小数点計算の課題に対処するために再調整されました。
     
     var1 = (t_fine / 2.0) - 64000.0
     var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
@@ -114,7 +117,7 @@ def bme280_compensate_p(adc_P):
     var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # digP1 * 2^16
 
     if var1 == 0:
-        return 0 # Avoid division by zero
+        return 0 # ゼロ除算を避ける
 
     p = (1048576.0 - adc_P)
     p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # この除算は非常に重要
