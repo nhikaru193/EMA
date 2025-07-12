@@ -9,7 +9,7 @@ class FlagDetector:
     特定の白い図形を検出し、フラッグの位置を判定するクラス。
     """
     
-    def __init__(self, width=640, height=480, min_black_area=300):
+    def __init__(self, width=640, height=480, min_black_area=1000):
         """
         コンストラクタ（初期化処理）
         """
