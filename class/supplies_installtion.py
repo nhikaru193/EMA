@@ -82,64 +82,6 @@ class ServoController:
         GPIO.cleanup()
         print("GPIOをクリーンアップしました。")
 
----
-
-### **クラス化のポイント**
-
-1.  **`ServoController` クラス**:
-    * サーボモーターの操作に関連するすべての機能（初期化、デューティサイクル設定、段階的変化、クリーンアップ）をカプセル化します。
-    * **コンストラクタ `__init__`**:
-        * サーボが接続されている **GPIOピン番号**と**PWM周波数**を引数で受け取るようにしました。これにより、複数のサーボを異なるピンや設定で制御することが簡単になります。
-        * `RPi.GPIO`の初期設定とPWMの開始もここで行われます。
-    * **`set_duty_cycle(self, duty_cycle)`**:
-        * 特定のデューティサイクルを設定し、サーボがその位置に移動するのを待つためのシンプルなメソッドです。
-        * デューティサイクルが有効な範囲内にあるかどうかの基本的なチェックを追加しました。
-    * **`gradually_change_duty_cycle(self, start_duty, end_duty, steps, delay_per_step)`**:
-        * 元の`changing_servo_reverse`関数をより汎用的にしました。`start_duty`から`end_duty`までを**指定されたステップ数**で徐々に変化させ、**各ステップ間の遅延**も調整できるようにしました。
-        * 関数名も、より動作が分かりやすいように変更しています。
-    * **`stop_pwm(self)`**:
-        * PWM信号の出力を停止するためのメソッドです。これにより、サーボモーターがフリーな状態になります。
-    * **`cleanup(self)`**:
-        * `stop_pwm()`を呼び出した後、`GPIO.cleanup()`を実行してGPIOピンを適切に解放します。これにより、次回プログラムを実行する際にGPIO関連のエラーを防ぎます。
-
-### **使い方**
-
-このクラスを使うには、以下の手順に従います。
-
-1.  **インスタンスの作成**:
-    サーボが接続されているGPIOピン番号（例: `13`）とPWM周波数（通常 `50` Hz）を指定して、`ServoController`のインスタンスを作成します。
-    ```python
-    servo_control = ServoController(servo_pin=13, pwm_frequency=50)
-    ```
-
-2.  **サーボの制御**:
-    * 特定のデューティサイクルを設定するには：
-        ```python
-        print("サーボを逆回転（速い）位置へ設定")
-        servo_control.set_duty_cycle(4.0) # デューティサイクルを4.0%に設定
-        time.sleep(10) # 10秒間その位置を維持
-        ```
-    * デューティサイクルを徐々に変化させるには：
-        ```python
-        print("デューティサイクルを7.5%から10%へ徐々に変化（正回転方向へ）")
-        servo_control.gradually_change_duty_cycle(7.5, 10.0, steps=50, delay_per_step=0.05)
-        time.sleep(3)
-
-        print("デューティサイクルを10%から7.5%へ徐々に変化（停止方向へ）")
-        servo_control.gradually_change_duty_cycle(10.0, 7.5, steps=50, delay_per_step=0.05)
-        time.sleep(3)
-        ```
-    * 元のコードにあった`set_servo_duty(12.5)`は、例として徐々に変化させる方法の代わりに、直接最大値に設定する用途として残しています。
-
-3.  **クリーンアップ**:
-    プログラムの終了時や、サーボ制御が不要になった際には、必ず`cleanup()`メソッドを呼び出してリソースを解放してください。
-    ```python
-    servo_control.cleanup()
-    ```
-
-### **完全な実行例**
-
-```python
 import RPi.GPIO as GPIO
 import time
 
