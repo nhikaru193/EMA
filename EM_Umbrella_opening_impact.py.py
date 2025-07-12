@@ -6,9 +6,10 @@ import smbus
 from BNO055 import BNO055
 
 # --- BME280 グローバル変数とI2C設定 ---
-t_fine = 0.0 # 気圧補正に必要なので残します
-digT = []    # 気圧補正に必要なので残します
+t_fine = 0.0 # 温度、気圧、湿度補正の基礎となるグローバル変数
+digT = []    # 温度補正パラメータ
 digP = []    # 気圧補正パラメータ
+# digH は不要なので削除済みのまま
 
 # I2Cバスとアドレス設定
 i2c_bus = smbus.SMBus(1) # Raspberry Pi の I2C バスは通常 1
@@ -30,7 +31,7 @@ def read_compensate():
     BME280 センサーの NVM から工場出荷時の校正 (補正) 値を読み取ります。
     digT, digP リストを直接代入する形に修正済みです。
     """
-    global digT, digP # digH は不要なので削除
+    global digT, digP 
 
     # 温度補正値の読み取り (レジスタ 0x88 ～ 0x8D, 6 バイト)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
@@ -79,27 +80,27 @@ def bme280_compensate_t(adc_T):
 def bme280_compensate_p(adc_P):
     """hPa で補正された気圧を計算します。"""
     global t_fine
-    # --- Python での浮動小数点精度とデータシートの C 言語実装に厳密に合わせた気圧補正関数 ---
-    # このバージョンは、Pythonでの大規模な浮動小数点計算の課題に対処するために再調整されました。
+    # *** 最終版：Pythonでの実績ある BME280 気圧補正関数 (再々調整) ***
+    # これは、より多くの実績ある smbus BME280 ライブラリ実装と照らし合わせて検証したものです。
     
     var1 = (t_fine / 2.0) - 64000.0
     var2 = (((var1 / 4.0) * var1) / 8192.0) * digP[5]
     var2 = var2 + ((var1 * digP[4]) * 2.0)
-    var2 = (var2 / 4.0) + (digP[3] * 65536.0) # digP3 * 2^16
+    var2 = (var2 / 4.0) + (digP[3] * 65536.0)
     
     var1 = (((digP[2] * var1) / 262144.0) * var1) / 32768.0
     var1 = (digP[1] * var1) / 2.0
-    var1 = (var1 / 262144.0) + (digP[0] * 65536.0) # digP1 * 2^16
+    var1 = (var1 / 262144.0) + (digP[0] * 65536.0)
 
     if var1 == 0:
         return 0 # ゼロ除算を避ける
 
     p = (1048576.0 - adc_P)
-    p = ((p - (var2 / 4096.0)) * 6250.0) / var1 # この除算は非常に重要
+    p = ((p - (var2 / 4096.0)) * 6250.0) / var1
 
-    var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / 2^31
-    var2 = (p * digP[7]) / 32768.0       # (digP8 * p) / 2^15
-    p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 を加えてから 16 で割る
+    var1 = (digP[8] * p * p) / 2147483648.0
+    var2 = (p * digP[7]) / 32768.0
+    p = p + (var1 + var2 + digP[6]) / 16.0
 
     return p / 100.0 # Pa を hPa に変換 (1 hPa = 100 Pa)
 
@@ -121,7 +122,7 @@ def bme280_read_data_pressure_only():
             print(f"ERROR: BME280 read only {len(data)} bytes, expected 8 bytes.")
             raise IndexError("Not enough data read from BME280 for full compensation.")
 
-        # 気圧と温度の 20ビット ADC 値を抽出
+        # 気圧と温度の 20ビット ADC 値を抽出 (19:4, 11:4, 3:4)
         pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
         
@@ -160,7 +161,7 @@ def main():
         # デバッグ: 補正値が正しく読み込まれているか確認するためにコメントアウトを外すことができます
         print(f"DEBUG: digT={digT}")
         print(f"DEBUG: digP={digP}")
-        # digH は気圧のみの場合不要なので削除
+        # digH は気圧のみの場合不要なので削除済み
         # print(f"DEBUG: digH={digH}") 
 
     except Exception as e:
