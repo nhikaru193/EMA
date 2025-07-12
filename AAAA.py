@@ -47,29 +47,28 @@ time.sleep(1)
 
 #関数のインスタンス作成
 RELEASE = Release(bno) #ok
-LAND = Landing(driver, bno) 
-AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
-GPS_StoF = Amaging_GPS(driver, bno, goal_location = [35.9240852, 139.9112008])
-FLAG = FLAGNAVIGATOR(driver, bno)
-GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [35.9241086 ,139.9113731])
+RELEASE.run()
 
-# カメラ初期化と設定
-picam2 = Picamera2()
-config = picam2.create_still_configuration(main={"size": (320, 240)})
-picam2.configure(config)
-picam2.start()
-time.sleep(1)
+LAND = Landing(driver, bno) 
+LAND.run()
+
+AVOIDANCE = Parakai(driver, bno, picam2, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE.run()
+
+GPS_StoF = Amaging_GPS(driver, bno, goal_location = [35.9240852, 139.9112008])
+GPS_StoF.run()
+
+FLAG = FLAGNAVIGATOR(driver, bno)
+FLAG.run()
+
+GPS_FtoG = Amaging_GPS(driver, bno, goal_location = [35.9241086 ,139.9113731])
+GPS_FtoG.run()
 
 GOAL = GDN(driver, bno, picam2, 30)
+GOAL.run()
+
 
 
 #実行文
-RELEASE.run()
-LAND.run()
-AVOIDANCE.run()
-GPS_StoF.run()
-FLAG.run()
-GPS_FtoG.run()
-GOAL.run()
 
 print("クラス呼び出し完了です")
