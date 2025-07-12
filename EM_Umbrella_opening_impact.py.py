@@ -1,44 +1,53 @@
 import time
 import math
 import smbus
+
+# Assuming BNO055.py is correctly set up and in the same directory
 from BNO055 import BNO055
 
-# BME280関連のグローバル変数
+# --- BME280 Global Variables and I2C Setup ---
+# t_fine is a global variable used by temperature, pressure, and humidity compensation
 t_fine = 0.0
+# Compensation parameters, read from the sensor's NVM (Non-Volatile Memory)
 digT = []
 digP = []
 digH = []
 
-# I2Cアドレスとバス設定
-i2c_bus = smbus.SMBus(1)
-bme280_address = 0x76 # BME280のアドレス
+# I2C bus and address settings
+i2c_bus = smbus.SMBus(1) # Raspberry Pi's I2C bus is typically 1
+bme280_address = 0x76 # Common I2C address for BME280. Verify with 'i2cdetect -y 1'.
 
-# --- BME280 初期化と補正関数群 ---
+# --- BME280 Initialization and Compensation Functions ---
 
 def init_bme280():
-    # センサー設定
-    # 0xF2 (ctrl_hum): oversampling x1
+    """Initializes the BME280 sensor by writing configuration registers."""
+    # Set humidity oversampling (ctrl_hum register 0xF2) to x1
     i2c_bus.write_byte_data(bme280_address, 0xF2, 0x01)
-    # 0xF4 (ctrl_meas): Temp/Pres oversampling x1, Normal mode
+    # Set temperature and pressure oversampling (ctrl_meas register 0xF4) to x1, Normal mode
     i2c_bus.write_byte_data(bme280_address, 0xF4, 0x27)
-    # 0xF5 (config): T_standby 1000ms, filter off, SPI 4-wire
+    # Set config register 0xF5: T_standby 1000ms, filter off, SPI 4-wire disable
     i2c_bus.write_byte_data(bme280_address, 0xF5, 0xA0)
 
 def read_compensate():
-    global digT, digP, digH
-    
-    # 温度補正値の読み取り (0x88-0x8D)
+    """
+    Reads the factory calibration (compensation) values from the BME280 sensor's NVM.
+    These values are crucial for converting raw ADC readings into meaningful physical units.
+    """
+    global digT, digP, digH # Declare global to modify the lists
+
+    # Read temperature compensation values (reg 0x88 to 0x8D, 6 bytes)
     dat_t = i2c_bus.read_i2c_block_data(bme280_address, 0x88, 6)
     digT = [
         (dat_t[1] << 8) | dat_t[0], # digT1 (unsigned 16-bit)
         (dat_t[3] << 8) | dat_t[2], # digT2 (signed 16-bit)
         (dat_t[5] << 8) | dat_t[4]  # digT3 (signed 16-bit)
     ]
-    for i in range(1, 3): # digT2 and digT3 are signed
+    # Convert signed 16-bit values if necessary (digT2 and digT3)
+    for i in range(1, 3):
         if digT[i] >= 32768:
             digT[i] -= 65536
-            
-    # 気圧補正値の読み取り (0x8E-0x9F)
+
+    # Read pressure compensation values (reg 0x8E to 0x9F, 18 bytes)
     dat_p = i2c_bus.read_i2c_block_data(bme280_address, 0x8E, 18)
     digP = [
         (dat_p[1] << 8) | dat_p[0],   # digP1 (unsigned 16-bit)
@@ -51,15 +60,17 @@ def read_compensate():
         (dat_p[15] << 8) | dat_p[14], # digP8 (signed 16-bit)
         (dat_p[17] << 8) | dat_p[16]  # digP9 (signed 16-bit)
     ]
-    for i in range(1, 9): # digP2 to digP9 are signed
+    # Convert signed 16-bit values if necessary (digP2 to digP9)
+    for i in range(1, 9):
         if digP[i] >= 32768:
             digP[i] -= 65536
 
-    # 湿度補正値の読み取り (0xA1 and 0xE1 to 0xE7)
+    # Read humidity compensation values (reg 0xA1 and 0xE1 to 0xE7, total 8 bytes)
     dh = i2c_bus.read_byte_data(bme280_address, 0xA1) # digH1
     dat_h = i2c_bus.read_i2c_block_data(bme280_address, 0xE1, 7) # digH2 to digH6
 
-    digH = [0] * 6 # Initialize list with 6 elements
+    # Construct digH list with 6 elements
+    digH = [0] * 6 # Initialize with zeros to ensure correct size
 
     digH[0] = dh # H1
     digH[1] = (dat_h[1] << 8) | dat_h[0] # H2
@@ -68,19 +79,21 @@ def read_compensate():
     digH[4] = (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F) # H5
     digH[5] = dat_h[6] # H6
 
-    # Convert signed values for humidity compensation
-    if digH[1] >= 32768: # H2
+    # Convert signed values for humidity compensation (H2, H4, H5 are signed 16-bit; H6 is signed 8-bit)
+    if digH[1] >= 32768:
         digH[1] -= 65536
-    if digH[3] >= 32768: # H4
+    if digH[3] >= 32768:
         digH[3] -= 65536
-    if digH[4] >= 32768: # H5
+    if digH[4] >= 32768:
         digH[4] -= 65536
     if digH[5] >= 128: # H6 is 8-bit signed
         digH[5] -= 256
 
 def bme280_compensate_t(adc_T):
+    """Calculates compensated temperature in degrees Celsius."""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for temperature (integer and floating-point versions)
+    # This implementation is a standard floating-point translation.
     var1 = (adc_T / 16384.0 - digT[0] / 1024.0) * digT[1]
     var2 = ((adc_T / 131072.0 - digT[0] / 8192.0) *
             (adc_T / 131072.0 - digT[0] / 8192.0)) * digT[2]
@@ -89,13 +102,15 @@ def bme280_compensate_t(adc_T):
     return temperature # Celsius
 
 def bme280_compensate_p(adc_P):
+    """Calculates compensated pressure in hPa."""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for pressure
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for pressure (floating-point version)
     p = 0.0
-    var1 = t_fine - 128000.0
-    var2 = var1 * var1 * digP[5]
-    var2 = var2 + (var1 * digP[4] * 131072.0)
-    var2 = var2 + (digP[3] * 3.4359738368e9) # digP3 * (2^32)
+    
+    var1 = (t_fine / 2.0) - 64000.0
+    var2 = var1 * var1 * digP[5] / 32768.0
+    var2 = var2 + var1 * digP[4] * 2.0
+    var2 = var2 + digP[3] * 131072.0
     var1 = (digP[2] * var1 * var1 / 524288.0) + (digP[1] * var1) / 32768.0
     var1 = (1.0 + var1 / 32768.0) * digP[0]
 
@@ -104,19 +119,18 @@ def bme280_compensate_p(adc_P):
 
     p = 1048576.0 - adc_P
     p = (p - (var2 / 4096.0)) * 6250.0 / var1
-    var1 = (digP[8] * p * p) / 2147483648.0 # digP9 * p^2 / (2^31)
-    var2 = (p * digP[7]) / 32768.0       # digP8 * p / (2^15)
+    var1 = (digP[8] * p * p) / 2147483648.0 # (digP9 * p^2) / (2^31)
+    var2 = (p * digP[7]) / 32768.0       # (p * digP8) / (2^15)
     p = p + (var1 + var2 + digP[6]) / 16.0 # digP7 is added, then divided by 16
 
     return p / 100.0 # Convert Pa to hPa
 
 def bme280_compensate_h(adc_H):
+    """Calculates compensated humidity in %RH."""
     global t_fine
-    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for humidity
-    # This formula is often translated slightly differently across examples.
-    # This version is a common and robust one.
+    # Based on Bosch BME280 datasheet, Section 4.2.3 Compensation formula for humidity (floating-point version)
     
-    var_H = (t_fine - 76800.0)
+    var_H = t_fine - 76800.0
     
     var_H = (adc_H - (digH[3] * 64.0 + digH[4] / 16384.0 * var_H)) * \
             (digH[1] / 1024.0 + digH[2] / 65536.0 * var_H)
@@ -139,6 +153,7 @@ def bme280_read_data():
     """Reads raw ADC values for pressure, temperature, and humidity, then compensates them."""
     try:
         # Read 8 bytes starting from 0xF7 (pressure_msb)
+        # Data order: pres_msb, pres_lsb, pres_xlsb, temp_msb, temp_lsb, temp_xlsb, hum_msb, hum_lsb
         data = i2c_bus.read_i2c_block_data(bme280_address, 0xF7, 8)
         
         # --- DEBUG OUTPUT ---
