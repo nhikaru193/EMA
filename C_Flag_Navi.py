@@ -40,9 +40,9 @@ class FlagNavigator:
                     return flag
         return None
 
-    def left_90_degree_rotation(self):
+    def left_20_degree_rotation(self):
         before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-        target_heading = (before_heading - 90) % 360
+        target_heading = (before_heading - 20) % 360
         while True:
             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = ((target_heading - curent_heading + 180) % 360) - 180
@@ -93,8 +93,19 @@ class FlagNavigator:
                         search_count += 1
 
                         """
+                    while target_flag is None and search_count < 70:
                         self.driver.petit_petit(9)
+                        detected_data = self.detector.detect()
+                        target_flag = self.find_target_flag(detected_data, target_name)
+                        time.sleep(0.5)
+                        search_count += 1
                         
+                        while rotation_count < 25:
+                            self.left_20_degree_rotation()
+                            detected_data = self.detector.detect()
+                            target_flag = self.find_target_flag(detected_data, target_name)
+                            time.sleep(0.5)
+                            rotation_count += 1
                         """
                                 
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
