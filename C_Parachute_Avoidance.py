@@ -28,16 +28,12 @@ class Parakai:
         self.pi = pigpio.pi()
         self.pi.bb_serial_read_close(self.RX_PIN)   #追加
         self.pi.bb_serial_read_open(self.RX_PIN, 9600, 8)
-
-        # BNO055
-        self.picam2 = picam2
         self.bno = bno
-        
         # Picamera2
         self.picam2 = Picamera2
-        config = picam2.create_still_configuration(main={"size": (320, 480)})
-        picam2.configure(config)
-        picam2.start()
+        config = self.picam2.create_still_configuration(main={"size": (320, 480)})
+        self.picam2.configure(config)
+        self.picam2.start()
         time.sleep(1)
 
         # Destination
