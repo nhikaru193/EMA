@@ -51,7 +51,7 @@ while True:
 RELEASE = RD(bno) #ok
 RELEASE.run()
 
-LAND = Landing(bno) 
+LAND = LD(bno) 
 LAND.run()
 
 AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
