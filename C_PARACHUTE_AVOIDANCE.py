@@ -166,6 +166,7 @@ class PA:
                 else:
                     break
             #正面
+            print("パラシュートの検知を行います。")
             p_front = self.detective_red()
             #30度左回頭
             self.degree_rotation(-30, 5)
@@ -200,6 +201,7 @@ class PA:
 
             else:
                 print("正面にパラシュートは検知できません")
+                print("前進します")
                 following.follow_forward(driver, bno, 90, 8)
 
         finally:
