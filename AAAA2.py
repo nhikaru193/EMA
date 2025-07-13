@@ -51,22 +51,22 @@ while True:
 RELEASE = RD(bno) #ok
 RELEASE.run()
 
-LAND = Landing(bno) 
+LAND = LD(driver, bno) 
 LAND.run()
 
-AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE = PA(driver, bno, pi, picam2, goal_location = [35.9240852, 139.9112008]) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = [35.9240852, 139.9112008])
+GPS_StoF = GPS(driver, bno, pi, goal_location = [35.9240852, 139.9112008])
 GPS_StoF.run()
 
-FLAG = FN(bno)
+FLAG = FN(driver, bno)
 FLAG.run()
 
-GPS_FtoG = GPS(bno, goal_location = [35.9241086 ,139.9113731])
+GPS_FtoG = GPS(driver, bno, pi, goal_location = [35.9241086 ,139.9113731])
 GPS_FtoG.run()
 
-GOAL = GDN(bno, 30)
+GOAL = GDN(driver, bno, picam2, 30)
 GOAL.run()
 
 #実行文
