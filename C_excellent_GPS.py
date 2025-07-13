@@ -28,7 +28,7 @@ class GPS:
         self.bno    = bno
         self.RX_PIN = 17
         self.BAUD = 9600
-        self.turn_speed = 90
+        self.turn_speed = 95
         self.pi = pigpio.pi()
         if not self.pi.connected:
             raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
