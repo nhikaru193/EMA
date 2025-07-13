@@ -8,12 +8,12 @@ import smbus
 import following
 import BME280
 from BNO055 import BNO055
-from C_release import Release
+from C_release import RD
 from C_Landing_Detective import Landing
 from C_Parachute_Avoidance import Parakai
 from C_PARACHUTE_AVOIDANCE import PA
 from C_Flag_Navi import FN
-from C_excellent_GPS import Amaging_GPS
+from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import fusing
 import struct
@@ -23,15 +23,6 @@ import numpy
 from Flag_Detector2 import FlagDetector
 import pigpio
 import busio
-
-"""
-#モータの初期化
-driver = MotorDriver(
-    PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
-    PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
-    STBY=21                      # STBYピン
-)
-"""
 
 #BNO055の初期設定
 bno = BNO055()
@@ -57,7 +48,7 @@ picam2.start()
 time.sleep(1)
 """
 #関数のインスタンス作成
-RELEASE = Release(bno) #ok
+RELEASE = RD(bno) #ok
 RELEASE.run()
 
 LAND = Landing(bno) 
@@ -66,13 +57,13 @@ LAND.run()
 AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
 AVOIDANCE.run()
 
-GPS_StoF = Amaging_GPS(bno, goal_location = [35.9240852, 139.9112008])
+GPS_StoF = GPS(bno, goal_location = [35.9240852, 139.9112008])
 GPS_StoF.run()
 
-FLAG = FLAGNAVIGATOR(bno)
+FLAG = FN(bno)
 FLAG.run()
 
-GPS_FtoG = Amaging_GPS(bno, goal_location = [35.9241086 ,139.9113731])
+GPS_FtoG = GPS(bno, goal_location = [35.9241086 ,139.9113731])
 GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
