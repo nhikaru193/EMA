@@ -73,7 +73,7 @@ start_time = time.time()
 
 # 加速度測定
 while True:
-    ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
+    ax, ay, az = bno.getVector(BNO055.VECTOR_LINEARACCEL)
     squ_a = ax ** 2 + ay ** 2 + az ** 2
     size_a = math.sqrt(squ_a)
     #print(f"総加速度の大きさ：{size_a}m/s^2")
