@@ -9,7 +9,7 @@ import smbus
 import struct
 import following
 
-class Amaging_GPS:
+class GPS:
     def __init__(
         self,
         bno: BNO055,
