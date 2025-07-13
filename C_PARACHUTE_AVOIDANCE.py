@@ -226,4 +226,5 @@ class PA:
         finally:
             self.driver.cleanup()
             self.picam2.close()
+            self.pi.bb_serial_read_close(self.RX_PIN)
             self.pi.stop()
