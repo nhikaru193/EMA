@@ -11,7 +11,7 @@ from Flag_Detector2 import FlagDetector
 import RPi.GPIO as GPIO
 from C_excellent_GPS import Amaging_GPS
 
-class FLAGNAVIGATOR:
+class FN:
     # --- クラスの初期化メソッド ---
     def __init__(self, bno: BNO055):
         """
