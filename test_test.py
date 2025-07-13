@@ -33,7 +33,7 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
       
-AVOIDANCE = PA(bno, goal_location = [35.9189971, 139.9085032]) #ok
+AVOIDANCE = PA(bno, goal_location = [35.9242042, 139.9113654]) #ok
 AVOIDANCE.run()
 
 #完璧でしたGDN
