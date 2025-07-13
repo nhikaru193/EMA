@@ -32,6 +32,13 @@ import busio
 from C_Parachute_Avoidance import Parakai
 """
 
+#driverのインスタンス作成
+driver = MotorDriver(
+    PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
+    PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
+    STBY=21                      # STBYピン
+)
+
 #BNO055の初期設定
 bno = BNO055()
 bno.begin()
@@ -39,6 +46,27 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
+
+# === GPSピン設定 ===
+RX_PIN = 17
+BAUD = 9600
+# === pigpio 初期化 ===
+pi = pigpio.pi()
+if not pi.connected:
+    print("pigpio デーモンに接続できてないよ。sudo pigpiod を実行してください。")
+    exit(1)
+err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
+if err != 0:
+    print(f"ソフトUART RX の設定に失敗：GPIO={RX_PIN}, {BAUD}bps")
+    pi.stop()
+    exit(1)
+
+#picam2初期設定
+picam2 = Picamera2()
+config = picam2.create_still_configuration(main={"size": (320, 480)})
+picam2.configure(config)
+picam2.start()
+time.sleep(1)
 
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
