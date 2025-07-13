@@ -64,6 +64,22 @@ class PA:
         else:
             return False
 
+    #左n度回頭はdegree負の値、右はその逆
+    def degree_rotation(self, degree, threshold_deg = 5):
+        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+        target_heading = (before_heading + degree) % 360
+        while True:
+            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
+            if abs(delta_heading) <= threshold_deg:
+                break
+            elif delta_heading < -1 * threshold_deg:
+                self.driver.petit_left(0, 90)
+                self.driver.motor_stop_brake()
+            elif delta_heading > threshold_deg:
+                self.driver.petit_right(0, 90)
+                self.driver.motor_stop_brake()
+                
     def convert_to_decimal(self, coord, direction):
         if not coord: return 0.0
         if direction in ['N', 'S']:
@@ -147,9 +163,7 @@ class PA:
     
                 else:
                     break
-            #正面撮影→パラシュートがあれば回避
+            #正面
             percentage_front = self.detective_red()
-                
-            
             #30度左回頭
         
