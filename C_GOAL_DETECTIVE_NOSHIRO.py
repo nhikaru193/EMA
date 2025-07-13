@@ -173,6 +173,8 @@ class GDN:
                 counter = counter - 1
         finally:
             self.picam2.close()
+            self.pi.bb_serial_read_close(17)
+            self.picam2.close()
             print("カメラを閉じました。")
             print("ゴール判定")
             self.driver.cleanup()
