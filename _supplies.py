@@ -27,7 +27,10 @@ try:
     #set_servo_duty(12.5)
     
     #set_servo_duty(2.5)　停止
-    set_servo_duty(7.5)
+    #set_servo_duty(7.5)
+
+    set_servo_duty(5.0)
+    
     
     
 finally:
