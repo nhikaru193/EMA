@@ -137,12 +137,14 @@ driver = MotorDriver(
 for i in range(2):
 	driver.changing_forward(0, 50)
 	driver.changing_forward(50, 0)
+	"""
 	driver.changing_left(0, 40)
 	driver.changing_left(40, 0)
 	driver.changing_right(0, 40)
 	driver.changing_right(40, 0)
 	driver.changing_retreat(0, 100)
 	driver.changing_retreat(100, 0)
+ 	"""
 
 #モータークリーンアップ
 driver.motor_stop_brake()
