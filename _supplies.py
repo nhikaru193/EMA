@@ -12,7 +12,7 @@ pwm.start(0)
 
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
-    time.sleep(0.01)
+    time.sleep(5)
 
 def changing_servo_reverse(before, after):
     global speed
