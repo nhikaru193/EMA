@@ -26,7 +26,7 @@ bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
 
-AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE = PA(bno, goal_location = [35.9189971, 139.9085032]) #ok
 AVOIDANCE.run()
 
 #完璧でしたGDN
