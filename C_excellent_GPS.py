@@ -145,7 +145,7 @@ class GPS:
     
                 # 5. 前進フェーズ (PD制御による直進維持)
                 print(f"[MOVE] 方向OK。PD制御で前進します。")
-                following.follow_forward(self.driver, self.bno, 70, 8)
+                following.follow_forward(self.driver, self.bno, 70, 3)
     
         except KeyboardInterrupt:
             print("\n[STOP] 手動で停止されました。")
