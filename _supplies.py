@@ -23,18 +23,10 @@ def changing_servo_reverse(before, after):
         time.sleep(0.01)
     
 try:
-    print("7.5→10")
-    changing_servo_reverse(7.5, 10.0)
-    time.sleep(2)
-
-    changing_servo_reverse(10.0, 7.5)
-    time.sleep(2)
-    """
-    print("逆回転（速い）")
-    set_servo_duty(4.0)
-    time.sleep(10)
+    set_servo_duty(10)
     #set_servo_duty(12.5)
     time.sleep(3)
+    set_servo_duty(7.5)
     """
     
 finally:
