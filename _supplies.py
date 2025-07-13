@@ -23,11 +23,12 @@ def changing_servo_reverse(before, after):
         time.sleep(0.01)
     
 try:
-    set_servo_duty(12.5)
-    """
+    
+    #set_servo_duty(12.5)
+    
     set_servo_duty(10)
-    set_servo_duty(7.5)
-    """
+    #set_servo_duty(7.5)
+    
     
 finally:
     pwm.stop()
