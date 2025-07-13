@@ -118,8 +118,8 @@ class GDN:
                     break
                 elif number == 3:
                     if percentage > 40:
-                        print("petit_petitを1回実行します")
-                        self.driver.petit_petit(3)
+                        print("petit_petitを2回実行します")
+                        self.driver.petit_petit(2)
                         time.sleep(1.0)
                         counter = self.counter_max
 
