@@ -77,9 +77,11 @@ class PA:
                 break
             elif delta_heading < -1 * threshold_deg:
                 self.driver.petit_left(0, 90)
+                time.sleep(0.05)
                 self.driver.motor_stop_brake()
             elif delta_heading > threshold_deg:
                 self.driver.petit_right(0, 90)
+                time.sleep(0.05)
                 self.driver.motor_stop_brake()
                 
     def convert_to_decimal(self, coord, direction):
@@ -170,6 +172,7 @@ class PA:
             p_front = self.detective_red()
             #30度左回頭
             self.degree_rotation(-30, 5)
+            self
             p_left = self.detective_red()
             #右60度回頭
             self.degree_rotation(60, 5)
