@@ -11,6 +11,7 @@ from BNO055 import BNO055
 from C_release import Release
 from C_Landing_Detective import Landing
 from C_Parachute_Avoidance import Parakai
+from C_PARACHUTE_AVOIDANCE import PA
 from C_Flag_Navi import FlagNavigator
 from C_excellent_GPS import Amaging_GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
@@ -54,7 +55,7 @@ RELEASE.run()
 LAND = Landing(bno) 
 LAND.run()
 
-AVOIDANCE = Parakai(bno, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
 AVOIDANCE.run()
 
 GPS_StoF = Amaging_GPS(bno, goal_location = [35.9240852, 139.9112008])
