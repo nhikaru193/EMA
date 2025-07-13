@@ -63,6 +63,18 @@ GPS_StoF.run()
 FLAG = FN(bno)
 FLAG.run()
 
+SERVO_PIN = 13  # GPIO13を使用
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+pwm = GPIO.PWM(SERVO_PIN, 50)
+pwm.start(0)
+print("逆回転（速い）")
+set_servo_duty(4.0)
+time.sleep(7)
+#set_servo_duty(12.5)
+pwm.stop()
+GPIO.cleanup()
+
 GPS_FtoG = GPS(bno, goal_location = [35.9241528 ,139.9112682])
 GPS_FtoG.run()
 
