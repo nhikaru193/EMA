@@ -24,8 +24,6 @@ def changing_servo_reverse(before, after):
     
 try:
     set_servo_duty(10)
-    #set_servo_duty(12.5)
-    time.sleep(3)
     set_servo_duty(7.5)
     
     
