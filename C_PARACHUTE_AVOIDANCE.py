@@ -26,7 +26,7 @@ class PA:
         self.picam2.start()
         self.bno = bno
         self.goal_location = goal_location
-        self.ANGLE_THRESHOLD_DEG = 7.0
+        self.ANGLE_THRESHOLD_DEG = 9.0
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
@@ -81,7 +81,7 @@ class PA:
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             elif delta_heading > threshold_deg:
-                self.driver.petit_right(0, 90)
+                self.driver.petit_right(0, 99)
                 time.sleep(0.05)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
