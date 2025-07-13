@@ -141,8 +141,5 @@ class GPS:
             print(f"\n[FATAL] 予期せぬエラーが発生しました: {e}")
         finally:
             print("クリーンアップ処理を実行します。")
-            self.driver.cleanup()
-            self.pi.bb_serial_read_close(self.RX_PIN)
-            self.pi.stop()
             print("プログラムを終了しました。")
         
