@@ -61,8 +61,10 @@ class PA:
         percentage = self.get_percentage(frame)
         if percentage > 10:
             return True
+            print("この方向にパラシュートを検知しました")
         else:
             return False
+            print("この方向にパラシュートは検知できませんでした")
 
     #左n度回頭はdegree負の値、右はその逆
     def degree_rotation(self, degree, threshold_deg = 5):
@@ -164,6 +166,38 @@ class PA:
                 else:
                     break
             #正面
-            percentage_front = self.detective_red()
+            p_front = self.detective_red()
             #30度左回頭
-        
+            self.degree_rotation(-30, 5)
+            p_left = self.detective_red()
+            #右60度回頭
+            self.degree_rotation(60, 5)
+            p_right = self.detective_red()
+            #正面を向く
+            self.degree_rotation(-30, 5)
+            if p_front and p_left and p_right:
+                self.degree_rotation(175, 5)
+                following.follow_forward(driver, bno, 90, 3)
+                self.degree_rotation(-90, 5)
+                following.follow_forward(driver, bno, 90, 8)
+                self.degree_rotation(-90, 5)
+                following.follow_forward(driver, bno, 90, 10)
+                print("パラ回避終了。GPS誘導に移ります")
+
+            elif p_front and p_left:
+                self.degree_rotation(90, 5)
+                following.follow_forward(driver, bno, 90, 4)
+                self.degree_rotation(-90, 5)
+                following.follow_forward(driver, bno, 90, 8)
+                print("パラ回避終了。GPS誘導に移ります")
+
+            elif p_front:
+                self.degree_rotation(-90, 5)
+                following.follow_forward(driver, bno, 90, 4)
+                self.degree_rotation(90, 5)
+                following.follow_forward(driver, bno, 90, 8)
+                print("パラ回避終了。GPS誘導に移ります")
+
+            else:
+                print("正面にパラシュートは検知できません")
+                following.follow_forward(driver, bno, 90, 8)
