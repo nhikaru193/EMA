@@ -219,6 +219,9 @@ class PA:
                 print("正面にパラシュートは検知できません")
                 print("前進します")
                 following.follow_forward(self.driver, self.bno, 90, 8)
+                
+        except keyboardInterrupt:
+            print("回避行動を中断します")
 
         finally:
             self.driver.cleanup()
