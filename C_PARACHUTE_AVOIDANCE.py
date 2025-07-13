@@ -178,31 +178,31 @@ class PA:
             self.degree_rotation(-30, 5)
             if p_front and p_left and p_right:
                 self.degree_rotation(175, 5)
-                following.follow_forward(driver, bno, 90, 3)
+                following.follow_forward(self.driver, self.bno, 90, 3)
                 self.degree_rotation(-90, 5)
-                following.follow_forward(driver, bno, 90, 8)
+                following.follow_forward(self.driver, self.bno, 90, 8)
                 self.degree_rotation(-90, 5)
-                following.follow_forward(driver, bno, 90, 10)
+                following.follow_forward(self.driver, self.bno, 90, 10)
                 print("パラ回避終了。GPS誘導に移ります")
 
             elif p_front and p_left:
                 self.degree_rotation(90, 5)
-                following.follow_forward(driver, bno, 90, 4)
+                following.follow_forward(self.driver, self.bno, 90, 4)
                 self.degree_rotation(-90, 5)
-                following.follow_forward(driver, bno, 90, 8)
+                following.follow_forward(self.driver, self.bno, 90, 8)
                 print("パラ回避終了。GPS誘導に移ります")
 
             elif p_front:
                 self.degree_rotation(-90, 5)
-                following.follow_forward(driver, bno, 90, 4)
+                following.follow_forward(self.driver, self.bno, 90, 4)
                 self.degree_rotation(90, 5)
-                following.follow_forward(driver, bno, 90, 8)
+                following.follow_forward(self.driver, self.bno, 90, 8)
                 print("パラ回避終了。GPS誘導に移ります")
 
             else:
                 print("正面にパラシュートは検知できません")
                 print("前進します")
-                following.follow_forward(driver, bno, 90, 8)
+                following.follow_forward(self.driver, self.bno, 90, 8)
 
         finally:
             self.driver.cleanup()
