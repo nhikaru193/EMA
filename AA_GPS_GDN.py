@@ -65,7 +65,7 @@ FLAG = FN(bno)
 FLAG.run()
 """
 
-GPS_FtoG = GPS(bno, goal_location = [35.9244151 ,139.9113296])
+GPS_FtoG = GPS(bno, goal_location = [35.9244151 ,139.9113296], 3.0, 5.0)
 GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
