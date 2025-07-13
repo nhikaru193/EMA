@@ -142,7 +142,7 @@ class PA:
                     continue
     
                 # 2. 計算
-                bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
+                bearing_to_goal = self.get_bearing_to_goal(current_location, self.goal_location)
                 angle_error = (bearing_to_goal - heading + 360) % 360
     
                 print(f"目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
