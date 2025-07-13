@@ -13,7 +13,7 @@ from C_excellent_GPS import Amaging_GPS
 
 class FlagNavigator:
     # --- クラスの初期化メソッド ---
-    def __init__(self, driver: MotorDriver, bno: BNO055):
+    def __init__(self, bno: BNO055):
         """
         ロボットのハードウェアと設定を初期化します。
         """
@@ -26,7 +26,11 @@ class FlagNavigator:
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
-        self.driver = driver
+        self.driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,   
+            PWMB=19, BIN1=16, BIN2=26,   
+            STBY=21                      
+        )
         self.screen_area = self.detector.width * self.detector.height
         
         # === BNO055 初期化 ===
