@@ -29,7 +29,7 @@ bno.setExternalCrystalUse(True)
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"gyro:{gyro}")
-    if gyro == 3:
+    if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
       
