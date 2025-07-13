@@ -9,7 +9,6 @@ from BNO055 import BNO055
 from motor import MotorDriver
 from Flag_Detector2 import FlagDetector
 import RPi.GPIO as GPIO
-from C_excellent_GPS import Amaging_GPS
 
 class FN:
     # --- クラスの初期化メソッド ---
