@@ -17,7 +17,7 @@ class FN:
         ロボットのハードウェアと設定を初期化します。
         """
         # --- 設定値 ---
-        self.TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] #, "T字", "十字"を追加する
+        self.TARGET_SHAPES = ["三角形"] #, "長方形", "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 25.0
         self.turn_speed = 60
         self.flag_lat = 35.9240852
