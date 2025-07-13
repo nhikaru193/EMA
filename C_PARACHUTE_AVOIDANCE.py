@@ -170,35 +170,46 @@ class PA:
             #正面
             print("パラシュートの検知を行います。")
             p_front = self.detective_red()
+            time.sleep(1)
             #30度左回頭
             self.degree_rotation(-30, 5)
-            self
+            time.sleep(0.5)
             p_left = self.detective_red()
+            time.sleep(1)
             #右60度回頭
             self.degree_rotation(60, 5)
+            time.sleep(0.5)
             p_right = self.detective_red()
+            time.sleep(1)
             #正面を向く
             self.degree_rotation(-30, 5)
             if p_front and p_left and p_right:
                 self.degree_rotation(175, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 3)
                 self.degree_rotation(-90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 8)
                 self.degree_rotation(-90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 10)
                 print("パラ回避終了。GPS誘導に移ります")
 
             elif p_front and p_left:
                 self.degree_rotation(90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 4)
                 self.degree_rotation(-90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 8)
                 print("パラ回避終了。GPS誘導に移ります")
 
             elif p_front:
                 self.degree_rotation(-90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 4)
                 self.degree_rotation(90, 5)
+                time.sleep(0.5)
                 following.follow_forward(self.driver, self.bno, 90, 8)
                 print("パラ回避終了。GPS誘導に移ります")
 
