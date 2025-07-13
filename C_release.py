@@ -3,7 +3,7 @@ import time
 from BNO055 import BNO055
 import BME280
 
-class Release:
+class RD:
     def __init__(self, bno: BNO055):
         self.bno = bno
         self.t_fine = 0.0
