@@ -10,6 +10,14 @@ import following
 import cv2
 import camera
 from BNO055 import BNO055
+from C_PARACHUTE_AVOIDANCE import PA
+import smbus
+import math
+import pigpio
+import struct
+import following
+import cv2
+import camera
 
 bno = BNO055()
 bno.begin()
@@ -18,5 +26,11 @@ bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
 
+AVOIDANCE = PA(bno, goal_location = [35.9240852, 139.9112008]) #ok
+AVOIDANCE.run()
+
+#完璧でしたGDN
+"""
 GDinN = GDN(bno)
 GDinN.run()
+"""
