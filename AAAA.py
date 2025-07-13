@@ -7,9 +7,7 @@ from picamera2 import Picamera2
 import struct
 import RPi.GPIO as GPIO
 import math
-import numpy
 import pigpio
-import busio
 
 #作成ファイルのインポート
 import fusing
@@ -27,8 +25,12 @@ from C_Flag_Navi import FN
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 
-
-#from C_Parachute_Avoidance import Parakai
+#おそらく未使用のモジュール
+"""
+import numpy
+import busio
+from C_Parachute_Avoidance import Parakai
+"""
 
 #BNO055の初期設定
 bno = BNO055()
@@ -44,15 +46,7 @@ while True:
     if gyro == 3:
         print("BNO055のキャリブレーション終了")
         break
-        
-"""
-# カメラ初期化と設定
-picam2 = Picamera2()
-config = picam2.create_still_configuration(main={"size": (320, 240)})
-picam2.configure(config)
-picam2.start()
-time.sleep(1)
-"""
+
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
 RELEASE.run()
