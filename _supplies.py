@@ -27,7 +27,7 @@ try:
     #set_servo_duty(12.5)
     time.sleep(3)
     set_servo_duty(7.5)
-    """
+    
     
 finally:
     pwm.stop()
