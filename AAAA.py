@@ -40,6 +40,14 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
+
+while True:
+    sys, gyro, accel, mag = bno.getCalibration()
+    print(f"gyro:{gyro}")
+    if gyro == 3:
+        print("BNO055のキャリブレーション終了")
+        break
+        
 """
 # カメラ初期化と設定
 picam2 = Picamera2()
