@@ -201,3 +201,8 @@ class PA:
             else:
                 print("正面にパラシュートは検知できません")
                 following.follow_forward(driver, bno, 90, 8)
+
+        finally:
+            self.driver.cleanup()
+            self.picam2.close()
+            self.pi.stop()
