@@ -56,6 +56,14 @@ class PA:
         print(f"検知割合は{percentage}%です")
         return percentage
 
+    def detective_red(self):
+        frame = self.picam2.capture_array()
+        percentage = self.get_percentage(frame)
+        if percentage > 10:
+            return True
+        else:
+            return False
+
     def convert_to_decimal(self, coord, direction):
         if not coord: return 0.0
         if direction in ['N', 'S']:
@@ -137,8 +145,11 @@ class PA:
                     time.sleep(0.5) # 回転後の安定待ち
                     continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
     
-    
-                # 5. 前進フェーズ (PD制御による直進維持)
-                print(f"[MOVE] 方向OK。PD制御で前進します。")
-                following.follow_forward(self.driver, self.bno, 70, 8)
+                else:
+                    break
+            #正面撮影→パラシュートがあれば回避
+            percentage_front = self.detective_red()
+                
+            
+            #30度左回頭
         
