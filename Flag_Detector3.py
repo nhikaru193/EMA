@@ -100,7 +100,7 @@ class FlagDetector:
         elif vertices >= 7 and vertices <= 9 and solidity < 0.9:
             shape_name = "T字"
             
-        elif vertices >= 10 and vertices <= 13 and solidity < 0.75:
+        elif vertices >= 11 and vertices <= 13 and solidity < 0.75:
             shape_name = "十字"
 
         return shape_name, approx
