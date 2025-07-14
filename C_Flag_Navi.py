@@ -181,7 +181,7 @@ class FN:
         self.driver.cleanup()
         self.detector.close()
         GPIO.cleanup()
-        cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()
 
 # メインの実行ブロック
 if __name__ == '__main__':
