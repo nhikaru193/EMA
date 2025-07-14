@@ -15,7 +15,7 @@ class RD:
         self.pressure_change_threshold = 0.3
         self.acc_z_threshold_abs = 0.5
         self.consecutive_checks = 3
-        self.timeout = 60
+        self.timeout = 20
         self.landing_count = 0
         self.start_time = time.time()
         self.current_time = time.time()
