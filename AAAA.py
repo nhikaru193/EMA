@@ -31,10 +31,11 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import numpy
 import busio
 from C_Parachute_Avoidance import Parakai
+"""
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
-"""
+
 
 #BNO055の初期設定
 bno = BNO055()
@@ -66,11 +67,9 @@ GPS_StoF.run()
 
 FLAG = FN(bno)
 FLAG.run()
-
+"""
 SERVO = SM(6)
 SERVO.run()
-
-
 """
 SERVO_PIN = 13  # GPIO13を使用
 GPIO.setmode(GPIO.BCM)
@@ -83,7 +82,7 @@ time.sleep(7)
 #set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
-"""
+
 
 GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
 GPS_FtoG.run()
