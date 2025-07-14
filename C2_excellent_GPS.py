@@ -19,7 +19,7 @@ class GPS:
         GOAL_THRESHOLD_M: float = 5.0,
         ANGLE_THRESHOLD_DEG: float = 15.0,
     ):
-        self.GOAL_LOCATION     = [35.920324666 ,139.9112945]
+        self.GOAL_LOCATION     = goal_location
         self.GOAL_THRESHOLD_M  = GOAL_THRESHOLD_M
         self.ANGLE_THRESHOLD_DEG   = ANGLE_THRESHOLD_DEG
         self.driver = driver
