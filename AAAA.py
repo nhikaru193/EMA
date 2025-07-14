@@ -32,6 +32,10 @@ import busio
 from C_Parachute_Avoidance import Parakai
 """
 
+def set_servo_duty(duty):
+    pwm.ChangeDutyCycle(duty)
+    time.sleep(0.5)
+
 #BNO055の初期設定
 bno = BNO055()
 bno.begin()
