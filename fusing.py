@@ -19,7 +19,7 @@ def circuit():
         GPIO.output(NICHROME_PIN, GPIO.LOW)
         print("シーケンスが正常に完了しました。")
 
-    except keyboardInterrupt:
+    except KeyboardInterrupt:
         print("プログラムが中断されました。")
         GPIO.output(NICHROME_PIN, GPIO.LOW)
 
