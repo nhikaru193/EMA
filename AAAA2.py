@@ -89,8 +89,8 @@ GPIO.cleanup()
 GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
 GPS_FtoG.run()
 
-GOAL = GDN(bno, 30)
-GOAL.run()
+#GOAL = GDN(bno, 30)
+#GOAL.run()
 
 #実行文
 print("クラス呼び出し完了です")
