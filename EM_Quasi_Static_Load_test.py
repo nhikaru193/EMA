@@ -97,7 +97,8 @@ while True:
         lat = 0
     if lon == None:
         lon = 0
-    print(f"a:{str(size_a)[:4]}, t:{str(q)[:4]}, p:{str(w)[:4]}, h:{str(e)[:4]}, lat:{str(lat)[:4]}, lon:{str(lon)[:4]}, 9軸:{str(s1)[:3]}, {str(s2)[:3]}, {str(s3)[:3]}")
+    #print(f"a:{str(size_a)[:4]}, t:{str(q)[:4]}, p:{str(w)[:4]}, h:{str(e)[:4]}, lat:{str(lat)[:4]}, lon:{str(lon)[:4]}, 9軸:{str(s1)[:3]}, {str(s2)[:3]}, {str(s3)[:3]}")
+    print(f" lat:{str(lat)[:12]}, lon:{str(lon)[:12]}, 9軸:{str(s1)[:3]}, {str(s2)[:3]}, {str(s3)[:3]}") 
     time.sleep(0.2)
 
 
