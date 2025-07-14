@@ -9,7 +9,7 @@ class SM:
         GPIO.setup(self.SERVO_PIN, GPIO.OUT)   
         self.pwm = GPIO.PWM(self.SERVO_PIN, 50)
 
-    def set_servo_duty(self.duty):
+    def set_servo_duty(self, duty):
         self.pwm.ChangeDutyCycle(duty)
         time.sleep(0.5)
     
