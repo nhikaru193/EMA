@@ -20,8 +20,8 @@ class FN:
         self.TARGET_SHAPES = ["三角形"] #, "長方形", "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 25.0
         self.turn_speed = 60
-        self.flag_lat = 35.9240852
-        self.flag_lon = 139.9112008
+        self.flag_lat = 35.920324666
+        self.flag_lon = 139.9112945
 
         # --- 初期化処理 ---
         self.detector = FlagDetector()
