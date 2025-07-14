@@ -113,11 +113,14 @@ class PA:
 
     def run(self):
         try:
+            print("収納ホルダから脱出します")
             while True:
                 if self.detective_red() is False:
                     following.follow_forward(self.driver, self.bno, 90, 3)
+                    print("脱出を終了します")
                     break
                 else:
+                    print("前方にパラシュートが検知できたので、回頭を行います")
                     self.driver.petit_left(0, 90) 
                     time.sleep(0.3)
                     self.driver.motor_stop_brake()
