@@ -69,7 +69,7 @@ class FlagDetector:
         vertices = len(approx)
 
         # 小さすぎる輪郭はノイズとして除外
-        if cv2.contourArea(contour) < 80: #ノイズを除外するための値
+        if cv2.contourArea(contour) < 100: #ノイズを除外するための値
             return "不明", None
 
         # 凸性(Solidity)の計算
