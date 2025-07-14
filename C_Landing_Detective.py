@@ -85,7 +85,7 @@ class LD:
             #溶断回路作動
             print("着地判定正常終了。テグス溶断シーケンスに入ります")
             time.sleep(3)
-            fusing.circuit()
+            #fusing.circuit()
             print("テグス溶断を完了しました。テグス溶断の確認を行います")
             before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             self.driver.petit_left(0, 80)
@@ -94,7 +94,7 @@ class LD:
             delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
             if delta_heading < 5:
                 print("溶断の不良を確認しました。再度溶断シーケンスを行います")
-                fusing.circuit()
+                #fusing.circuit()
                 print("テグス溶断の再起動を終了しました")
         except keyboardInterrupt:
             print("割り込みにより、着地判定をスキップします")
