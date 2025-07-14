@@ -75,7 +75,7 @@ time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
 
-GPS_FtoG = GPS(bno, goal_location = [35.9241528 ,139.9112682])
+GPS_FtoG = GPS(bno, goal_location = [35.9201320, 139.9109889])
 GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
