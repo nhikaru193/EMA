@@ -11,7 +11,7 @@ class FlagDetector:
     重心・垂心の一致度を利用して、より高精度に図形を識別する。
     """
 
-    def __init__(self, width=640, height=480, min_black_area=1000, triangle_tolerance=0.5):
+    def __init__(self, width=640, height=480, min_black_area=1000, triangle_tolerance=0.3):
         """
         コンストラクタ（初期化処理）
         Args:
