@@ -96,7 +96,7 @@ class LD:
                 print("溶断の不良を確認しました。再度溶断シーケンスを行います")
                 fusing.circuit()
                 print("テグス溶断の再起動を終了しました")
-        except keyboardInterrupt:
+        except KeyboardInterrupt:
             print("割り込みにより、着地判定をスキップします")
         finally:
             print("着地判定+溶断回路動作の終了です or 強制終了です")
