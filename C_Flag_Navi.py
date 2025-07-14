@@ -172,7 +172,11 @@ class FN:
                         break # 追跡ループ(while target_flag)を抜ける
 
         print("\n---====== 全ての目標の探索が完了しました ======---")
-
+        print("--- 制御を終了します ---")
+        self.driver.cleanup()
+        self.detector.close()
+        GPIO.cleanup()
+        
     def cleanup(self):
         
         #プログラム終了時にリソースを解放します。
