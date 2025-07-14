@@ -10,7 +10,7 @@ import struct
 import following
 
 # === 制御パラメータ (チューニング用) ===
-GOAL_LOCATION = [35.920324666, 139.9112945]  # 12号館前
+GOAL_LOCATION = [35.9200992, 139.9110305]  # 12号館前
 GOAL_THRESHOLD_M = 5.0      # ゴールとみなす距離 (メートル)
 ANGLE_THRESHOLD_DEG = 15.0  # これ以上の角度誤差があれば回頭する (度)
 TURN_SPEED = 45             # 回頭時のモーター速度 (0-100)
