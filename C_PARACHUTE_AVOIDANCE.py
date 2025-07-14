@@ -26,7 +26,7 @@ class PA:
         self.picam2.start()
         self.bno = bno
         self.goal_location = goal_location
-        self.ANGLE_THRESHOLD_DEG = 9.0
+        self.ANGLE_THRESHOLD_DEG = 10.0
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
@@ -114,6 +114,15 @@ class PA:
     def run(self):
         try:
             while True:
+                if self.detective_red() is False:
+                    following.follow_forward(self.driver, self.bno, 90, 3)
+                    break
+                else:
+                    self.driver.petit_left(0, 90) 
+                    time.sleep(0.3)
+                    self.driver.motor_stop_brake()
+                
+            while True:
                 # 1. 状態把握
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
@@ -159,13 +168,13 @@ class PA:
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
                         print(f"[TURN] 左に回頭します ")
                         self.driver.petit_left(0, 90) 
-                        time.sleep(0.02)
+                        time.sleep(0.025)
                         self.driver.motor_stop_brake()
                         
                     else: # 時計回り（右）に回る方が近い
                         print(f"[TURN] 右に回頭します")
                         self.driver.petit_right(0, 90) 
-                        time.sleep(0.02)
+                        time.sleep(0.025)
                         self.driver.motor_stop_brake()
                 
                     time.sleep(0.5) # 回転後の安定待ち
