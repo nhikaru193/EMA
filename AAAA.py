@@ -51,7 +51,6 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
 
-"""
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
 RELEASE.run()
@@ -70,7 +69,7 @@ FLAG.run()
 
 SERVO = SM(6)
 SERVO.run()
-"""
+
 
 """
 SERVO_PIN = 13  # GPIO13を使用
