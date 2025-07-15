@@ -6,11 +6,6 @@ def circuit():
     NICHROME_PIN = 25
     HEATING_TIME = 0.5
     GPIO.setmode(GPIO.BCM)
-    
-    GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    time.sleep(0.05)
-    
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
     print("ニクロム線溶断シーケンスを開始します。")
     try:
         time.sleep(1)
@@ -26,8 +21,7 @@ def circuit():
         GPIO.output(NICHROME_PIN, GPIO.LOW)
         time.sleep(0.2)
         GPIO.output(NICHROME_PIN, GPIO.LOW)
-        GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        time.sleep(2)
+       
         print("シーケンスが正常に完了しました。")
 
     except KeyboardInterrupt:
