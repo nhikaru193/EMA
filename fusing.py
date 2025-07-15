@@ -26,6 +26,7 @@ def circuit():
         GPIO.output(NICHROME_PIN, GPIO.LOW)
         time.sleep(0.2)
         GPIO.output(NICHROME_PIN, GPIO.LOW)
+        GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         print("シーケンスが正常に完了しました。")
 
     except KeyboardInterrupt:
