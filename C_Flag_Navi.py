@@ -184,17 +184,19 @@ class FN:
         print("--- 制御を終了します ---")
         self.driver.cleanup()
         self.detector.close()
-        self.GPIO.cleanup()
+        self.GPIO.cleanup() #いらないよ
         #cv2.destroyAllWindows()
 
 # メインの実行ブロック
 if __name__ == '__main__':
     # --- 各クラスのインスタンスを作成 ---
     # 1. モータードライバの初期化
+    """
     driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
     PWMB=19, BIN1=16, BIN2=26,   # 右モーター用（モータB）
     STBY=21   )
-
+    """
+    
     # 2. BNO055（9軸センサー）の初期化
     try:
         bno = BNO055()
@@ -205,13 +207,15 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"BNO055の初期化中にエラーが発生しました: {e}")
         # BNO055が使えない場合はプログラムを終了
+        """
         driver.cleanup()
         GPIO.cleanup()
         exit()
+        """
 
     # --- メインクラスのインスタンスを作成し、実行 ---
     # 3. FlagNavigatorにdriverとbnoを渡してインスタンス化
-    robot = FN(bno=bno)
+    robot = FN(bno)
 
     try:
         # 4. メインの処理を実行
