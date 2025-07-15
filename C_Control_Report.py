@@ -179,10 +179,14 @@ def navigate_to_goal():
                 continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
 
 
-            # 5. 前進フェーズ (PD制御による直進維持)
-            print(f"[MOVE] 方向OK。PD制御で前進します。")
-            following.follow_forward(driver, bno, 70, 8)
-
+            if dist_to_goal > 10:
+                # 5. 前進フェーズ (PD制御による直進維持)
+                print(f"[MOVE] 方向OK。P制御で8秒間前進します。")
+                following.follow_forward(driver, bno, 70, 8)
+            else:
+                print(f"[MOVE] 方向OK。P制御で3秒間前進します。")
+                following.follow_forward(driver, bno, 70, 3)
+                
     except KeyboardInterrupt:
         print("\n[STOP] 手動で停止されました。")
     except Exception as e:
