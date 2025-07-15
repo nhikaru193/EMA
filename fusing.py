@@ -17,6 +17,8 @@ def circuit():
         time.sleep(HEATING_TIME)
         print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
         GPIO.output(NICHROME_PIN, GPIO.LOW)
+        time.sleep(0.2)
+        GPIO.output(NICHROME_PIN, GPIO.LOW)
         print("シーケンスが正常に完了しました。")
 
     except KeyboardInterrupt:
