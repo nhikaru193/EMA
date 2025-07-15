@@ -189,7 +189,6 @@ class FN:
 
 # メインの実行ブロック
 if __name__ == '__main__':
-    GPIO.cleanup()
     # --- 各クラスのインスタンスを作成 ---
     # 1. モータードライバの初期化
     driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,   # 左モーター用（モータA）
