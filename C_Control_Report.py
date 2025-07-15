@@ -126,7 +126,7 @@ def navigate_to_goal():
                                     lon = convert_to_decimal(parts[5], parts[6])
                                     current_location = [lat, lon]
                                     if current_location:
-                                        print(f"lat:{lat}, lon:{lon}")
+                                        #print(f"lat:{lat}, lon:{lon}")
                                     break
                 except Exception as e:
                     print(f"GPSデコードエラー: {e}")
@@ -178,7 +178,7 @@ def navigate_to_goal():
                 time.sleep(0.5) # 回転後の安定待ち
                 continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
 
-
+            print(f"lat:{lat}, lon:{lon}, heading:{heading}")
             if dist_to_goal > 10:
                 # 5. 前進フェーズ (PD制御による直進維持)
                 print(f"[MOVE] 方向OK。P制御で8秒間前進します。")
