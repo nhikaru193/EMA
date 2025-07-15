@@ -3,12 +3,12 @@ import time
 import struct
 
 def circuit():
+    NICHROME_PIN = 25
+    HEATING_TIME = 0.1
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    print("ニクロム線溶断シーケンスを開始します。")
     try:
-        NICHROME_PIN = 25
-        HEATING_TIME = 0.1
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
-        print("ニクロム線溶断シーケンスを開始します。")
         time.sleep(1)
         print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
         time.sleep(1)
