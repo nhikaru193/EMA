@@ -5,7 +5,7 @@ import struct
 def circuit():
     try:
         NICHROME_PIN = 25
-        HEATING_TIME = 5
+        HEATING_TIME = 0.4
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
         print("ニクロム線溶断シーケンスを開始します。")
