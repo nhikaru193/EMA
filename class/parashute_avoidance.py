@@ -89,7 +89,7 @@ class RoverNavigator:
     FORWARD_SPEED_DEFAULT = 100 # 通常の前進速度
     FORWARD_DURATION_DEFAULT = 5 # 通常の前進時間 (秒)
 
-    def __init__(self):
+    def __init__(self, bno: BNO055):
         """
         ローバーナビゲーターのコンストラクタです。
         各種ハードウェアの初期設定を行います。
@@ -110,17 +110,15 @@ class RoverNavigator:
             PWMB=self.PWMB, BIN1=self.BIN1, BIN2=self.BIN2,
             STBY=self.STBY
         )
-
-        # BNO055 IMUの初期化
-        self.bno_sensor_raw = BNO055(address=self.BNO055_ADDRESS)
-        if not self.bno_sensor_raw.begin():
+        self.bno = bno
+        if not self.bno.begin():
             print("🔴 BNO055センサーの初期化に失敗しました。終了します。")
             self.cleanup() # 失敗時はクリーンアップして終了
             sys.exit(1)
-        self.bno_sensor_raw.setMode(BNO055.OPERATION_MODE_NDOF)
-        self.bno_sensor_raw.setExternalCrystalUse(True)
+        self.bno.setMode(BNO055.OPERATION_MODE_NDOF)
+        self.bno.setExternalCrystalUse(True)
         time.sleep(1) # センサー安定化のための待機
-        self.bno_wrapper = BNO055Wrapper(self.bno_sensor_raw) # ラッパークラスでラップ
+        self.bno_wrapper = BNO055Wrapper(self.bno) # ラッパークラスでラップ
 
         # Picamera2の初期化
         self.picam2 = Picamera2()
@@ -665,8 +663,6 @@ class RoverNavigator:
 
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
-    # ローバーナビゲーターのインスタンスを作成
-    # ここで設定値を調整することもできますが、クラス内でデフォルト値を定義しています。
     # 例: navigator = RoverNavigator(destination_lat=35.1234, destination_lon=139.5678)
     navigator = RoverNavigator()
 
