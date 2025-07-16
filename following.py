@@ -88,7 +88,7 @@ def follow_petit_forward(driver, bno, base_speed, duration_time):
                 break
     finally:
         print("誘導終了")
-
+"""
 if __name__ == "__main__":
     try:
         driver = MotorDriver{
@@ -108,3 +108,4 @@ if __name__ == "__main__":
 
     finally:
         driver.cleanup()
+"""
