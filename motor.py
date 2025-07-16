@@ -205,3 +205,30 @@ class MotorDriver():
             self.petit_forward(0, 80)
             self.petit_forward(80, 0)
             time.sleep(0.2)
+
+
+    
+    # motor.py の MotorDriver クラス内に追加 by中川
+
+    def set_speeds(self, left_speed, right_speed):
+        """
+        左右のモーターの速度を個別に設定する。
+        速度は-100から100の範囲で指定。マイナス値は逆回転。
+        """
+        # left_speedに応じて左モーターの向きと速度を設定
+        if left_speed >= 0:
+            GPIO.output(self.A1, GPIO.HIGH) # 仮にHIGH/LOWが正回転
+            GPIO.output(self.A2, GPIO.LOW)
+        else:
+            GPIO.output(self.A1, GPIO.LOW)
+            GPIO.output(self.A2, GPIO.HIGH)
+        self.pwma.ChangeDutyCycle(abs(left_speed))
+
+        # right_speedに応じて右モーターの向きと速度を設定
+        if right_speed >= 0:
+            GPIO.output(self.B1, GPIO.HIGH) # 仮にHIGH/LOWが正回転
+            GPIO.output(self.B2, GPIO.LOW)
+        else:
+            GPIO.output(self.B1, GPIO.LOW)
+            GPIO.output(self.B2, GPIO.HIGH)
+        self.pwmb.ChangeDutyCycle(abs(right_speed))
