@@ -27,10 +27,12 @@ class PA:
         self.bno = bno
         self.goal_location = goal_location
         self.ANGLE_THRESHOLD_DEG = 10.0
+        #------赤色マスクの作成------#
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
+        
         self.RX_PIN = 17
         self.BAUD = 9600
         self.pi = pigpio.pi()
@@ -41,7 +43,7 @@ class PA:
             self.pi.stop()
             raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
         
-
+    #引数:画像フレーム　返り値:画像の赤色面積の全体のピクセル数に対する割合
     def get_percentage(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
@@ -55,7 +57,8 @@ class PA:
         percentage = (red_area / total_area) * 100
         print(f"検知割合は{percentage}%です")
         return percentage
-
+        
+    #返り値:赤色面積が10%以上Trueそれ以外False
     def detective_red(self):
         frame = self.picam2.capture_array()
         percentage = self.get_percentage(frame)
