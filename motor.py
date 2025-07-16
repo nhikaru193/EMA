@@ -202,6 +202,6 @@ class MotorDriver():
             
     def petit_petit(self, count):
         for i in range (1, count):
-            self.petit_forward(0, 90)
-            self.petit_forward(90, 0)
+            self.petit_forward(0, 80)
+            self.petit_forward(80, 0)
             time.sleep(0.2)
