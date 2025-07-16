@@ -11,11 +11,11 @@ import following
 
 # === 制御パラメータ (チューニング用) ===
 GOAL_LOCATION = [35.9189908, 139.9078095]  # 12号館前
-GOAL_THRESHOLD_M = 5.0      # ゴールとみなす距離 (メートル)
-ANGLE_THRESHOLD_DEG = 15.0  # これ以上の角度誤差があれば回頭する (度)
-TURN_SPEED = 45             # 回頭時のモーター速度 (0-100)
+GOAL_THRESHOLD_M = 3.0      # ゴールとみなす距離 (メートル)
+ANGLE_THRESHOLD_DEG = 10.0  # これ以上の角度誤差があれば回頭する (度)
+TURN_SPEED = 90             # 回頭時のモーター速度 (0-100)
 MOVE_SPEED = 80             # 前進時の基本速度 (0-100)
-MOVE_DURATION_S = 1.5       # 一回の前進時間 (秒)
+MOVE_DURATION_S = 2.0      # 一回の前進時間 (秒)
 
 # === PD制御パラメータ ===
 Kp = 0.50   # 比例ゲイン: 誤差に対する反応の強さ
@@ -165,13 +165,11 @@ def navigate_to_goal():
 
                 if angle_error > 180: # 反時計回り（左）に回る方が近い
                     print(f"[TURN] 左に回頭します ({turn_duration:.2f}秒)")
-                    driver.changing_left(0, turn_speed) 
-                    driver.changing_left(turn_speed, 0) 
+                    driver.petit_left(0, turn_speed) 
                     time.sleep(turn_duration)
                 else: # 時計回り（右）に回る方が近い
                     print(f"[TURN] 右に回頭します ({turn_duration:.2f}秒)")
                     driver.changing_right(0, turn_speed) 
-                    driver.changing_right(turn_speed, 0) 
                     time.sleep(turn_duration)
                 
                 driver.motor_stop_free() # 確実な停止
