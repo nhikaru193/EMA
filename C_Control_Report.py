@@ -127,7 +127,7 @@ def navigate_to_goal():
                                     current_location = [lat, lon]
                                     if current_location:
                                         #print(f"lat:{lat}, lon:{lon}")
-                                    break
+                                        break
                 except Exception as e:
                     print(f"GPSデコードエラー: {e}")
             
