@@ -18,8 +18,8 @@ class FN:
         """
         # --- 設定値 ---
         self.TARGET_SHAPES = ["三角形", "長方形"] #, "T字", "十字"を追加する
-        self.AREA_THRESHOLD_PERCENT = 60.0
-        self.turn_speed = 60
+        self.AREA_THRESHOLD_PERCENT = 55.0
+        self.turn_speed = 50
         #self.flag_lat = 35.920324666
         #self.flag_lon = 139.9112945
 
@@ -107,6 +107,7 @@ class FN:
                         rotation_count = 0
                         while target_flag is None and rotation_count < 23:
                             self.left_20_degree_rotation()
+                            time.sleep(0.5) #7/16追加
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
