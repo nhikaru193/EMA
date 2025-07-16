@@ -8,7 +8,7 @@ from picamera2 import Picamera2
 from BNO055 import BNO055
 # motor.py から MotorDriver クラスをインポート
 from motor import MotorDriver 
-from Flag_Detector3 import FlagDetector
+from Flag_Detector4 import FlagDetector
 import RPi.GPIO as GPIO
 
 class FN:
