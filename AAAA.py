@@ -52,7 +52,7 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
 
-"""
+
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
 RELEASE.run()
@@ -65,7 +65,7 @@ AVOIDANCE.run()
 
 GPS_StoF = GPS(bno, goal_location = [35.9243730, 139.9112337])
 GPS_StoF.run()
-"""
+
 FLAG = FN(bno)
 FLAG.run()
 """
@@ -84,12 +84,10 @@ time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
 
-"""
 GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
 GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
 GOAL.run()
-"""
-#実行文
+
 print("クラス呼び出し完了です")
