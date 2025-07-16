@@ -81,12 +81,12 @@ class RoverNavigator:
     MIN_RED_PIXEL_RATIO_PER_CELL = 0.10 # グリッドセルあたりの最小赤色ピクセル比率
 
     # 旋回・回避設定
-    ANGLE_GPS_ADJUST_THRESHOLD_DEG = 20.0 # GPS方位調整の許容誤差（度）
-    ANGLE_RELATIVE_TURN_TOLERANCE_DEG = 20.0 # 相対旋回の許容誤差（度）
+    ANGLE_GPS_ADJUST_THRESHOLD_DEG = 10.0 # GPS方位調整の許容誤差（度）
+    ANGLE_RELATIVE_TURN_TOLERANCE_DEG = 10.0 # 相対旋回の許容誤差（度）
     TURN_SPEED = 90 # 旋回時のモーター速度
-    TURN_RE_ALIGN_SPEED = 80 # 再調整時のモーター速度
+    TURN_RE_ALIGN_SPEED = 90 # 再調整時のモーター速度
     MAX_TURN_ATTEMPTS = 100 # 旋回調整の最大試行回数
-    FORWARD_SPEED_DEFAULT = 90 # 通常の前進速度
+    FORWARD_SPEED_DEFAULT = 100 # 通常の前進速度
     FORWARD_DURATION_DEFAULT = 5 # 通常の前進時間 (秒)
 
     def __init__(self):
@@ -134,7 +134,6 @@ class RoverNavigator:
         time.sleep(2) # カメラ起動待機
 
         # pigpioソフトUARTの初期化 (GPS用)
-        # BME280用のI2Cバスはここには直接関係ないので削除
         err = self.pi.bb_serial_read_open(self.RX_PIN, self.GPS_BAUD, 8)
         if err != 0:
             print(f"🔴 ソフトUART RX の設定に失敗：GPIO={self.RX_PIN}, {self.GPS_BAUD}bps, エラーコード: {err}")
@@ -262,7 +261,7 @@ class RoverNavigator:
             blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
             hsv_full = cv2.cvtColor(blurred_full_frame, cv2.COLOR_BGR2HSV)
             mask_full = cv2.bitwise_or(cv2.inRange(hsv_full, lower_red1, upper_red1),
-                                     cv2.inRange(hsv_full, lower_red2, upper_red2))
+                                       cv2.inRange(hsv_full, lower_red2, upper_red2))
             red_pixels_full = np.count_nonzero(mask_full)
             total_pixels_full = height * width
             red_percentage_full = red_pixels_full / total_pixels_full if total_pixels_full > 0 else 0.0
@@ -278,7 +277,7 @@ class RoverNavigator:
                 blurred_cell_frame = cv2.GaussianBlur(cell_frame, (5, 5), 0)
                 hsv_cell = cv2.cvtColor(blurred_cell_frame, cv2.COLOR_BGR2HSV)
                 mask_cell = cv2.bitwise_or(cv2.inRange(hsv_cell, lower_red1, upper_red1),
-                                           cv2.inRange(hsv_cell, lower_red2, upper_red2))
+                                             cv2.inRange(hsv_cell, lower_red2, upper_red2))
                 red_counts[cell_name] = np.count_nonzero(mask_cell)
                 total_pixels_in_cell[cell_name] = cell_frame.shape[0] * cell_frame.shape[1]
                 
@@ -290,7 +289,7 @@ class RoverNavigator:
                     thickness = 3
                 cv2.rectangle(debug_frame, (x_start, y_start), (x_end, y_end), color, thickness)
                 cv2.putText(debug_frame, f"{cell_name}: {(red_counts[cell_name] / total_pixels_in_cell[cell_name]):.2f}", 
-                            (x_start + 5, y_start + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                                (x_start + 5, y_start + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
             # デバッグ画像を保存
             directory = os.path.dirname(save_path)
@@ -396,10 +395,7 @@ class RoverNavigator:
             sys_cal, gyro_cal, accel_cal, mag_cal = self.bno_sensor_raw.getCalibration()
             print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal} ", end='\r')
             sys.stdout.flush() # 出力を即座に反映
-
-            # ジャイロ、地磁気だけでなく、加速度計もレベル3になるまで待機
-            # 経験上、ジャイロと地磁気が3になれば加速度計もすぐに3になることが多い
-            if gyro_cal == 3 and accel_cal == 3 and mag_cal == 3:
+            if gyro_cal == 3:
                 print("\n✅ キャリブレーション完了！ナビゲーションを開始します。")
                 break
             time.sleep(0.5) # 0.5秒ごとに状態を確認
@@ -417,6 +413,13 @@ class RoverNavigator:
             while True:
                 print("\n--- 新しい走行サイクル開始 ---")
                 
+                # 最初目的地の方向へ旋回する前に、1秒前進したい
+                print("\n=== 初期動作: 1秒間前進します ===")
+                following.follow_forward(self.driver, self.bno_sensor_raw, base_speed=self.FORWARD_SPEED_DEFAULT, duration_time=1)
+                self.driver.motor_stop_brake()
+                time.sleep(0.5) # 停止して安定化を待つ
+                print("1秒前進が完了しました。")
+
                 # STEP 2: GPS現在地取得し、目標方位計算
                 print("\n=== ステップ2: GPS現在地取得と目標方位計算 ===")
                 current_gps_coords = self._get_current_location()
