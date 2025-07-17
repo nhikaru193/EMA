@@ -13,6 +13,7 @@ class RD:
     def run():
         start_time = time.time()
         base_pressure = BME280.read_pressure()
+        max_counter = self.p_counter
         print(f"!!!!!!圧力閾値:{self.p_threshold} | タイムアウト:{self.timeout} で放出判定を行います!!!!!!")
         while True:
             pressure = BME280.read_pressure()
@@ -22,8 +23,12 @@ class RD:
             time = current_time - start_time
             print(f"t:{time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
             if delta_pressure > self.p_threshold:
-                print("気圧変化による放出判定に成功しました")
-                break
+                self.p_counter = self.p_counter - 1
+                if self.p_counter == 0:
+                    print("気圧変化による放出判定に成功しました")
+                    break
+            else:
+                self.p_counter = max_counter
             if time > self.timeout:
                 print("タイムアウトによる放出判定に成功しました")
                 break
