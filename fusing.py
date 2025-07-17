@@ -7,20 +7,20 @@ def circuit():
     HEATING_TIME = 2.0
     GPIO.setmode(GPIO.BCM)
     print("ニクロム線溶断シーケンスを開始します。")
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    
     try:
         time.sleep(1)
         print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
         time.sleep(1)
 
-        GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
-        
-        GPIO.output(NICHROME_PIN, GPIO.HIGH)
         print(f"{HEATING_TIME}秒間、加熱します...")
+        GPIO.output(NICHROME_PIN, GPIO.HIGH)
         time.sleep(HEATING_TIME)
+        
         print(f"GPIO{NICHROME_PIN} をLOWに設定し、ニクロム線をオフにします。")
         GPIO.output(NICHROME_PIN, GPIO.LOW)
         time.sleep(0.2)
-        GPIO.output(NICHROME_PIN, GPIO.LOW)
        
         print("シーケンスが正常に完了しました。")
 
