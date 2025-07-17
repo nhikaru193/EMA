@@ -43,7 +43,3 @@ while True:
     ax, ay, az = bno.getVector(VECTOR_ACCELEROMETER)
     print(f"t:{delta_time} || p:{pressure} || ax:{ax} || ay:{ay} || az:{az}")
 #---------------------------#
-
-
-
-
