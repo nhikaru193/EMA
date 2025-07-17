@@ -10,7 +10,7 @@ class RD:
         self.p_threshold = p_threshold
         self.timeout = timeout
 
-    def run():
+    def run(self):
         start_time = time.time()
         base_pressure = BME280.read_pressure()
         max_counter = self.p_counter
@@ -18,10 +18,10 @@ class RD:
         while True:
             pressure = BME280.read_pressure()
             delta_pressure = pressure - base_pressure
-            ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
+            ax, ay, az = self.bno.getVector(BNO055.VECTOR_ACCELEROMETER)
             current_time = time.time()
-            time = current_time - start_time
-            print(f"t:{time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
+            e_time = current_time - start_time
+            print(f"t:{e_time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
             if delta_pressure > self.p_threshold:
                 self.p_counter = self.p_counter - 1
                 if self.p_counter == 0:
@@ -34,4 +34,4 @@ class RD:
                 break
             time.sleep(0.4)
         print("放出判定を終了します")
-        #ここから先に無線機の電源とgpsの通信を開始するコードを作る
+        #ここから先に無線機の電源とgpsの通信を開始するコードを作る   
