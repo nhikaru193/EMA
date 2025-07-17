@@ -7,9 +7,9 @@ def circuit():
     HEATING_TIME = 2.0
     GPIO.setmode(GPIO.BCM)
     print("ニクロム線溶断シーケンスを開始します。")
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
-    GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     
+    GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
     try:
         time.sleep(1)
         print(f"GPIO{NICHROME_PIN} をHIGHに設定し、ニクロム線をオンにします。")
