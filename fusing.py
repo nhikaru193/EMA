@@ -8,6 +8,7 @@ def circuit():
     GPIO.setmode(GPIO.BCM)
     print("ニクロム線溶断シーケンスを開始します。")
     GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(NICHROME_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     
     try:
         time.sleep(1)
@@ -29,6 +30,6 @@ def circuit():
         GPIO.output(NICHROME_PIN, GPIO.LOW)
 
     finally:
-        #GPIO.cleanup()
+        GPIO.cleanup()
         print("GPIOのクリーンアップを実行しました。")
 
