@@ -18,7 +18,7 @@ from motor import MotorDriver
 from Flag_Detector2 import FlagDetector
 
 #ミッション部分
-from C_release import RD
+from C_RELEASE import RD
 from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from C_Flag_Navi import FN
