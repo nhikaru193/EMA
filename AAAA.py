@@ -60,10 +60,10 @@ RELEASE.run()
 LAND = LD(bno) 
 LAND.run()
 
-AVOIDANCE = PA(bno, goal_location = [35.9243730, 139.9112337]) #ok
+AVOIDANCE = PA(bno, goal_location = [35.9175612, 139.9087922]) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = [35.9243730, 139.9112337])
+GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
 GPS_StoF.run()
 
 FLAG = FN(bno)
