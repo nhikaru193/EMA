@@ -30,6 +30,6 @@ def circuit():
         GPIO.output(NICHROME_PIN, GPIO.LOW)
 
     finally:
-        GPIO.cleanup()
+        #GPIO.cleanup()
         print("GPIOのクリーンアップを実行しました。")
 
