@@ -20,7 +20,7 @@ from Flag_Detector2 import FlagDetector
 #ミッション部分
 from C_RELEASE import RD
 from C_Landing_Detective import LD
-from C_PARACHUTE_AVOIDANCE import PA
+from C_PARACHUTE_AVOIDANCE_DROP import PAD
 from C_Flag_Navi import FN
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
@@ -42,4 +42,11 @@ while True:
         print("キャリブレーション完了")
         break
 
-RELEASE = 
+RELEASE = RD(bno)
+RELEASE.run()
+
+LAND = LD(bno)
+LAND.run()
+
+AVOIDANCE = PAD(bno)
+AVOIDANCE.run()
