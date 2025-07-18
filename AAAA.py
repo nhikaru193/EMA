@@ -63,31 +63,31 @@ while True:
 AVOIDANCE = PA(bno, goal_location = [35.9175612, 139.9087922]) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
-GPS_StoF.run()
+#GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
+#GPS_StoF.run()
 
-FLAG = FN(bno)
-FLAG.run()
+#FLAG = FN(bno)
+#FLAG.run()
 """
-SERVO = SM(6)
-SERVO.run()
+#SERVO = SM(6)
+#SERVO.run()
 """
-SERVO_PIN = 13  # GPIO13を使用
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(SERVO_PIN, GPIO.OUT)
-pwm = GPIO.PWM(SERVO_PIN, 50)
-pwm.start(0)
-print("逆回転（速い）")
-set_servo_duty(4.0)
-time.sleep(7)
+#SERVO_PIN = 13  # GPIO13を使用
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(SERVO_PIN, GPIO.OUT)
+#pwm = GPIO.PWM(SERVO_PIN, 50)
+#pwm.start(0)
+#print("逆回転（速い）")
+#set_servo_duty(4.0)
+#time.sleep(7)
 #set_servo_duty(12.5)
-pwm.stop()
-GPIO.cleanup()
+#pwm.stop()
+#GPIO.cleanup()
 
-GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
-GPS_FtoG.run()
+#GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
+#GPS_FtoG.run()
 
-GOAL = GDN(bno, 30)
-GOAL.run()
+#GOAL = GDN(bno, 30)
+#GOAL.run()
 
-print("クラス呼び出し完了です")
+#print("クラス呼び出し完了です")
