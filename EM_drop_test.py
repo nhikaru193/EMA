@@ -10,6 +10,7 @@ import RPi.GPIO as GPIO
 import os
 import sys
 import math
+import pigpio
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
