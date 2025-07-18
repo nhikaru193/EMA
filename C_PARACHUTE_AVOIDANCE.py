@@ -126,7 +126,7 @@ class PA:
                     following.follow_forward(self.driver, self.bno, 90, 3)
                     print("脱出を終了します")
                     break
-                elif:
+                elif self.detective_red():
                     print("前方にパラシュートが検知できたので、回頭を行います")
                     self.driver.petit_left(0, 90) 
                     time.sleep(0.3)
