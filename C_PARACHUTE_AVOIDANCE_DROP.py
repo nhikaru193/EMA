@@ -85,4 +85,5 @@ class PAD:
                 self.driver.changing_Lforward(90, 0)
             else:
                 following.follow_forward(self.driver, self.bno, 90, 4)
+                print("パラシュートの回避を終了します")
                 break
