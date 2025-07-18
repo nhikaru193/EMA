@@ -612,6 +612,15 @@ if __name__ == "__main__":
 
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0: 
+                    # --- ここに1秒前進の処理を追加 ---
+                    print(f"→ 旋回前に1秒前進します...")
+                    # following.pyのfollow_forward関数を使用
+                    # bno_raw_sensor を渡す必要があります
+                    following.follow_forward(driver, bno_raw_sensor, base_speed=60, duration_time=1) 
+                    driver.motor_stop_brake()
+                    time.sleep(0.5) # 前進後の安定時間
+                    # --- 追加ここまで ---
+
                     print(f"→ {angle_offset}度旋回してスキャンします...")
                     turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=90, angle_tolerance_deg=15)
                     time.sleep(0.5)
@@ -658,8 +667,8 @@ if __name__ == "__main__":
                     time.sleep(1)
                     break 
 
-            driver.motor_stop_brake()
-            time.sleep(0.5)
+                driver.motor_stop_brake()
+                time.sleep(0.5)
 
             if not detected_during_scan_cycle:
                 print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。初期回避フェーズ完了。")
@@ -704,7 +713,7 @@ if __name__ == "__main__":
                 else:
                     print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
                     continue 
-            
+                
             continue
 
 
@@ -721,5 +730,5 @@ if __name__ == "__main__":
         
         # GPIO.cleanup()は必ず最後に一度だけ呼び出す
         # ニクロム線ピンはactivate_nichrome_wire()内でLOWになるので、ここで個別に設定する必要はない
-        GPIO.cleanup() 
+        GPIO.cleanup()  # BNO055関連のI2Cなど、残りのGPIOをクリーンアップ
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
