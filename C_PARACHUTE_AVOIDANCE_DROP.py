@@ -79,7 +79,7 @@ class PAD:
 
     def run(self):
         while True:
-            if self.detective_red:
+            if self.detective_red():
                 print("前方にパラシュートが検知できたので回頭します")
                 self.driver.changing_Lforward(0, 90)
                 self.driver.changing_Lforward(90, 0)
