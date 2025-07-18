@@ -1,8 +1,12 @@
 import RPi.GPIO as GPIO
 import time
 import struct
+import time
+import pigpio
 
-def circuit():
+def circuit(t_melt = 4):
+    """
+    #われらの愛すべきポンコツコード
     NICHROME_PIN = 25
     HEATING_TIME = 2.0
     GPIO.setmode(GPIO.BCM)
@@ -32,7 +36,20 @@ def circuit():
     finally:
         #GPIO.cleanup()
         print("GPIOのクリーンアップを実行しました。")
+    """
 
+    #2024の先輩コード
+    meltPin = 25
+    pi = pigpio.pi()
+    pi.write(meltPin, 0)
+    time.sleep(1)
+    pi.write(meltPin, 1)
+    time.sleep(t_melt)
+    pi.write(meltPin, 0)
+    time.sleep(1)
+
+    pi.stop()
+    
 if __name__ == '__main__':
     # 許容誤差を調整したい場合は、ここで値を設定できます
     # 例: detector = FlagDetector(triangle_tolerance=0.8)
