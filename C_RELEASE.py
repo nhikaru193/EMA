@@ -29,7 +29,7 @@ class RD:
                     break
             else:
                 self.p_counter = max_counter
-            if time > self.timeout:
+            if e_time > self.timeout:
                 print("タイムアウトによる放出判定に成功しました")
                 break
             time.sleep(0.4)
