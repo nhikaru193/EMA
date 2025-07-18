@@ -28,10 +28,14 @@ class PA:
         self.goal_location = goal_location
         self.ANGLE_THRESHOLD_DEG = 10.0
         #------赤色マスクの作成------#
-        self.lower_red1 = np.array([0, 100, 100])
-        self.upper_red1 = np.array([10, 255, 255])
-        self.lower_red2 = np.array([160, 100, 100])
-        self.upper_red2 = np.array([180, 255, 255])
+        self.lower_red1 = np.array([5, 100, 100]) #これはオレンジ色マスクです
+        self.upper_red1 = np.array([15, 255, 255])
+        self.lower_red2 = np.array([0, 120, 70])
+        self.upper_red2 = np.array([25, 255, 255])
+        #self.lower_red1 = np.array([0, 100, 100])
+        #self.upper_red1 = np.array([10, 255, 255])
+        #self.lower_red2 = np.array([160, 100, 100])
+        #self.upper_red2 = np.array([180, 255, 255])
         
         self.RX_PIN = 17
         self.BAUD = 9600
