@@ -69,8 +69,8 @@ AVOIDANCE.run()
 #FLAG = FN(bno)
 #FLAG.run()
 """
-#SERVO = SM(6)
-#SERVO.run()
+SERVO = SM(6)
+SERVO.run()
 """
 #SERVO_PIN = 13  # GPIO13を使用
 #GPIO.setmode(GPIO.BCM)
