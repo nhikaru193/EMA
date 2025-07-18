@@ -198,7 +198,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロ、地磁気が完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
         
         print("機体回転前に3秒間待機します...")
         time.sleep(3) 
@@ -221,7 +221,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             
-            if gyro_cal == 3 and mag_cal == 3:
+            if gyro_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake() 
                 break
@@ -613,7 +613,7 @@ if __name__ == "__main__":
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0: 
                     print(f"→ {angle_offset}度旋回してスキャンします...")
-                    turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=60, angle_tolerance_deg=5)
+                    turn_to_relative_angle(driver, bno_sensor_wrapper, angle_offset, turn_speed=90, angle_tolerance_deg=15)
                     time.sleep(0.5)
                     driver.motor_stop_brake()
 
