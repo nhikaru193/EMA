@@ -601,7 +601,7 @@ if __name__ == "__main__":
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
-        activate_nichrome_wire()
+        activate_nichrome_wire(t_melt = 4)
         time.sleep(2) 
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
