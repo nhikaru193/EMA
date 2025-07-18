@@ -25,14 +25,21 @@ from C_Flag_Navi import FN
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 
-RELEASE = RD(bno)
-RELEASE.run()
+#BNO055の初期設定
+bno = BNO055()
+time.sleep(0.5)
+if not bno.begin():    
+    print("bnoが始まりませんでした")
+    exit()
+time.sleep(0.5)
+bno.setMode(BNO055.OPERATION_MODE_NDOF)
+time.sleep(0.5)
 
-LAND = LD(bno)
-LAND.run()
+while True:
+    sys, gyro, accel, mag = bno.getCalibration()
+    print(f"Calib → Sys:{sys}, Gyro:{gyro}, Acc:{accel}, Mag:{mag}", end='\r\n')
+    if gyro == 3 and accel == 3:
+        print("キャリブレーション完了")
+        break
 
-FLAG = FN(bno)
-FLAG.run()
-
-GOAL = GDN(bno, 30)
-GOAL.run()
+RELEASE = 
