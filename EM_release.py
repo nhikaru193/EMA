@@ -82,7 +82,7 @@ def get_pressure_and_temperature():
     return pressure, temperature
 
 
-def check_landing(pressure_change_threshold=0.3, acc_z_threshold_abs=0.5, consecutive_checks=3, timeout=60):
+def check_landing(pressure_change_threshold=0.3, acc_z_threshold_abs=0.5, consecutive_checks=3, timeout=390):
     """
     最初に測定した気圧からの変化量とZ軸加速度が絶対閾値内に収まる状態を監視し、着地条件が連続で満たされた場合に着地判定を行う。
     タイムアウトした場合、条件成立回数に関わらず着地成功とみなす。
