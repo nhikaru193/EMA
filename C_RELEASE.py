@@ -29,6 +29,7 @@ class RD:
             e_time = current_time - start_time
             print(f"t:{e_time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
             writer.writerows([[e_time, pressure, ax, ay, az]])
+            f.flush()
             if delta_pressure > self.p_threshold:
                 self.p_counter = 3
                 if self.p_counter == 0:
@@ -38,6 +39,7 @@ class RD:
                 self.p_counter = max_counter
             if e_time > self.timeout:
                 print("タイムアウトによる放出判定に成功しました")
+                f.close()
                 break
             time.sleep(0.4)
         print("放出判定を終了します")
