@@ -30,19 +30,21 @@ class PAD:
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
         """
-        self.lower_red1 = np.array([0, 100, 100])
-        self.upper_red1 = np.array([10, 255, 255])
+        self.lower_red1 = np.array([5, 150, 150])
+        self.upper_red1 = np.array([30, 255, 255])
+        """
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
-
+        """
+        
     def get_percentage(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
-        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
-        mask = cv2.bitwise_or(mask1, mask2)
+        mask = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+        #mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
+        #mask = cv2.bitwise_or(mask1, mask2)
         red_area = np.count_nonzero(mask)
         total_area = frame.shape[0] * frame.shape[1]
         percentage = (red_area / total_area) * 100
