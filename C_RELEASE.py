@@ -4,7 +4,7 @@ from BNO055 import BNO055
 import BME280
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 300):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 200):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
