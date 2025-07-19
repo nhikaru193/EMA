@@ -69,8 +69,8 @@ class PAD:
                 following.follow_forward(self.driver, self.bno, 90, 4)
                 print("パラシュートの回避を終了します")
                 break
-                self.picam2.close()
-                self.driver.cleanup()
+        self.picam2.close()
+        self.driver.cleanup()
 
 if __name__ == '__main__':
     # 許容誤差を調整したい場合は、ここで値を設定できます
