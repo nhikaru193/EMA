@@ -11,6 +11,8 @@ class RD:
         self.timeout = timeout
 
     def run(self):
+        BME280.init_bme280()
+        BME280.read_compensate()
         start_time = time.time()
         base_pressure = BME280.get_pressure()
         max_counter = self.p_counter
