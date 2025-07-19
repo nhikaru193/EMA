@@ -12,11 +12,11 @@ class RD:
 
     def run(self):
         start_time = time.time()
-        base_pressure = BME280.read_pressure()
+        base_pressure = BME280.get_pressure()
         max_counter = self.p_counter
         print(f"!!!!!!圧力閾値:{self.p_threshold} | タイムアウト:{self.timeout} で放出判定を行います!!!!!!")
         while True:
-            pressure = BME280.read_pressure()
+            pressure = BME280.get_pressure()
             delta_pressure = pressure - base_pressure
             ax, ay, az = self.bno.getVector(BNO055.VECTOR_ACCELEROMETER)
             current_time = time.time()
