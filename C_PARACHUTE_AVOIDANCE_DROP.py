@@ -24,7 +24,7 @@ class PAD:
         config = self.picam2.create_still_configuration(main={"size": (320, 480)})
         self.picam2.configure(config)
         self.picam2.start()
-        self.bno = BNO055()
+        self.bno = bno
         
         """
         self.lower_red1 = np.array([0, 100, 100])
