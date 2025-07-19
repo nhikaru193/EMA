@@ -14,7 +14,7 @@ from picamera2 import Picamera2
 import camera
 
 class PAD:
-    def __init__(self, bno: BNO055):
+    def __init__(self):
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,
             PWMB=19, BIN1=16, BIN2=26,
@@ -24,7 +24,12 @@ class PAD:
         config = self.picam2.create_still_configuration(main={"size": (320, 480)})
         self.picam2.configure(config)
         self.picam2.start()
-        self.bno = bno
+        """
+        self.lower_red1 = np.array([0, 100, 100])
+        self.upper_red1 = np.array([10, 255, 255])
+        self.lower_red2 = np.array([160, 100, 100])
+        self.upper_red2 = np.array([180, 255, 255])
+        """
         self.lower_red1 = np.array([0, 100, 100])
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
@@ -89,3 +94,9 @@ class PAD:
                 break
                 self.picam2.close()
                 self.driver.cleanup()
+
+if __name__ == '__main__':
+    # 許容誤差を調整したい場合は、ここで値を設定できます
+    # 例: detector = FlagDetector(triangle_tolerance=0.8)
+    AVO = PAD()
+    AVO.run()
