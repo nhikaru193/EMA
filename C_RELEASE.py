@@ -25,7 +25,7 @@ class RD:
             e_time = current_time - start_time
             print(f"t:{e_time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
             if delta_pressure > self.p_threshold:
-                self.p_counter = self.p_counter - 1
+                self.p_counter = 3
                 if self.p_counter == 0:
                     print("気圧変化による放出判定に成功しました")
                     break
