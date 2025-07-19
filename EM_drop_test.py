@@ -6,11 +6,11 @@ from motor import MotorDriver
 import following
 from BNO055 import BNO055
 import smbus
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO # RPi.GPIOはモータードライバやその他のcleanupで使うため残す
 import os
 import sys
 import math
-import pigpio
+import pigpio # pigpioのインポートを追加
 
 # --- ログファイルの設定 ---
 LOG_DIR = "/home/mark1/1_Logs"
@@ -129,7 +129,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
-    
+
     # 放出判定中にはキャリブレーションは行わない（高所投下を想定）
     print("\n⚠️ 放出判定中のBNO055キャリブレーションは行いません。線形加速度の精度が低下する可能性があります。")
 
@@ -247,6 +247,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
 
+            # ジャイロと加速度の両方がキャリブレーションレベル3に達したかチェック
             if gyro_cal == 3 and accel_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake()
@@ -414,7 +415,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
         # 明るいオレンジ色の範囲を調整
-        lower_orange1 = np.array([5, 150, 150]) ; upper_orange1 = np.array([15, 255, 255]) # 彩度・明度を上げた範囲
+        lower_orange1 = np.array([5, 100, 100]) ; upper_orange1 = np.array([40, 255, 255]) # 彩度・明度を上げた範囲
         lower_orange2 = np.array([0, 120, 100]) ; upper_orange2 = np.array([25, 255, 255]) # より広い範囲（赤に近いオレンジも含む）
 
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
@@ -643,7 +644,7 @@ if __name__ == "__main__":
             pressure_change_threshold=0.3,
             acc_z_threshold_abs=4.0,
             consecutive_checks=3,
-            timeout=360 # 放出判定のタイムアウトは長め
+            timeout=200 # 放出判定のタイムアウトは長め
         )
 
         if is_released:
