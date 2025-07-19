@@ -224,7 +224,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+        print("    (ジャイロと加速度が完全キャリブレーション(レベル3)になるのを待ちます)") # メッセージも修正
 
         print("機体回転前に3秒間待機します...")
         time.sleep(3)
@@ -369,7 +369,7 @@ class BNO055Wrapper:
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
     """デバッグ用に画像を保存します。"""
-    frame_rgb = picam2_instance.capture_array()
+    frame_rgb = picam2_capture_array_with_retry(picam2_instance) # リトライロジックを呼び出し
     if frame_rgb is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
@@ -384,13 +384,24 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
     print(f"画像保存成功: {path}")
     return processed_frame_bgr
 
+# Picamera2のキャプチャにリトライロジックを追加するヘルパー関数
+def picam2_capture_array_with_retry(picam2_instance, max_retries=5, delay_between_retries=0.1):
+    for i in range(max_retries):
+        frame = picam2_instance.capture_array()
+        if frame is not None:
+            return frame
+        print(f"⚠️ Picamera2フレーム取得失敗。リトライ中... ({i+1}/{max_retries})")
+        time.sleep(delay_between_retries)
+    print("🔴 Picamera2フレーム取得を複数回試行しましたが失敗しました。")
+    return None
+
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
     カメラ画像を縦2x横3のグリッドに分割し、各セルでの赤色検出を行い、その位置情報を返します。
     キャプチャした画像を反時計回りに90度回転させてから左右反転させて処理します。
     """
     try:
-        frame_rgb = picam2_instance.capture_array()
+        frame_rgb = picam2_capture_array_with_retry(picam2_instance) # リトライロジックを呼び出し
         if frame_rgb is None:
             print("画像キャプション失敗: フレームがNoneです。")
             return 'error_in_processing'
@@ -415,7 +426,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
         # 明るいオレンジ色の範囲を調整
-        lower_orange1 = np.array([5, 100, 100]) ; upper_orange1 = np.array([40, 255, 255]) # 彩度・明度を上げた範囲
+        lower_orange1 = np.array([5, 150, 150]) ; upper_orange1 = np.array([15, 255, 255]) # 彩度・明度を上げた範囲
         lower_orange2 = np.array([0, 120, 100]) ; upper_orange2 = np.array([25, 255, 255]) # より広い範囲（赤に近いオレンジも含む）
 
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
@@ -584,20 +595,21 @@ def activate_nichrome_wire(t_melt = 4):
             pi.stop() # pigpioの接続を停止
     print("--- ニクロム線溶断シーケンス終了。 ---")
 
-# --- BNO055のジャイロキャリブレーション待機関数 ---
-def calibrate_bno055_gyro(bno_sensor_instance, timeout_seconds=60):
+# --- BNO055のジャイロと加速度キャリブレーション待機関数 (放出判定前) ---
+def calibrate_bno055_gyro_accel_initial(bno_sensor_instance, timeout_seconds=60):
     """
-    BNO055のジャイロスコープが完全にキャリブレーションされるまで待機します。
+    BNO055のジャイロスコープと加速度計が完全にキャリブレーションされるまで待機します。
     timeout_seconds を過ぎても完了しない場合は、未完了のまま終了します。
+    このキャリブレーションは主に手動での機体移動を想定しています。
     """
-    print("\n⚙️ BNO055 ジャイロキャリブレーション開始...")
+    print("\n--- BNO055 ジャイロ & 加速度キャリブレーション開始 (ミッション開始前) ---")
     print("    センサーをいろんな向きにゆっくり回してください。")
-    print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+    print("    (ジャイロと加速度が完全キャリブレーション(レベル3)になるのを待ちます)")
 
     start_time = time.time()
     if not bno_sensor_instance.begin():
-        print("🔴 BNO055 初期化失敗。ジャイロキャリブレーションをスキップします。")
-        return False # 初期化失敗
+        print("🔴 BNO055 初期化失敗。キャリブレーションをスキップし、未完了のまま続行します。")
+        return False # 初期化失敗でも処理は続行
 
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードに設定
@@ -606,15 +618,16 @@ def calibrate_bno055_gyro(bno_sensor_instance, timeout_seconds=60):
         calibration_data = bno_sensor_instance.getCalibration()
         if calibration_data is not None and len(calibration_data) == 4:
             sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
+            # キャリブレーション状態を詳細に表示
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
-            if gyro_cal == 3:
-                print("\n✅ BNO055 ジャイロキャリブレーション完了！")
+            if gyro_cal == 3 and accel_cal == 3: # ジャイロと加速度の両方が3になったら完了
+                print("\n✅ BNO055 ジャイロ & 加速度キャリブレーション完了！")
                 return True
         else:
             print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
         time.sleep(0.5) # 0.5秒ごとにチェック
 
-    print(f"\n⏰ BNO055 ジャイロキャリブレーションがタイムアウトしました ({timeout_seconds}秒経過)。未完了のまま続行します。")
+    print(f"\n⏰ BNO055 ジャイロ & 加速度キャリブレーションがタイムアウトしました ({timeout_seconds}秒経過)。未完了のまま続行します。")
     return False # タイムアウト
 
 # --- メイン実行ブロック ---
@@ -631,11 +644,8 @@ if __name__ == "__main__":
     bno_raw_sensor = BNO055(address=0x28)
 
     try:
-        # --- BNO055 ジャイロキャリブレーション（放出判定前） ---
-        print("\n--- ミッション開始前: BNO055ジャイロキャリブレーション ---")
-        # 実際には手動で機体を動かしてキャリブレーションを促す必要がある
-        # または、事前にキャリブレーション済みであることを前提とする
-        calibrate_bno055_gyro(bno_raw_sensor, timeout_seconds=60) # 60秒でタイムアウト
+        # --- BNO055 ジャイロと加速度のキャリブレーション（放出判定前） ---
+        calibrate_bno055_gyro_accel_initial(bno_raw_sensor, timeout_seconds=60) # 60秒でタイムアウト
 
         # --- ステージ0: 放出判定 ---
         print("\n--- ステージ0: 放出判定を開始します ---")
@@ -644,7 +654,7 @@ if __name__ == "__main__":
             pressure_change_threshold=0.3,
             acc_z_threshold_abs=4.0,
             consecutive_checks=3,
-            timeout=200 # 放出判定のタイムアウトは長め
+            timeout=360 # 放出判定のタイムアウトは長め
         )
 
         if is_released:
