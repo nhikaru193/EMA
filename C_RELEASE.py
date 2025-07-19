@@ -2,6 +2,7 @@ import smbus
 import time
 from BNO055 import BNO055
 import BME280
+import csv
 
 class RD:
     def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 200):
@@ -11,6 +12,9 @@ class RD:
         self.timeout = timeout
 
     def run(self):
+        filename = "bme280_data_" + time.strftime("%m%d-%H%M%S") + ".csv"
+    	f = open(filename,"w")
+    	writer = csv.writer(f)
         BME280.init_bme280()
         BME280.read_compensate()
         start_time = time.time()
@@ -24,6 +28,7 @@ class RD:
             current_time = time.time()
             e_time = current_time - start_time
             print(f"t:{e_time} | p:{pressure} | ax:{ax} | ay:{ay} | az:{az} |")
+            writer.writerows([[e_time, pressure, ax, ay, az]])
             if delta_pressure > self.p_threshold:
                 self.p_counter = 3
                 if self.p_counter == 0:
