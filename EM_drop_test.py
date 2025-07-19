@@ -6,11 +6,31 @@ from motor import MotorDriver
 import following
 from BNO055 import BNO055
 import smbus
-import RPi.GPIO as GPIO # RPi.GPIOはモータードライバやその他のcleanupで使うため残す
+import RPi.GPIO as GPIO
 import os
 import sys
 import math
-import pigpio # pigpioのインポートを追加
+import pigpio
+
+# --- ログファイルの設定 ---
+LOG_DIR = "/home/mark1/1_Logs"
+LOG_FILE_NAME = "rover_mission_log_" + time.strftime("%Y%m%d-%H%M%S") + ".txt"
+LOG_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
+
+original_stdout = sys.stdout
+
+def setup_logging():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    sys.stdout = open(LOG_PATH, 'w', encoding='utf-8')
+    print(f"--- ログ出力開始: {time.asctime()} ---")
+    print(f"ログファイル: {LOG_PATH}\n")
+
+def restore_stdout():
+    if sys.stdout != original_stdout:
+        print(f"\n--- ログ出力終了: {time.asctime()} ---")
+        sys.stdout.close()
+    sys.stdout = original_stdout
+    print(f"すべての出力は {LOG_PATH} に保存されました。")
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -104,13 +124,14 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
     if not bno_sensor_instance.begin():
         print("🔴 BNO055 初期化失敗。放出判定を中止します。")
-        # BNO055が使えない場合でも次のフェーズに進む
         print("⚠️ BNO055 初期化失敗のため、タイムアウトを待たずに次のフェーズへ移行します。")
         return True # 強制的に成功とみなす
 
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
-    print("\n⚠️ BNO055 キャリブレーションはスキップされました。線形加速度の精度が低下する可能性があります。")
+    
+    # 放出判定中にはキャリブレーションは行わない（高所投下を想定）
+    print("\n⚠️ 放出判定中のBNO055キャリブレーションは行いません。線形加速度の精度が低下する可能性があります。")
 
     print("\n🚀 放出判定開始...")
     print(f"    初期気圧からの変化量閾値: >= {pressure_change_threshold:.2f} hPa")
@@ -133,7 +154,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
             if elapsed_total > timeout:
                 print(f"\n⏰ タイムアウト ({timeout}秒経過)。放出判定は成功とみなされ、次のフェーズへ移行します。")
-                return True # タイムアウトでも成功とみなして次へ
+                return True
 
             if (current_time - last_check_time) < 0.2:
                 time.sleep(0.01)
@@ -174,11 +195,11 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
     except KeyboardInterrupt:
         print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
         print("\n\nプログラムがユーザーによって中断されました。放出判定は成功とみなされ、次のフェーズへ移行します。")
-        return True # ユーザー中断でも成功とみなして次へ
+        return True
     except Exception as e:
         print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
         print(f"\n\n🚨 エラーが発生しました: {e}。放出判定は成功とみなされ、次のフェーズへ移行します。")
-        return True # エラーでも成功とみなして次へ
+        return True
     finally:
         print("\n--- 放出判定処理終了 ---")
 
@@ -195,7 +216,6 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if not bno_sensor_instance.begin():
         print("🔴 BNO055 初期化失敗。着地判定を中止します。")
-        # BNO055が使えない場合でも次のフェーズに進む
         print("⚠️ BNO055 初期化失敗のため、タイムアウトを待たずに次のフェーズへ移行します。")
         return True # 強制的に成功とみなす
 
@@ -227,7 +247,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
 
-            if gyro_cal == 3:
+            if gyro_cal == 3 and accel_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
                 driver_instance.motor_stop_brake()
                 break
@@ -318,10 +338,10 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     except KeyboardInterrupt:
         print("\n\nプログラムがユーザーによって中断されました。着地判定は成功とみなされ、次のフェーズへ移行します。")
-        return True # ユーザー中断でも成功とみなして次へ
+        return True
     except Exception as e:
         print(f"\n\n🚨 エラーが発生しました: {e}。着地判定は成功とみなされ、次のフェーズへ移行します。")
-        return True # エラーでも成功とみなして次へ
+        return True
     finally:
         print("\n--- 判定処理終了 ---")
 
@@ -393,21 +413,22 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red1 = np.array([0, 100, 100]) ; upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
-        lower_orange1 = np.array([5, 100, 100]) ; upper_orange1 = np.array([40, 255, 255])
-        lower_orange2 = np.array([0, 120, 70]) ; upper_orange2 = np.array([25, 255, 255])# オレンジ色の上限
+        # 明るいオレンジ色の範囲を調整
+        lower_orange1 = np.array([5, 150, 150]) ; upper_orange1 = np.array([15, 255, 255]) # 彩度・明度を上げた範囲
+        lower_orange2 = np.array([0, 120, 100]) ; upper_orange2 = np.array([25, 255, 255]) # より広い範囲（赤に近いオレンジも含む）
 
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
         hsv_full = cv2.cvtColor(blurred_full_frame, cv2.COLOR_BGR2HSV)
         mask_full_red = cv2.bitwise_or(cv2.inRange(hsv_full, lower_red1, upper_red1),
                                      cv2.inRange(hsv_full, lower_red2, upper_red2))
         mask_full_orange = cv2.bitwise_or(cv2.inRange(hsv_full, lower_orange1, upper_orange1),
-                                     cv2.inRange(hsv_full, lower_orange2, upper_orange2))
+                                         cv2.inRange(hsv_full, lower_orange2, upper_orange2))
         mask_full = cv2.bitwise_or(mask_full_red, mask_full_orange)
         red_pixels_full = np.count_nonzero(mask_full) ; total_pixels_full = height * width
         red_percentage_full = red_pixels_full / total_pixels_full if total_pixels_full > 0 else 0.0
 
         if red_percentage_full >= 0.80:
-            print(f"画像全体の赤色ピクセル割合: {red_percentage_full:.2%} (高割合) -> high_percentage_overall")
+            print(f"画像全体の赤色またはオレンジ色ピクセル割合: {red_percentage_full:.2%} (高割合) -> high_percentage_overall")
             cv2.imwrite(save_path, processed_frame_bgr)
             return 'high_percentage_overall'
 
@@ -419,7 +440,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             mask_cell_red = cv2.bitwise_or(cv2.inRange(hsv_cell, lower_red1, upper_red1),
                                          cv2.inRange(hsv_cell, lower_red2, upper_red2))
             mask_cell_orange = cv2.bitwise_or(cv2.inRange(hsv_cell, lower_orange1, upper_orange1),
-                                         cv2.inRange(hsv_cell, lower_orange2, upper_orange2))
+                                             cv2.inRange(hsv_cell, lower_orange2, upper_orange2))
             mask_cell = cv2.bitwise_or(mask_cell_red, mask_cell_orange)
             red_counts[cell_name] = np.count_nonzero(mask_cell)
             total_pixels_in_cell[cell_name] = cell_frame.shape[0] * cell_frame.shape[1]
@@ -446,22 +467,22 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         if bottom_right_ratio >= min_red_pixel_ratio_per_cell: detected_cells.append('bottom_right')
 
         if len(detected_cells) == 0:
-            print("赤色を検出しませんでした (下段)")
+            print("赤色またはオレンジ色を検出しませんでした (下段)")
             return 'none_detected'
         elif 'bottom_left' in detected_cells and 'bottom_right' not in detected_cells:
-            print("赤色が左下に偏って検出されました")
+            print("赤色またはオレンジ色が左下に偏って検出されました")
             return 'left_bottom'
         elif 'bottom_right' in detected_cells and 'bottom_left' not in detected_cells:
-            print("赤色が右下に偏って検出されました")
+            print("赤色またはオレンジ色が右下に偏って検出されました")
             return 'right_bottom'
         elif 'bottom_left' in detected_cells and 'bottom_middle' in detected_cells and 'bottom_right' in detected_cells:
-            print("赤色が下段全体に広く検出されました")
+            print("赤色またはオレンジ色が下段全体に広く検出されました")
             return 'bottom_middle'
         elif 'bottom_middle' in detected_cells:
-            print("赤色が下段中央に検出されました")
+            print("赤色またはオレンジ色が下段中央に検出されました")
             return 'bottom_middle'
         else:
-            print("赤色が下段の特定の場所に検出されましたが、左右の偏りはありません")
+            print("赤色またはオレンジ色が下段の特定の場所に検出されましたが、左右の偏りはありません")
             return 'bottom_middle'
 
     except Exception as e:
@@ -562,58 +583,96 @@ def activate_nichrome_wire(t_melt = 4):
             pi.stop() # pigpioの接続を停止
     print("--- ニクロム線溶断シーケンス終了。 ---")
 
+# --- BNO055のジャイロキャリブレーション待機関数 ---
+def calibrate_bno055_gyro(bno_sensor_instance, timeout_seconds=60):
+    """
+    BNO055のジャイロスコープが完全にキャリブレーションされるまで待機します。
+    timeout_seconds を過ぎても完了しない場合は、未完了のまま終了します。
+    """
+    print("\n⚙️ BNO055 ジャイロキャリブレーション開始...")
+    print("    センサーをいろんな向きにゆっくり回してください。")
+    print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
+
+    start_time = time.time()
+    if not bno_sensor_instance.begin():
+        print("🔴 BNO055 初期化失敗。ジャイロキャリブレーションをスキップします。")
+        return False # 初期化失敗
+
+    bno_sensor_instance.setExternalCrystalUse(True)
+    bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードに設定
+
+    while (time.time() - start_time) < timeout_seconds:
+        calibration_data = bno_sensor_instance.getCalibration()
+        if calibration_data is not None and len(calibration_data) == 4:
+            sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
+            print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
+            if gyro_cal == 3:
+                print("\n✅ BNO055 ジャイロキャリブレーション完了！")
+                return True
+        else:
+            print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
+        time.sleep(0.5) # 0.5秒ごとにチェック
+
+    print(f"\n⏰ BNO055 ジャイロキャリブレーションがタイムアウトしました ({timeout_seconds}秒経過)。未完了のまま続行します。")
+    return False # タイムアウト
 
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
+    # --- ログファイルの設定を呼び出し ---
+    setup_logging()
+
     # RPi.GPIOはモータードライバやBNO055（I2C経由だがcleanupでGPIOを扱う場合）の
     # cleanupのために残す場合があるため、setmodeは継続
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定はpigpioで行うため、RPi.GPIOでの設定は削除
-    # GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW) は削除
-
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
     bno_raw_sensor = BNO055(address=0x28)
 
-    # --- ステージ0: 放出判定 ---
-    print("\n--- ステージ0: 放出判定を開始します ---")
-    is_released = check_release(
-        bno_raw_sensor,
-        pressure_change_threshold=0.3,
-        acc_z_threshold_abs=4.0,
-        consecutive_checks=3,
-        timeout=200
-    )
-
-    if is_released:
-        print("\n=== ローバーの放出判定が成功したか、タイムアウトにより次のフェーズへ移行します。 ===")
-    else:
-        # このパスは、is_releasedがFalseを返す、すなわち何らかの致命的エラーで失敗した場合のみ実行される（タイムアウト時はTrueを返すため）。
-        print("\n=== ローバーの放出判定が致命的なエラーにより失敗しました。しかし、プログラムは続行されます。 ===")
-        pass # 現状では何もしないが、必要に応じてエラー通知などを追加
-
-    # 放出が確認されたか、タイムアウトで移行する場合にデバイスを初期化
-    driver = MotorDriver(
-        PWMA=12, AIN1=23, AIN2=18,
-        PWMB=19, BIN1=16, BIN2=26,
-        STBY=21
-    )
-
-    # BNO055Wrapperインスタンス
-    bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor)
-
-    picam2 = Picamera2()
-    picam2.configure(picam2.create_still_configuration(
-        main={"size": (320, 240)}
-    ))
-    picam2.start()
-    time.sleep(1)
-
-
     try:
+        # --- BNO055 ジャイロキャリブレーション（放出判定前） ---
+        print("\n--- ミッション開始前: BNO055ジャイロキャリブレーション ---")
+        # 実際には手動で機体を動かしてキャリブレーションを促す必要がある
+        # または、事前にキャリブレーション済みであることを前提とする
+        calibrate_bno055_gyro(bno_raw_sensor, timeout_seconds=60) # 60秒でタイムアウト
+
+        # --- ステージ0: 放出判定 ---
+        print("\n--- ステージ0: 放出判定を開始します ---")
+        is_released = check_release(
+            bno_raw_sensor,
+            pressure_change_threshold=0.3,
+            acc_z_threshold_abs=4.0,
+            consecutive_checks=3,
+            timeout=360 # 放出判定のタイムアウトは長め
+        )
+
+        if is_released:
+            print("\n=== ローバーの放出判定が成功したか、タイムアウトにより次のフェーズへ移行します。 ===")
+        else:
+            print("\n=== ローバーの放出判定が致命的なエラーにより失敗しました。しかし、プログラムは続行されます。 ===")
+            pass
+
+        # 放出が確認されたか、タイムアウトで移行する場合にデバイスを初期化
+        driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,
+            PWMB=19, BIN1=16, BIN2=26,
+            STBY=21
+        )
+
+        # BNO055Wrapperインスタンス
+        bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor)
+
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_still_configuration(
+            main={"size": (320, 240)}
+        ))
+        picam2.start()
+        time.sleep(1)
+
+
         # --- ステージ1: 着地判定 ---
         print("\n--- ステージ1: 着地判定を開始します ---")
+        # 着地判定では、機体の動きを伴うキャリブレーションはcheck_landing内部で実施
         is_landed = check_landing(
             bno_raw_sensor,
             driver,
@@ -622,13 +681,12 @@ if __name__ == "__main__":
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
             timeout=120,
-            calibrate_bno055=True
+            calibrate_bno055=True # 着地判定内のキャリブレーションも実行
         )
 
         if is_landed:
             print("\n=== ローバーの着地判定が成功したか、タイムアウトにより次のフェーズへ移行します。 ===")
         else:
-            # このパスは、is_landedがFalseを返す、すなわち何らかの致命的エラーで失敗した場合のみ実行される。
             print("\n=== ローバーの着地判定が致命的なエラーにより失敗しました。しかし、プログラムは続行されます。 ===")
             driver.motor_stop_brake()
             time.sleep(1)
@@ -757,7 +815,6 @@ if __name__ == "__main__":
 
             continue
 
-
     except SystemExit as e:
         print(f"\nプログラムが強制終了されました: {e}")
     except Exception as e:
@@ -769,8 +826,5 @@ if __name__ == "__main__":
         if 'picam2' in locals():
             picam2.close() # Picamera2を閉じる
 
-        # RPi.GPIOのcleanupは、RPi.GPIOでセットアップされたピンのみをクリーンアップします。
-        # pigpioで制御されたピン（NICHROME_PIN）は、activate_nichrome_wire()内のfinallyブロックで
-        # pi.stop()によって適切に停止されます。
         GPIO.cleanup()
-        print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
+        restore_stdout() # 標準出力を元に戻し、ログ保存メッセージを表示
