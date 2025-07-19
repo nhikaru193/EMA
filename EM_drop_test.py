@@ -631,7 +631,7 @@ if __name__ == "__main__":
             pressure_change_threshold=0.3,
             acc_z_threshold_abs=4.0,
             consecutive_checks=3,
-            timeout=360 # 放出判定のタイムアウトは長め
+            timeout=200 # 放出判定のタイムアウトは長め
         )
 
         if is_released:
