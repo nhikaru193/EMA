@@ -212,7 +212,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
         calibration_start_time = time.time()
         rotation_start_time = time.time()
-        CALIBRATION_TURN_SPEED = 60
+        CALIBRATION_TURN_SPEED = 90
         TURN_DURATION = 0.5
         STOP_DURATION = 0.2
 
@@ -459,7 +459,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         print(f"カメラ撮影・グリッド処理中にエラーが発生しました: {e}")
         return 'error_in_processing'
 
-def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=3.0, max_turn_attempts=100):
+def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg, turn_speed=90, angle_tolerance_deg=15.0, max_turn_attempts=100):
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
     """
