@@ -4,12 +4,13 @@ import time
 from picamera2 import Picamera2
 from motor import MotorDriver
 import following
-from BNO055 import BNO055 
+from BNO055 import BNO055
 import smbus
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO # RPi.GPIOはモータードライバやその他のcleanupで使うため残す
 import os
 import sys
 import math
+import pigpio # pigpioのインポートを追加
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -18,7 +19,7 @@ digP = []
 digH = []
 
 i2c = smbus.SMBus(1)
-BME280_address = 0x76 
+BME280_address = 0x76
 
 def init_bme280():
     """BME280センサーを初期化します。"""
@@ -44,7 +45,7 @@ def read_compensate():
     digH = [dh, (dat_h[1] << 8) | dat_h[0], dat_h[2],
             (dat_h[3] << 4) | (0x0F & dat_h[4]),
             (dat_h[5] << 4) | ((dat_h[4] >> 4) & 0x0F),
-            dat_h[6]] 
+            dat_h[6]]
     if digH[1] >= 32768:
         digH[1] -= 65536
     for i in range(3, 4):
@@ -65,7 +66,7 @@ def bme280_compensate_t(adc_T):
 def bme280_compensate_p(adc_P):
     """BME280の気圧値を補正します。"""
     global t_fine
-    p = 0.0 
+    p = 0.0
     var1 = t_fine - 128000.0
     var2 = var1 * var1 * digP[5]
     var2 += (var1 * digP[4]) * 131072.0
@@ -86,7 +87,7 @@ def get_pressure_and_temperature():
     dat = i2c.read_i2c_block_data(BME280_address, 0xF7, 8)
     adc_p = (dat[0] << 16 | dat[1] << 8 | dat[2]) >> 4
     adc_t = (dat[3] << 16 | dat[4] << 8 | dat[5]) >> 4
-    
+
     temperature = bme280_compensate_t(adc_t)
     pressure = bme280_compensate_p(adc_p)
     return pressure, temperature
@@ -96,13 +97,16 @@ def get_pressure_and_temperature():
 def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_threshold_abs=4.0, consecutive_checks=3, timeout=60):
     """
     放出判定を行う関数。BME280の気圧変化とBNO055のZ軸加速度を監視します。
+    タイムアウト時は強制的に放出成功とみなしてTrueを返します。
     """
     init_bme280()
     read_compensate()
 
     if not bno_sensor_instance.begin():
         print("🔴 BNO055 初期化失敗。放出判定を中止します。")
-        return False
+        # BNO055が使えない場合でも次のフェーズに進む
+        print("⚠️ BNO055 初期化失敗のため、タイムアウトを待たずに次のフェーズへ移行します。")
+        return True # 強制的に成功とみなす
 
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
@@ -128,13 +132,13 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
             elapsed_total = current_time - start_time
 
             if elapsed_total > timeout:
-                print(f"\n⏰ タイムアウト ({timeout}秒経過)。放出判定を失敗とします。")
-                return False
-            
+                print(f"\n⏰ タイムアウト ({timeout}秒経過)。放出判定は成功とみなされ、次のフェーズへ移行します。")
+                return True # タイムアウトでも成功とみなして次へ
+
             if (current_time - last_check_time) < 0.2:
                 time.sleep(0.01)
                 continue
-            
+
             last_check_time = current_time
 
             current_pressure, _ = get_pressure_and_temperature()
@@ -147,7 +151,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
                 continue
 
             pressure_delta_from_initial = abs(current_pressure - initial_pressure)
-            
+
             print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
 
             is_release_condition_met = (
@@ -169,12 +173,12 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
     except KeyboardInterrupt:
         print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
-        print("\n\nプログラムがユーザーによって中断されました。")
-        return False
+        print("\n\nプログラムがユーザーによって中断されました。放出判定は成功とみなされ、次のフェーズへ移行します。")
+        return True # ユーザー中断でも成功とみなして次へ
     except Exception as e:
         print(f"\n{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{initial_pressure:<15.2f}{pressure_delta_from_initial:<15.2f}{acc_z:<12.2f}")
-        print(f"\n\n🚨 エラーが発生しました: {e}")
-        return False
+        print(f"\n\n🚨 エラーが発生しました: {e}。放出判定は成功とみなされ、次のフェーズへ移行します。")
+        return True # エラーでも成功とみなして次へ
     finally:
         print("\n--- 放出判定処理終了 ---")
 
@@ -184,14 +188,16 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=120, calibrate_bno055=True): # driver_instanceを追加
     """
     着地判定を行う関数。気圧の変化量、加速度、角速度が閾値内に収まる状態を監視します。
-    キャリブレーション中に機体を回転させ、完了を待ちます。
+    タイムアウト時は強制的に着地成功とみなしてTrueを返します。
     """
     init_bme280()
     read_compensate()
 
     if not bno_sensor_instance.begin():
         print("🔴 BNO055 初期化失敗。着地判定を中止します。")
-        return False
+        # BNO055が使えない場合でも次のフェーズに進む
+        print("⚠️ BNO055 初期化失敗のため、タイムアウトを待たずに次のフェーズへ移行します。")
+        return True # 強制的に成功とみなす
 
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
@@ -199,16 +205,16 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
         print("    (ジャイロが完全キャリブレーション(レベル3)になるのを待ちます)")
-        
+
         print("機体回転前に3秒間待機します...")
-        time.sleep(3) 
+        time.sleep(3)
         print("機体回転を開始します。")
-        
+
         calibration_start_time = time.time()
         rotation_start_time = time.time()
         CALIBRATION_TURN_SPEED = 60
-        TURN_DURATION = 0.5 
-        STOP_DURATION = 0.2 
+        TURN_DURATION = 0.5
+        STOP_DURATION = 0.2
 
         while True:
             calibration_data = bno_sensor_instance.getCalibration()
@@ -217,24 +223,30 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             else:
                 print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
                 time.sleep(0.5)
-                continue 
+                continue
 
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
-            
+
             if gyro_cal == 3:
                 print("\n✅ BNO055 キャリブレーション完了！")
-                driver_instance.motor_stop_brake() 
+                driver_instance.motor_stop_brake()
                 break
-            
-            if (time.time() - rotation_start_time) < TURN_DURATION:
-                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED) 
-            elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
-                driver_instance.motor_stop_brake() 
-            else:
-                rotation_start_time = time.time() 
 
-            time.sleep(0.1) 
-            
+            # タイムアウトチェックを追加 (キャリブレーションが長すぎないように)
+            if (time.time() - calibration_start_time) > 60: # 例: 1分でタイムアウト
+                print("\n⏰ BNO055 キャリブレーションがタイムアウトしました。未完了のまま着地判定に進みます。")
+                driver_instance.motor_stop_brake()
+                break
+
+            if (time.time() - rotation_start_time) < TURN_DURATION:
+                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED)
+            elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
+                driver_instance.motor_stop_brake()
+            else:
+                rotation_start_time = time.time()
+
+            time.sleep(0.1)
+
         print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
     else:
         print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
@@ -261,13 +273,13 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             elapsed_total = current_time - start_time
 
             if elapsed_total > timeout:
-                print(f"\n⏰ タイムアウト ({timeout}秒経過)。条件成立回数 {landing_count} 回でしたが、強制的に着地判定を成功とします。")
-                return True
-            
+                print(f"\n⏰ タイムアウト ({timeout}秒経過)。条件成立回数 {landing_count} 回でしたが、着地判定を成功とみなし、次のフェーズへ移行します。")
+                return True # タイムアウトでも成功とみなして次へ
+
             if (current_time - last_check_time) < 0.2:
                 time.sleep(0.01)
                 continue
-            
+
             last_check_time = current_time
 
             current_pressure, _ = get_pressure_and_temperature()
@@ -277,7 +289,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
             pressure_delta = float('inf')
             if previous_pressure is not None:
                 pressure_delta = abs(current_pressure - previous_pressure)
-            
+
             print(f"{current_time:<15.3f}{elapsed_total:<12.1f}{current_pressure:<15.2f}{pressure_delta:<18.2f}{acc_x:<8.2f}{acc_y:<8.2f}{acc_z:<8.2f}{gyro_x:<8.2f}{gyro_y:<8.2f}{gyro_z:<8.2f}", end='\r')
 
             is_landing_condition_met = (
@@ -305,11 +317,11 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
                 return True
 
     except KeyboardInterrupt:
-        print("\n\nプログラムがユーザーによって中断されました。")
-        return False
+        print("\n\nプログラムがユーザーによって中断されました。着地判定は成功とみなされ、次のフェーズへ移行します。")
+        return True # ユーザー中断でも成功とみなして次へ
     except Exception as e:
-        print(f"\n\n🚨 エラーが発生しました: {e}")
-        return False
+        print(f"\n\n🚨 エラーが発生しました: {e}。着地判定は成功とみなされ、次のフェーズへ移行します。")
+        return True # エラーでも成功とみなして次へ
     finally:
         print("\n--- 判定処理終了 ---")
 
@@ -320,18 +332,18 @@ class BNO055Wrapper:
         self.sensor = bno055_sensor_instance
 
     def get_heading(self):
-        euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER) 
+        euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER)
         if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             wait_start_time = time.time()
             max_wait_time = 0.1
             while (euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None) and (time.time() - wait_start_time < max_wait_time):
                 time.sleep(0.005)
                 euler_angles = self.sensor.getVector(BNO055.VECTOR_EULER)
-        
+
         if euler_angles is None or len(euler_angles) < 3 or euler_angles[0] is None:
             return None
-        
-        heading = euler_angles[0] 
+
+        heading = euler_angles[0]
         return heading
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
@@ -340,7 +352,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
     if frame_rgb is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
-    
+
     frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
     rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
     processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1) # 水平フリップ
@@ -349,7 +361,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_im
     if not os.path.exists(directory): os.makedirs(directory)
     cv2.imwrite(path, processed_frame_bgr)
     print(f"画像保存成功: {path}")
-    return processed_frame_bgr 
+    return processed_frame_bgr
 
 def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo_grid.jpg", min_red_pixel_ratio_per_cell=0.05):
     """
@@ -363,11 +375,11 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             return 'error_in_processing'
 
         frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-        
+
         rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        
+
         processed_frame_bgr = cv2.flip(rotated_frame_bgr, 1)
-        
+
         height, width, _ = processed_frame_bgr.shape
         cell_height = height // 2 ; cell_width = width // 3
         cells = {
@@ -402,12 +414,12 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
                                          cv2.inRange(hsv_cell, lower_red2, upper_red2))
             red_counts[cell_name] = np.count_nonzero(mask_cell)
             total_pixels_in_cell[cell_name] = cell_frame.shape[0] * cell_frame.shape[1]
-            
+
             color = (255, 0, 0) ; thickness = 2
             if red_counts[cell_name] / total_pixels_in_cell[cell_name] >= min_red_pixel_ratio_per_cell:
                 color = (0, 0, 255) ; thickness = 3
             cv2.rectangle(debug_frame, (x_start, y_start), (x_end, y_end), color, thickness)
-            cv2.putText(debug_frame, f"{cell_name}: {(red_counts[cell_name] / total_pixels_in_cell[cell_name]):.2f}", 
+            cv2.putText(debug_frame, f"{cell_name}: {(red_counts[cell_name] / total_pixels_in_cell[cell_name]):.2f}",
                                      (x_start + 5, y_start + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
         directory = os.path.dirname(save_path)
@@ -455,12 +467,12 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
     if initial_heading is None:
         print("警告: turn_to_relative_angle: 初期方位が取得できませんでした。")
         return False
-    
+
     target_heading = (initial_heading + angle_offset_deg + 360) % 360
     print(f"現在のBNO方位: {initial_heading:.2f}度, 相対目標角度: {angle_offset_deg:.2f}度 -> 絶対目標方位: {target_heading:.2f}度")
 
     loop_count = 0
-    
+
     while loop_count < max_turn_attempts:
         current_heading = bno_sensor_wrapper_instance.get_heading()
         if current_heading is None:
@@ -479,20 +491,20 @@ def turn_to_relative_angle(driver, bno_sensor_wrapper_instance, angle_offset_deg
             return True
 
         turn_duration_on = 0.02 + (abs(angle_error) / 180.0) * 0.2
-        
+
         if angle_error < 0:
             driver.petit_left(0, turn_speed)
             driver.petit_left(turn_speed, 0)
         else:
             driver.petit_right(0, turn_speed)
             driver.petit_right(turn_speed, 0)
-            
+
         time.sleep(turn_duration_on)
         driver.motor_stop_brake()
         time.sleep(0.05)
-        
+
         loop_count += 1
-    
+
     print(f"警告: turn_to_relative_angle: 最大試行回数({max_turn_attempts}回)内に目標角度に到達できませんでした。最終誤差: {angle_error:.2f}度 (試行回数: {loop_count})")
     driver.motor_stop_brake()
     time.sleep(0.5)
@@ -508,39 +520,52 @@ def activate_nichrome_wire(t_melt = 4):
     ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
     """
     print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
+    pi = None # piオブジェクトを初期化
     try:
-        meltPin = 25
-        pi = pigpio.pi()
-        pi.write(meltPin, 0)
-        time.sleep(1)
-        print(f"GPIOをHIGHに設定し、ニクロム線をオンにします。")
-        pi.write(meltPin, 1)
-        time.sleep(t_melt)
-        print(f"4秒間、加熱します...")
-        print(f"GPIOをLOWに設定し、ニクロム線をオフにします。")
-        pi.write(meltPin, 0)
-        time.sleep(1)
-        print("ニクロム線溶断シーケンスが正常に完了しました。")
+        pi = pigpio.pi() # pigpioのインスタンスを生成
+        if not pi.connected:
+            raise Exception("pigpioデーモンに接続できませんでした。")
 
-        pi.stop()
+        meltPin = NICHROME_PIN
+
+        # ピンモードを設定（ここではpigpioで設定）
+        pi.set_mode(meltPin, pigpio.OUTPUT)
+        # 初期状態をLOWに設定
+        pi.write(meltPin, 0)
+        time.sleep(1) # 安定時間
+
+        print(f"GPIO {meltPin} をHIGHに設定し、ニクロム線をオンにします。")
+        pi.write(meltPin, 1) # HIGHに設定
+        time.sleep(t_melt)
+        print(f"{t_melt}秒間、加熱しました。")
+
+        print(f"GPIO {meltPin} をLOWに設定し、ニクロム線をオフにします。")
+        pi.write(meltPin, 0) # LOWに設定
+        time.sleep(1) # オフ後の安定時間
+        print("ニクロム線溶断シーケンスが正常に完了しました。")
 
     except Exception as e:
         print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
-        pi.stop() # エラー時も安全のためオフ
+        if pi and pi.connected:
+            pi.write(NICHROME_PIN, 0) # エラー時も安全のためオフ
+    finally:
+        if pi and pi.connected:
+            pi.stop() # pigpioの接続を停止
     print("--- ニクロム線溶断シーケンス終了。 ---")
 
 
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
-    # GPIO設定
+    # RPi.GPIOはモータードライバやBNO055（I2C経由だがcleanupでGPIOを扱う場合）の
+    # cleanupのために残す場合があるため、setmodeは継続
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-    # ニクロム線ピンの初期設定 (NICHROME_PINはここで定義され、GPIO.setupも行われる)
-    GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW)
+    # ニクロム線ピンの初期設定はpigpioで行うため、RPi.GPIOでの設定は削除
+    # GPIO.setup(NICHROME_PIN, GPIO.OUT, initial=GPIO.LOW) は削除
 
     # BNO055センサーの生インスタンス（放出判定と着地判定で直接使用）
-    bno_raw_sensor = BNO055(address=0x28) 
+    bno_raw_sensor = BNO055(address=0x28)
 
     # --- ステージ0: 放出判定 ---
     print("\n--- ステージ0: 放出判定を開始します ---")
@@ -549,17 +574,19 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=30 # タイムアウトを短く設定
+        timeout=30
     )
 
     if is_released:
-        print("\n=== ローバーの放出を確認しました！次のフェーズへ移行します。 ===")
+        print("\n=== ローバーの放出判定が成功したか、タイムアウトにより次のフェーズへ移行します。 ===")
     else:
-        print("\n=== ローバーの放出は確認できません。プログラムを終了します。 ===")
-        GPIO.cleanup() 
-        sys.exit("放出失敗")
+        # このパスは、is_releasedがFalseを返す、すなわち何らかの致命的エラーで失敗した場合のみ実行される（タイムアウト時はTrueを返すため）。
+        print("\n=== ローバーの放出判定が致命的なエラーにより失敗しました。しかし、プログラムは続行されます。 ===")
+        # 強制終了の代わりにログ出力とモーター停止などを行う（driver初期化前だが念のため）
+        # ただし、driverは以下で初期化されるので、ここでは特にモーター操作は不要
+        pass # 現状では何もしないが、必要に応じてエラー通知などを追加
 
-    # 放出が確認されたら、以降のデバイスを初期化
+    # 放出が確認されたか、タイムアウトで移行する場合にデバイスを初期化
     driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
         PWMB=19, BIN1=16, BIN2=26,
@@ -567,7 +594,7 @@ if __name__ == "__main__":
     )
 
     # BNO055Wrapperインスタンス
-    bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor) 
+    bno_sensor_wrapper = BNO055Wrapper(bno_raw_sensor)
 
     picam2 = Picamera2()
     picam2.configure(picam2.create_still_configuration(
@@ -582,45 +609,47 @@ if __name__ == "__main__":
         print("\n--- ステージ1: 着地判定を開始します ---")
         is_landed = check_landing(
             bno_raw_sensor,
-            driver, 
+            driver,
             pressure_change_threshold=0.1,
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=30, # タイムアウトを短く設定
+            timeout=30,
             calibrate_bno055=True
         )
 
         if is_landed:
-            print("\n=== ローバーの着地を確認しました！次のフェーズへ移行します。 ===")
+            print("\n=== ローバーの着地判定が成功したか、タイムアウトにより次のフェーズへ移行します。 ===")
         else:
-            print("\n=== ローバーの着地は確認できませんでした。プログラムを終了します。 ===")
-            raise SystemExit("着地失敗")
-            
-        driver.motor_stop_brake() 
+            # このパスは、is_landedがFalseを返す、すなわち何らかの致命的エラーで失敗した場合のみ実行される。
+            print("\n=== ローバーの着地判定が致命的なエラーにより失敗しました。しかし、プログラムは続行されます。 ===")
+            driver.motor_stop_brake()
+            time.sleep(1)
+
+        driver.motor_stop_brake()
         time.sleep(1)
 
         # --- ステージ1.5: ニクロム線溶断シーケンス ---
         activate_nichrome_wire(t_melt = 4)
-        time.sleep(2) 
+        time.sleep(2)
 
         # --- ステージ2: パラシュート即時回避と最終確認 ---
         print("\n--- ステージ2: 着地後のパラシュート即時回避と最終確認を開始します ---")
-        
+
         # 回避と最終確認のループ
-        while True: 
+        while True:
             print("\n🔍 360度パラシュートスキャンを開始...")
-            detected_during_scan_cycle = False 
+            detected_during_scan_cycle = False
 
             scan_angles_offsets = [0, 45, 45, 45, 45, 45, 45, 45] # 45度ずつに修正
 
             for i, angle_offset in enumerate(scan_angles_offsets):
-                if i > 0: 
+                if i > 0:
                     # --- ここに1秒前進の処理を追加 ---
                     print(f"→ 旋回前に1秒前進します...")
                     # following.pyのfollow_forward関数を使用
                     # bno_raw_sensor を渡す必要があります
-                    following.follow_forward(driver, bno_raw_sensor, base_speed=60, duration_time=1) 
+                    following.follow_forward(driver, bno_raw_sensor, base_speed=60, duration_time=1)
                     driver.motor_stop_brake()
                     time.sleep(0.5) # 前進後の安定時間
                     # --- 追加ここまで ---
@@ -637,46 +666,49 @@ if __name__ == "__main__":
                 elif total_angle_turned == 90: current_direction_str = "右90度"
                 elif total_angle_turned == 135: current_direction_str = "右135度"
                 elif total_angle_turned == 180: current_direction_str = "後方(180度)"
-                elif total_angle_turned == 225: current_direction_str = "左135度" 
-                elif total_angle_turned == 270: current_direction_str = "左90度"  
-                elif total_angle_turned == 315: current_direction_str = "左45度"  
+                elif total_angle_turned == 225: current_direction_str = "左135度"
+                elif total_angle_turned == 270: current_direction_str = "左90度"
+                elif total_angle_turned == 315: current_direction_str = "左45度"
                 else: current_direction_str = f"方向不明({total_angle_turned}度)"
 
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
-                scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{current_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
+                # ファイル名に日本語が含まれないように修正
+                safe_direction_str = current_direction_str.replace("正面(0度)", "front_0deg").replace("右45度", "right_45deg").replace("右90度", "right_90deg").replace("右135度", "right_135deg").replace("後方(180度)", "rear_180deg").replace("左135度", "left_135deg").replace("左90度", "left_90deg").replace("左45度", "left_45deg").replace("方向不明", "unknown_direction")
+
+                scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{safe_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
 
                 if scan_result != 'none_detected' and scan_result != 'error_in_processing':
                     print(f"🚩 {current_direction_str}でパラシュートを検知しました！")
                     detected_during_scan_cycle = True
-                    
+
                     print(f"検出されたため、回避行動に移ります。")
-                    
-                    if total_angle_turned <= 45 or total_angle_turned >= 315: 
+
+                    if total_angle_turned <= 45 or total_angle_turned >= 315:
                         print("正面付近で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    elif total_angle_turned > 45 and total_angle_turned < 180: 
+                    elif total_angle_turned > 45 and total_angle_turned < 180:
                         print("右側で検出されたため、左90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, -90, turn_speed=90, angle_tolerance_deg=10)
-                    elif total_angle_turned > 180 and total_angle_turned < 315: 
+                    elif total_angle_turned > 180 and total_angle_turned < 315:
                         print("左側で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    else: 
+                    else:
                         print("後方または不明な方向で検出されたため、右90度回頭して回避します。")
                         turn_to_relative_angle(driver, bno_sensor_wrapper, 90, turn_speed=90, angle_tolerance_deg=10)
-                    
+
                     print("回避のため少し前進します。(速度80, 3秒)")
                     following.follow_forward(driver, bno_raw_sensor, base_speed=80, duration_time=3)
                     driver.motor_stop_brake()
                     time.sleep(1)
-                    break 
+                    break
 
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
             if not detected_during_scan_cycle:
                 print("\n✅ 360度スキャンしましたが、パラシュートは検知されませんでした。初期回避フェーズ完了。")
-                
+
                 print("\n→ 少し前進します。(速度70, 5秒)")
                 following.follow_forward(driver, bno_raw_sensor, base_speed=70, duration_time=5)
                 driver.motor_stop_brake()
@@ -689,7 +721,7 @@ if __name__ == "__main__":
                 }
 
                 print("\n=== 最終確認スキャンを開始します (正面、左30度、右30度) ===")
-                
+
                 print("→ 正面方向の赤色を確認します...")
                 final_scan_results['front'] = detect_red_in_grid(picam2, save_path="/home/mark1/1_Pictures/final_confirm_front.jpg", min_red_pixel_ratio_per_cell=0.10)
 
@@ -713,11 +745,11 @@ if __name__ == "__main__":
 
                 if is_final_clear:
                     print("\n🎉 最終確認スキャン結果: 全ての方向でパラシュートは検知されませんでした。ミッション完了！")
-                    break 
+                    break
                 else:
                     print("\n⚠️ 最終確認スキャン結果: パラシュートが検知されました。再度回避を試みます。")
-                    continue 
-                
+                    continue
+
             continue
 
 
@@ -731,8 +763,9 @@ if __name__ == "__main__":
             driver.cleanup() # モータードライバーのGPIOをクリーンアップ
         if 'picam2' in locals():
             picam2.close() # Picamera2を閉じる
-        
-        # GPIO.cleanup()は必ず最後に一度だけ呼び出す
-        # ニクロム線ピンはactivate_nichrome_wire()内でLOWになるので、ここで個別に設定する必要はない
-        GPIO.cleanup()  # BNO055関連のI2Cなど、残りのGPIOをクリーンアップ
+
+        # RPi.GPIOのcleanupは、RPi.GPIOでセットアップされたピンのみをクリーンアップします。
+        # pigpioで制御されたピン（NICHROME_PIN）は、activate_nichrome_wire()内のfinallyブロックで
+        # pi.stop()によって適切に停止されます。
+        GPIO.cleanup()
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
