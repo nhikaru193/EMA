@@ -77,5 +77,5 @@ class PAD:
 if __name__ == '__main__':
     # 許容誤差を調整したい場合は、ここで値を設定できます
     # 例: detector = FlagDetector(triangle_tolerance=0.8)
-    AVO = PAD()
+    AVO = PAD(bno)
     AVO.run()
