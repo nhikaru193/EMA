@@ -32,8 +32,8 @@ class PAD:
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
         """
-        self.lower_red1 = np.array([5, 150, 150])
-        self.upper_red1 = np.array([30, 255, 255])
+        self.lower_red1 = np.array([5, 100, 100])
+        self.upper_red1 = np.array([15, 255, 255])
         """
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
