@@ -186,7 +186,7 @@ def check_release(bno_sensor_instance, pressure_change_threshold=0.3, acc_z_thre
 
 # --- 2. 着地判定用の関数 ---
 
-def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=120, calibrate_bno055=True): # driver_instanceを追加
+def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshold=0.1, acc_threshold_abs=0.5, gyro_threshold_abs=0.5, consecutive_checks=3, timeout=120): # calibrate_bno055引数を削除
     """
     着地判定を行う関数。気圧の変化量、加速度、角速度が閾値内に収まる状態を監視します。
     タイムアウト時は強制的に着地成功とみなしてTrueを返します。
@@ -202,56 +202,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
     bno_sensor_instance.setExternalCrystalUse(True)
     bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
 
-    if calibrate_bno055:
-        print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロと加速度が完全キャリブレーション(レベル3)になるのを待ちます)")
-
-        print("機体回転前に3秒間待機します...")
-        time.sleep(3)
-        print("機体回転を開始します。")
-
-        calibration_start_time = time.time()
-        rotation_start_time = time.time()
-        CALIBRATION_TURN_SPEED = 90
-        TURN_DURATION = 0.5
-        STOP_DURATION = 0.2
-
-        while True:
-            calibration_data = bno_sensor_instance.getCalibration()
-            if calibration_data is not None and len(calibration_data) == 4:
-                sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
-            else:
-                print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
-                time.sleep(0.5)
-                continue
-
-            print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
-
-            # ジャイロと加速度の両方がキャリブレーションレベル3に達したかチェック
-            if gyro_cal == 3 and accel_cal == 3:
-                print("\n✅ BNO055 キャリブレーション完了！")
-                driver_instance.motor_stop_brake()
-                break
-
-            # タイムアウトチェックを追加 (キャリブレーションが長すぎないように)
-            if (time.time() - calibration_start_time) > 60: # 例: 1分でタイムアウト
-                print("\n⏰ BNO055 キャリブレーションがタイムアウトしました。未完了のまま着地判定に進みます。")
-                driver_instance.motor_stop_brake()
-                break
-
-            if (time.time() - rotation_start_time) < TURN_DURATION:
-                driver_instance.changing_right(0, CALIBRATION_TURN_SPEED)
-            elif (time.time() - rotation_start_time) < (TURN_DURATION + STOP_DURATION):
-                driver_instance.motor_stop_brake()
-            else:
-                rotation_start_time = time.time()
-
-            time.sleep(0.1)
-
-        print(f"    キャリブレーションにかかった時間: {time.time() - calibration_start_time:.1f}秒\n")
-    else:
-        print("\n⚠️ BNO055 キャリブレーション待機はスキップされました。")
-        driver_instance.motor_stop_brake()
+    # 着地判定時のBNO055キャリブレーションブロックは削除されました。
 
     print("🛬 着地判定開始...")
     print(f"    気圧変化量閾値: < {pressure_change_threshold:.2f} hPa")
@@ -406,8 +357,8 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
         # 明るいオレンジ色の範囲を調整
-        lower_orange1 = np.array([5, 150, 150]) ; upper_orange1 = np.array([15, 255, 255]) # 彩度・明度を上げた範囲
-        lower_orange2 = np.array([0, 120, 100]) ; upper_orange2 = np.array([25, 255, 255]) # より広い範囲（赤に近いオレンジも含む）
+        lower_orange1 = np.array([0, 100, 100]) ; upper_orange1 = np.array([40, 255, 255]) # 彩度・明度を上げた範囲
+        lower_orange2 = np.array([0, 100, 100]) ; upper_orange2 = np.array([45, 255, 255]) # より広い範囲（赤に近いオレンジも含む）
 
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
         hsv_full = cv2.cvtColor(blurred_full_frame, cv2.COLOR_BGR2HSV)
@@ -542,37 +493,35 @@ def activate_nichrome_wire(t_melt = 4):
     ニクロム線を指定された時間だけオンにして溶断シーケンスを実行します。
     """
     print("\n--- ニクロム線溶断シーケンスを開始します。 ---")
-    pi = None # piオブジェクトを初期化
+    pi = None
     try:
-        pi = pigpio.pi() # pigpioのインスタンスを生成
+        pi = pigpio.pi()
         if not pi.connected:
             raise Exception("pigpioデーモンに接続できませんでした。")
 
         meltPin = NICHROME_PIN
 
-        # ピンモードを設定（ここではpigpioで設定）
         pi.set_mode(meltPin, pigpio.OUTPUT)
-        # 初期状態をLOWに設定
         pi.write(meltPin, 0)
-        time.sleep(1) # 安定時間
+        time.sleep(1)
 
         print(f"GPIO {meltPin} をHIGHに設定し、ニクロム線をオンにします。")
-        pi.write(meltPin, 1) # HIGHに設定
+        pi.write(meltPin, 1)
         time.sleep(t_melt)
         print(f"{t_melt}秒間、加熱しました。")
 
         print(f"GPIO {meltPin} をLOWに設定し、ニクロム線をオフにします。")
-        pi.write(meltPin, 0) # LOWに設定
-        time.sleep(1) # オフ後の安定時間
+        pi.write(meltPin, 0)
+        time.sleep(1)
         print("ニクロム線溶断シーケンスが正常に完了しました。")
 
     except Exception as e:
         print(f"🚨 ニクロム線溶断中にエラーが発生しました: {e}")
         if pi and pi.connected:
-            pi.write(NICHROME_PIN, 0) # エラー時も安全のためオフ
+            pi.write(NICHROME_PIN, 0)
     finally:
         if pi and pi.connected:
-            pi.stop() # pigpioの接続を停止
+            pi.stop()
     print("--- ニクロム線溶断シーケンス終了。 ---")
 
 # --- BNO055のジャイロと加速度キャリブレーション待機関数 (放出判定前) ---
@@ -589,26 +538,25 @@ def calibrate_bno055_gyro_accel_initial(bno_sensor_instance, timeout_seconds=60)
     start_time = time.time()
     if not bno_sensor_instance.begin():
         print("🔴 BNO055 初期化失敗。キャリブレーションをスキップし、未完了のまま続行します。")
-        return False # 初期化失敗でも処理は続行
+        return False
 
     bno_sensor_instance.setExternalCrystalUse(True)
-    bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF) # NDOFモードに設定
+    bno_sensor_instance.setMode(BNO055.OPERATION_MODE_NDOF)
 
     while (time.time() - start_time) < timeout_seconds:
         calibration_data = bno_sensor_instance.getCalibration()
         if calibration_data is not None and len(calibration_data) == 4:
             sys_cal, gyro_cal, accel_cal, mag_cal = calibration_data
-            # キャリブレーション状態を詳細に表示
             print(f"    現在のキャリブレーション状態 → システム:{sys_cal}, ジャイロ:{gyro_cal}, 加速度:{accel_cal}, 地磁気:{mag_cal} ", end='\r')
             if gyro_cal == 3 and accel_cal == 3: # ジャイロと加速度の両方が3になったら完了
                 print("\n✅ BNO055 ジャイロ & 加速度キャリブレーション完了！")
                 return True
         else:
             print("⚠️ BNO055キャリブレーションデータ取得失敗。リトライ中...", end='\r')
-        time.sleep(0.5) # 0.5秒ごとにチェック
+        time.sleep(0.5)
 
     print(f"\n⏰ BNO055 ジャイロ & 加速度キャリブレーションがタイムアウトしました ({timeout_seconds}秒経過)。未完了のまま続行します。")
-    return False # タイムアウト
+    return False
 
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
@@ -622,7 +570,7 @@ if __name__ == "__main__":
 
     try:
         # --- BNO055 ジャイロと加速度のキャリブレーション（放出判定前） ---
-        calibrate_bno055_gyro_accel_initial(bno_raw_sensor, timeout_seconds=60) # 60秒でタイムアウト
+        calibrate_bno055_gyro_accel_initial(bno_raw_sensor, timeout_seconds=60)
 
         # --- ステージ0: 放出判定 ---
         print("\n--- ステージ0: 放出判定を開始します ---")
@@ -631,7 +579,7 @@ if __name__ == "__main__":
             pressure_change_threshold=0.3,
             acc_z_threshold_abs=4.0,
             consecutive_checks=3,
-            timeout=200 # 放出判定のタイムアウトは長め
+            timeout=250
         )
 
         if is_released:
@@ -668,8 +616,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=120,
-            calibrate_bno055=True # 着地判定内のキャリブレーションも実行
+            timeout=120
         )
 
         if is_landed:
@@ -691,9 +638,9 @@ if __name__ == "__main__":
 
         # 360度スキャンを開始する前に一度だけ前進
         print(f"\n→ 360度スキャン開始前に1秒前進します...")
-        following.follow_forward(driver, bno_raw_sensor, base_speed=60, duration_time=1)
+        following.follow_forward(driver, bno_raw_sensor, base_speed=90, duration_time=3)
         driver.motor_stop_brake()
-        time.sleep(0.5) # 前進後の安定時間
+        time.sleep(0.5)
 
 
         # 回避と最終確認のループ
@@ -701,7 +648,7 @@ if __name__ == "__main__":
             print("\n🔍 360度パラシュートスキャンを開始...")
             detected_during_scan_cycle = False
 
-            scan_angles_offsets = [0, 45, 45, 45, 45, 45, 45, 45] # 45度ずつに修正
+            scan_angles_offsets = [0, 45, 45, 45, 45, 45, 45, 45]
 
             for i, angle_offset in enumerate(scan_angles_offsets):
                 if i > 0:
@@ -724,7 +671,6 @@ if __name__ == "__main__":
 
 
                 print(f"--- スキャン方向: {current_direction_str} ---")
-                # ファイル名に日本語が含まれないように修正
                 safe_direction_str = current_direction_str.replace("正面(0度)", "front_0deg").replace("右45度", "right_45deg").replace("右90度", "right_90deg").replace("右135度", "right_135deg").replace("後方(180度)", "rear_180deg").replace("左135度", "left_135deg").replace("左90度", "left_90deg").replace("左45度", "left_45deg").replace("方向不明", "unknown_direction")
 
                 scan_result = detect_red_in_grid(picam2, save_path=f"/home/mark1/1_Pictures/initial_scan_{safe_direction_str}.jpg", min_red_pixel_ratio_per_cell=0.10)
@@ -810,9 +756,9 @@ if __name__ == "__main__":
     finally:
         # メインのfinallyブロックで全てのGPIOをクリーンアップ
         if 'driver' in locals():
-            driver.cleanup() # モータードライバーのGPIOをクリーンアップ
+            driver.cleanup()
         if 'picam2' in locals():
-            picam2.close() # Picamera2を閉じる
+            picam2.close()
 
         GPIO.cleanup()
         print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
