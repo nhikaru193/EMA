@@ -583,7 +583,7 @@ if __name__ == "__main__":
         pressure_change_threshold=0.3,
         acc_z_threshold_abs=4.0,
         consecutive_checks=3,
-        timeout=30
+        timeout=360
     )
 
     if is_released:
@@ -621,7 +621,7 @@ if __name__ == "__main__":
             acc_threshold_abs=0.5,
             gyro_threshold_abs=0.5,
             consecutive_checks=3,
-            timeout=30,
+            timeout=120,
             calibrate_bno055=True
         )
 
