@@ -393,7 +393,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red1 = np.array([0, 100, 100]) ; upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
-        lower_orange1 = np.array([5, 100, 100]) ; upper_orange2 = np.array([15, 255, 255])
+        lower_orange1 = np.array([5, 100, 100]) ; upper_orange1 = np.array([15, 255, 255])
         lower_orange2 = np.array([0, 120, 70]) ; upper_orange2 = np.array([25, 255, 255])# オレンジ色の上限
 
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
