@@ -13,8 +13,8 @@ class RD:
 
     def run(self):
         filename = "bme280_data_" + time.strftime("%m%d-%H%M%S") + ".csv"
-    	f = open(filename,"w")
-    	writer = csv.writer(f)
+        f = open(filename,"w")
+        writer = csv.writer(f)
         BME280.init_bme280()
         BME280.read_compensate()
         start_time = time.time()
