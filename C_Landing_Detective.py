@@ -100,4 +100,5 @@ class LD:
             print("割り込みにより、着地判定をスキップします")
         finally:
             print("着地判定+溶断回路動作の終了です or 強制終了です")
+            time.sleep(5)
             self.driver.cleanup()
