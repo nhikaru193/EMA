@@ -6,31 +6,11 @@ from motor import MotorDriver
 import following
 from BNO055 import BNO055
 import smbus
-import RPi.GPIO as GPIO # RPi.GPIOはモータードライバやその他のcleanupで使うため残す
+import RPi.GPIO as GPIO
 import os
 import sys
 import math
-import pigpio # pigpioのインポートを追加
-
-# --- ログファイルの設定 ---
-LOG_DIR = "/home/mark1/1_Logs"
-LOG_FILE_NAME = "rover_mission_log_" + time.strftime("%Y%m%d-%H%M%S") + ".txt"
-LOG_PATH = os.path.join(LOG_DIR, LOG_FILE_NAME)
-
-original_stdout = sys.stdout
-
-def setup_logging():
-    os.makedirs(LOG_DIR, exist_ok=True)
-    sys.stdout = open(LOG_PATH, 'w', encoding='utf-8')
-    print(f"--- ログ出力開始: {time.asctime()} ---")
-    print(f"ログファイル: {LOG_PATH}\n")
-
-def restore_stdout():
-    if sys.stdout != original_stdout:
-        print(f"\n--- ログ出力終了: {time.asctime()} ---")
-        sys.stdout.close()
-    sys.stdout = original_stdout
-    print(f"すべての出力は {LOG_PATH} に保存されました。")
+import pigpio
 
 # --- 共通のBME280グローバル変数と関数 ---
 t_fine = 0.0
@@ -224,7 +204,7 @@ def check_landing(bno_sensor_instance, driver_instance, pressure_change_threshol
 
     if calibrate_bno055:
         print("\n⚙️ BNO055 キャリブレーション中... センサーをいろんな向きにゆっくり回してください。")
-        print("    (ジャイロと加速度が完全キャリブレーション(レベル3)になるのを待ちます)") # メッセージも修正
+        print("    (ジャイロと加速度が完全キャリブレーション(レベル3)になるのを待ちます)")
 
         print("機体回転前に3秒間待機します...")
         time.sleep(3)
@@ -369,7 +349,7 @@ class BNO055Wrapper:
 
 def save_image_for_debug(picam2_instance, path="/home/mark1/1_Pictures/paravo_image.jpg"):
     """デバッグ用に画像を保存します。"""
-    frame_rgb = picam2_capture_array_with_retry(picam2_instance) # リトライロジックを呼び出し
+    frame_rgb = picam2_capture_array_with_retry(picam2_instance)
     if frame_rgb is None:
         print("画像キャプチャ失敗：フレームがNoneです。")
         return None
@@ -401,7 +381,7 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
     キャプチャした画像を反時計回りに90度回転させてから左右反転させて処理します。
     """
     try:
-        frame_rgb = picam2_capture_array_with_retry(picam2_instance) # リトライロジックを呼び出し
+        frame_rgb = picam2_capture_array_with_retry(picam2_instance)
         if frame_rgb is None:
             print("画像キャプション失敗: フレームがNoneです。")
             return 'error_in_processing'
@@ -632,9 +612,6 @@ def calibrate_bno055_gyro_accel_initial(bno_sensor_instance, timeout_seconds=60)
 
 # --- メイン実行ブロック ---
 if __name__ == "__main__":
-    # --- ログファイルの設定を呼び出し ---
-    setup_logging()
-
     # RPi.GPIOはモータードライバやBNO055（I2C経由だがcleanupでGPIOを扱う場合）の
     # cleanupのために残す場合があるため、setmodeは継続
     GPIO.setmode(GPIO.BCM)
@@ -838,4 +815,4 @@ if __name__ == "__main__":
             picam2.close() # Picamera2を閉じる
 
         GPIO.cleanup()
-        restore_stdout() # 標準出力を元に戻し、ログ保存メッセージを表示
+        print("=== すべてのクリーンアップが終了しました。プログラムを終了します。 ===")
