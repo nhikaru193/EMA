@@ -59,29 +59,6 @@ class PAD:
             return False
             print("この方向にパラシュートは検知できませんでした")
 
-    #左n度回頭はdegree負の値、右はその逆
-    def degree_rotation(self, degree, threshold_deg = 5, sleeping = 0.01):
-        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-        target_heading = (before_heading + degree) % 360
-        while True:
-            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
-            if abs(delta_heading) <= threshold_deg:
-                break
-            elif delta_heading < -1 * threshold_deg:
-                self.driver.petit_left(0, 90)
-                time.sleep(sleeping)
-                time.sleep(0.05)
-                self.driver.motor_stop_brake()
-                time.sleep(0.5)
-            elif delta_heading > threshold_deg:
-                self.driver.petit_right(0, 99)
-                time.sleep(sleeping)
-                time.sleep(0.05)
-                self.driver.motor_stop_brake()
-                time.sleep(0.5)
-
-
     def run(self):
         while True:
             if self.detective_red():
