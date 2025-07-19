@@ -393,10 +393,15 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
         lower_red1 = np.array([0, 100, 100]) ; upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([160, 100, 100]) ; upper_red2 = np.array([180, 255, 255])
 
+        lower_orange = np.array([5, 150, 150])  # オレンジ色の下限
+        upper_orange = np.array([30, 255, 255]) # オレンジ色の上限
+
         blurred_full_frame = cv2.GaussianBlur(processed_frame_bgr, (5, 5), 0)
         hsv_full = cv2.cvtColor(blurred_full_frame, cv2.COLOR_BGR2HSV)
-        mask_full = cv2.bitwise_or(cv2.inRange(hsv_full, lower_red1, upper_red1),
+        mask_full_red = cv2.bitwise_or(cv2.inRange(hsv_full, lower_red1, upper_red1),
                                      cv2.inRange(hsv_full, lower_red2, upper_red2))
+        mask_full_orange = cv2.inRange(hsv_full, lower_orange, upper_orange)
+        mask_full = cv2.bitwise_or(mask_full_red, mask_full_orange)
         red_pixels_full = np.count_nonzero(mask_full) ; total_pixels_full = height * width
         red_percentage_full = red_pixels_full / total_pixels_full if total_pixels_full > 0 else 0.0
 
@@ -410,8 +415,10 @@ def detect_red_in_grid(picam2_instance, save_path="/home/mark1/1_Pictures/akairo
             cell_frame = processed_frame_bgr[y_start:y_end, x_start:x_end]
             blurred_cell_frame = cv2.GaussianBlur(cell_frame, (5, 5), 0)
             hsv_cell = cv2.cvtColor(blurred_cell_frame, cv2.COLOR_BGR2HSV)
-            mask_cell = cv2.bitwise_or(cv2.inRange(hsv_cell, lower_red1, upper_red1),
+            mask_cell_red = cv2.bitwise_or(cv2.inRange(hsv_cell, lower_red1, upper_red1),
                                          cv2.inRange(hsv_cell, lower_red2, upper_red2))
+            mask_cell_orange = cv2.inRange(hsv_cell, lower_orange, upper_orange)
+            mask_cell = cv2.bitwise_or(mask_cell_red, mask_cell_orange)
             red_counts[cell_name] = np.count_nonzero(mask_cell)
             total_pixels_in_cell[cell_name] = cell_frame.shape[0] * cell_frame.shape[1]
 
