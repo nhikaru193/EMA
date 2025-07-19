@@ -58,6 +58,7 @@ class PAD:
         percentage = self.get_percentage(frame)
         if percentage > 10:
             return True
+            print(f"検知割合は{percentage}%です")
             print("この方向にパラシュートを検知しました")
         else:
             return False
