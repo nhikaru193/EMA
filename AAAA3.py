@@ -48,5 +48,5 @@ RELEASE.run()
 LAND = LD(bno)
 LAND.run()
 
-AVOIDANCE = PAD(bno)
+AVOIDANCE = PAD()
 AVOIDANCE.run()
