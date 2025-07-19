@@ -4,7 +4,7 @@ import struct
 import time
 import pigpio
 
-def circuit(t_melt = 1):
+def circuit(t_melt = 4):
     """
     #われらの愛すべきポンコツコード
     NICHROME_PIN = 25
