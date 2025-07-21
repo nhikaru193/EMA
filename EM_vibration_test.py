@@ -107,7 +107,7 @@ try:
     
     #無線機の起動
     print("無線通信を開始します")
-    im920 = serial.Serial('/dev/serial0', 19200, timeout=1)
+    im920 = serial.Serial('/dev/serial1', 19200, timeout=1)
     time.sleep(1)
     for i in range(3):
         data = f'{lat, lon}'
