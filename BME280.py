@@ -180,8 +180,8 @@ def get_data():
     dat_t = (dat[3] << 16 | dat[4] << 8 | dat[5]) >> 4    #t_fineが圧力補正に使われるため必要
     dat_h = dat[6] << 8 | dat[7]
     #補正
-    pres = bme280_compensate_p(dat_p)
     temp = bme280_compensate_t(dat_t)                     #ここでt_fineが更新
+    pres = bme280_compensate_p(dat_p)
     humid = bme280_compensate_h(dat_h)
     
     return pres, temp, humid
