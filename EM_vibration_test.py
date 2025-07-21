@@ -127,6 +127,6 @@ try:
 
 finally:
     driver.cleanup()
-    pi.close()
+    pi.stop()
     err = pi.bb_serial_read_close(RX_PIN)
     picam2.close()
