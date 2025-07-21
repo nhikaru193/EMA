@@ -240,16 +240,17 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
     """
     ローバーを20度ずつ360度回転させ、20%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
     20%以上の赤色が検知されなかった場合は、最も多くの赤が検知された方向に向きを合わせてからTrueを返します。
+    戻り値: (aligned_successfully:bool, aligned_heading:float)
     """
     print("\n=== 初期赤色アライメントスキャンを開始します (20%閾値) ===")
-    initial_heading = bno_sensor_instance.get_heading()
-    if initial_heading is None:
+    initial_heading_at_start = bno_sensor_instance.get_heading()
+    if initial_heading_at_start is None:
         print("警告: 初期アライメントスキャン開始時に方位が取得できません。")
-        return False
+        return False, None
 
     aligned = False
     max_red_ratio = -1.0
-    best_angle_from_initial_heading = 0 
+    best_heading_for_red = initial_heading_at_start 
 
     # 最初に20度回転してから検知を開始
     print(f"  初回回転: {turn_angle_step}度...")
@@ -285,20 +286,29 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
 
         print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2%}")
 
-        # 最大赤色割合とそれに対応する角度を更新
+        # 最大赤色割合とそれに対応する絶対方位を更新
         if overall_red_ratio > max_red_ratio:
             max_red_ratio = overall_red_ratio
-            best_angle_from_initial_heading = (current_scan_heading - initial_heading + 360) % 360 # 初期方位からの絶対角度
+            best_heading_for_red = current_scan_heading 
 
         if overall_red_ratio >= alignment_threshold: # 20%以上の赤色を検出
             print(f"  --> 赤色を{alignment_threshold:.0%}以上検出！この方向にアライメントしました。")
             aligned = True
             driver.motor_stop_brake()
             time.sleep(1.0) # 停止して向きを確定
+            # この時点の向き (current_scan_heading) がアライメントされた向き
+            best_heading_for_red = current_scan_heading # 厳密にここでアライメントされた向きを記憶
             break # 20%以上の赤色が見つかったらスキャンを終了し、その向きで停止
 
         driver.motor_stop_brake()
         time.sleep(0.5)
+
+        # 最初のループ (i=0) は既に20度回転済みなので、それ以降 (i>0) に20度回転
+        # この回転処理はループの最後で行うことで、写真撮影と検知が終わってから次の回転に移れる
+        if i < (360 // turn_angle_step) - 1: # 最後のループでは回転しない
+            print(f"  回転: {turn_angle_step}度...")
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+
 
     if not aligned:
         print(f"初期アライメントスキャンで{alignment_threshold:.0%}以上の赤色は検出されませんでした。")
@@ -307,15 +317,13 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
             current_heading_at_end_of_scan = bno_sensor_instance.get_heading()
             
             if current_heading_at_end_of_scan is not None:
-                # 目標は (initial_heading + best_angle_from_initial_heading) の絶対方位
-                target_absolute_heading = (initial_heading + best_angle_from_initial_heading + 360) % 360
+                # 現在の向きから最も赤があった方向への相対回転量を計算
+                # best_heading_for_redは、スキャン中に最も赤があった絶対方位
+                angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                 
-                # 現在の向きから目標絶対方位への相対回転量を計算
-                angle_to_turn_to_best_red = (target_absolute_heading - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
-                
-                # f-stringの修正
+                # SyntaxErrorを修正したf-string
                 print(f"  --> {alignment_threshold:.0%}"
-                      f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2%}) が検出された方向 ({target_absolute_heading:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
+                      f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2%}) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
                 turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=60, angle_tolerance_deg=15)
                 driver.motor_stop_brake()
                 time.sleep(0.5)
@@ -326,7 +334,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
             print("初期アライメントスキャンで赤色は全く検出されませんでした。")
     
     print("=== 初期赤色アライメントスキャンが完了しました。 ===")
-    return aligned
+    return aligned, best_heading_for_red # 成功フラグとアライメントした方位角を返す
 
 
 # --- メインシーケンス ---
@@ -364,7 +372,9 @@ if __name__ == "__main__":
     time.sleep(2)
 
     try:
-        
+        # BNO055キャリブレーション待機部分は削除済み
+        print("BNO055のキャリブレーション待機はスキップされました。自動操縦を開始します。")
+
         # メインの自律走行ループ
         while True:
             print("\n--- 新しい走行サイクル開始 ---")
@@ -380,11 +390,12 @@ if __name__ == "__main__":
             time.sleep(0.5)
 
             # ★★★ 初期アライメントスキャンを実行 ★★★
-            aligned_in_initial_scan = perform_initial_alignment_scan(driver, bno_sensor, picam2_instance)
+            # アライメント成功/失敗、およびアライメントした方位角を受け取る
+            aligned_in_initial_scan, initial_aligned_heading = perform_initial_alignment_scan(driver, bno_sensor, picam2_instance)
 
             # アライメント成功/失敗のログ出力
             if aligned_in_initial_scan:
-                print("初期アライメントスキャンによって、何らかの赤色へアライメントされました。")
+                print(f"初期アライメントスキャンによって、何らかの赤色へアライメントされました。方位: {initial_aligned_heading:.2f}度")
             else:
                 print("初期アライメントスキャンで赤色は全く検出されませんでした。")
                 
@@ -425,18 +436,33 @@ if __name__ == "__main__":
                     print("カメラ処理でエラーが発生しました。現在のスキャンステップをスキップします。")
                     continue
                 
-                # 5%以上の赤色を検知したら1秒前進し、このスキャンループを抜ける
-                if current_red_percentage_scan >= 0.05: # 5%閾値
-                    print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                    following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=1) # 1秒前進
+                # ★★★ ここで「最初のアライメント方位角以外」の条件を追加 ★★★
+                is_different_direction = True
+                if initial_aligned_heading is not None:
+                    # current_scan_heading_for_forwardとinitial_aligned_headingの差が許容誤差を超えるか
+                    # (A - B + 180 + 360) % 360 - 180 で角度差を-180から+180の範囲で計算
+                    angle_diff = (current_scan_heading_for_forward - initial_aligned_heading + 180 + 360) % 360 - 180
+                    # 許容誤差範囲内であれば同じ方向とみなす
+                    if abs(angle_diff) <= 15: # 例として±15度を許容誤差とする
+                        is_different_direction = False
+                        print(f"  (注: 現在の方向 {current_scan_heading_for_forward:.2f}度 は初期アライメント方向 {initial_aligned_heading:.2f}度 と類似しています。)")
+
+
+                # 5%以上の赤色を検知し、かつそれが最初のアライメント方位角以外の方向であれば1秒前進
+                if current_red_percentage_scan >= 0.05 and is_different_direction: # 5%閾値
+                    print(f"  --> 赤色を{0.05:.0%}以上検出し、かつ初期アライメント方向以外！この方向に1秒前進します。")
+                    following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1) # 1秒前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
                     scanned_and_moved = True
                     break # 赤色を検知して前進したので、360度スキャンを終了
+                elif current_red_percentage_scan >= 0.05 and not is_different_direction:
+                    print(f"  (注: 赤色を{0.05:.0%}以上検出しましたが、初期アライメント方向と同じであるため前進しません。)")
+
 
             if not scanned_and_moved:
-                print("360度スキャンで赤色を検出しませんでした (5%閾値未満)。5秒間前進します。")
-                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=1) # 赤色なしで5秒前進
+                print("360度スキャンで赤色を検出しませんでした (5%閾値未満、または初期アライメント方向)。5秒間前進します。")
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1) # 赤色なしで1秒前進
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
