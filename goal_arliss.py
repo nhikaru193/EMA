@@ -47,7 +47,7 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_imag
     print(f"画像保存成功: {path}")
     return frame
 
-# --- 赤色検出関数 (全体割合のみに修正) ---
+# --- 赤色検出関数 (ご提示のロジックを適用) ---
 def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_detection_overall.jpg"):
     """
     カメラ画像をキャプチャし、画像全体における赤色ピクセルの割合を返します。
@@ -60,41 +60,50 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
             print("画像キャプチャ失敗: フレームがNoneです。")
             return -1.0 # エラー値として-1.0を返す
 
-        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2HSV) # HSVに変換
+        # Picamera2はRGBを返すため、BGRに変換
+        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
         
-        # ★★★ ここで画像を回転・反転させる ★★★
-        # 1. 反時計回りに90度回転 (カメラが物理的に時計回りに90度傾いている場合)
-        processed_frame_hsv = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        
-        # 2. 左右反転 (水平フリップ)
-        processed_frame_hsv = cv2.flip(processed_frame_hsv, 1) # 1は水平フリップ (左右反転)
-        
-        height, width, _ = processed_frame_hsv.shape
+        # --- ここから回転処理 ---
+        # 反時計回りに90度回転 (カメラが物理的に時計回りに90度傾いている場合)
+        rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        # --- 回転処理ここまで ---
+
+        # 回転後のフレームの高さと幅を使用
+        height, width, _ = rotated_frame_bgr.shape
         total_pixels = height * width
 
+        # BGRからHSV色空間に変換 (回転後の画像を使用)
+        hsv = cv2.cvtColor(rotated_frame_bgr, cv2.COLOR_BGR2HSV)
+
+        # 赤色のHSV範囲を定義 (ご提示のHSV範囲を適用)
         lower_red1 = np.array([0, 80, 80])
-        upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([160, 80, 80])
+        upper_red1 = np.array([30, 255, 255])
+
+        lower_red2 = np.array([150, 100, 100])
         upper_red2 = np.array([180, 255, 255])
 
-        # blurred_frame = cv2.GaussianBlur(processed_frame_hsv, (5, 5), 0) # HSVなのでHSVのまま処理
-        mask = cv2.bitwise_or(cv2.inRange(processed_frame_hsv, lower_red1, upper_red1),
-                              cv2.inRange(processed_frame_hsv, lower_red2, upper_red2))
-        
-        red_pixels = np.count_nonzero(mask)
-        red_percentage = red_pixels / total_pixels if total_pixels > 0 else 0.0
+        # マスクを作成し結合 (ガウシアンブラーなし)
+        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask = cv2.add(mask1, mask2)
 
-        # デバッグ用に赤色領域をハイライトした画像を保存 (HSVからBGRに戻す)
-        debug_frame_bgr = cv2.cvtColor(processed_frame_hsv, cv2.COLOR_HSV2BGR)
-        red_highlighted_frame = cv2.bitwise_and(debug_frame_bgr, debug_frame_bgr, mask=mask)
+        # 赤色領域のピクセル数をカウント
+        red_pixels = cv2.countNonZero(mask)
+
+        # 赤色ピクセルの割合を計算
+        red_percentage = (red_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
+
+        # デバッグ用に赤色領域をハイライトした画像を保存
+        # rotated_frame_bgr に mask を適用
+        red_highlighted_frame = cv2.bitwise_and(rotated_frame_bgr, rotated_frame_bgr, mask=mask)
 
         directory = os.path.dirname(save_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
         cv2.imwrite(save_path, red_highlighted_frame)
-        print(f"赤色検出画像を保存しました: {save_path} (赤色割合: {red_percentage:.2%})")
+        print(f"赤色検出画像を保存しました: {save_path} (赤色割合: {red_percentage:.2f}%)")
 
-        return red_percentage
+        return red_percentage / 100.0 # 割合は0-1の範囲で返すように調整
 
     except Exception as e:
         print(f"カメラ撮影・赤色検出処理中にエラーが発生しました: {e}")
@@ -257,15 +266,15 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
             time.sleep(0.5)
             continue
 
-        print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2%}")
+        print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2f}%") # %表示に修正
 
         # 最大赤色割合とそれに対応する絶対方位を更新
         if overall_red_ratio > max_red_ratio:
             max_red_ratio = overall_red_ratio
             best_heading_for_red = current_scan_heading 
 
-        if overall_red_ratio >= alignment_threshold: # 20%以上の赤色を検出
-            print(f"  --> 赤色を{alignment_threshold:.0%}以上検出！この方向にアライメントしました。")
+        if overall_red_ratio * 100.0 >= alignment_threshold * 100.0: # 割合を100倍して比較
+            print(f"  --> 赤色を{alignment_threshold*100.0:.0f}%以上検出！この方向にアライメントしました。") # %表示に修正
             aligned = True
             driver.motor_stop_brake()
             time.sleep(1.0) # 停止して向きを確定
@@ -284,7 +293,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
 
 
     if not aligned:
-        print(f"初期アライメントスキャンで{alignment_threshold:.0%}以上の赤色は検出されませんでした。")
+        print(f"初期アライメントスキャンで{alignment_threshold*100.0:.0f}%以上の赤色は検出されませんでした。") # %表示に修正
         if max_red_ratio > -1.0: # 何らかの赤色が検出されていた場合
             # 最も多くの赤があった方向へ回頭
             current_heading_at_end_of_scan = bno_sensor_instance.get_heading()
@@ -294,9 +303,9 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
                 # best_heading_for_redは、スキャン中に最も赤があった絶対方位
                 angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                 
-                # SyntaxErrorを修正したf-string
-                print(f"  --> {alignment_threshold:.0%}"
-                      f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2%}) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
+                # f-stringの修正
+                print(f"  --> {alignment_threshold*100.0:.0f}%" # %表示に修正
+                      f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。") # %表示に修正
                 turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=60, angle_tolerance_deg=15)
                 driver.motor_stop_brake()
                 time.sleep(0.5)
@@ -420,7 +429,7 @@ if __name__ == "__main__":
 
             if not scanned_and_moved_after_alignment:
                 print("アライメント後の360度スキャンで赤色を検出しませんでした (10%閾値未満)。5秒間前進します。")
-                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1) # 赤色なしで5秒前進
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5) # 赤色なしで5秒前進
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
@@ -434,7 +443,7 @@ if __name__ == "__main__":
                 break # プログラムを終了
             else:
                 print("最終確認スキャンが完了しましたが、180度転回は行われませんでした。次の走行サイクルに進みます。")
-                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1)
+                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=3)
                 driver.motor_stop_brake()
                 time.sleep(1)
                 
