@@ -120,7 +120,8 @@ try:
     print("無線通信を開始します")
     im920 = serial.Serial('/dev/serial1', 19200, timeout=1)
     time.sleep(1)
-    for i in range(3):
+    for i in range(1, 4):
+        print(f"{i}番目のデータを送信中")
         data = f'{lat, lon}'
         msg = f'TXDA 0003,{data}\r'
         im920.write(msg.encode())
