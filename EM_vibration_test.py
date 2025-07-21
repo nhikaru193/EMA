@@ -5,7 +5,7 @@ import math
 import BME280
 from BNO055 import BNO055
 from motor import MotorDriver
-import RPI.GPIO as GPIO
+import RPi.GPIO as GPIO
 import serial
 import fusing
 import csv
@@ -65,6 +65,7 @@ try:
     writer = csv.writer(f)
     
     #測定開始
+    (count, data) = pi.bb_serial_read(RX_PIN)
     while True:
         print("測定を開始します")
         current_time = time.time()
@@ -106,10 +107,12 @@ try:
     
     #無線機の起動
     print("無線通信を開始します")
+    im920 = serial.Serial('/dev/serial0', 19200, timeout=1)
+    time.sleep(1)
     for i in range(3):
         data = f'{lat, lon}'
         msg = f'TXDA 0003,{data}\r'
-        im920.write(msg.encode()
+        im920.write(msg.encode())
     
     #カメラの起動
     picam2 = Picamera2()
@@ -119,8 +122,8 @@ try:
     time.sleep(1)
     frame = picam2.capture_array()
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    image_path = "/home/mark1/_Pictures"
-    cv2.imwrite(image_path, bgr)
+    image_path = "/home/mark1/_Pictures/vibration_test.jpg"
+    cv2.imwrite(image_path, frame)
 
 finally:
     driver.cleanup()
