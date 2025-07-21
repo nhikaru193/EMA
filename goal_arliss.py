@@ -72,9 +72,9 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         height, width, _ = processed_frame_hsv.shape
         total_pixels = height * width
 
-        lower_red1 = np.array([0, 100, 100])
+        lower_red1 = np.array([0, 80, 80])
         upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([160, 100, 100])
+        lower_red2 = np.array([160, 80, 80])
         upper_red2 = np.array([180, 255, 255])
 
         # blurred_frame = cv2.GaussianBlur(processed_frame_hsv, (5, 5), 0) # HSVなのでHSVのまま処理
