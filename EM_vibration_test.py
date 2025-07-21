@@ -111,3 +111,13 @@ for i in range(3):
     im920.write(msg.encode()
 
 #カメラの起動
+picam2 = Picamera2()
+config = picam2.create_still_configuration(main={"size": (320, 480)})
+picam2.configure(config)
+picam2.start()
+time.sleep(1)
+frame = picam2.capture_array()
+frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+image_path = "/home/mark1/_Pictures"
+cv2.imwrite(image_path, bgr)
+
