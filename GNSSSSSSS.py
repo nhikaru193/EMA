@@ -9,6 +9,10 @@ try:
     BAUD = 9600
     
     pi = pigpio.pi()
+
+    pi.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+
+    
     
     def convert_to_decimal(coord, direction):
         # 度分（ddmm.mmmm）形式を10進数に変換
@@ -52,3 +56,4 @@ try:
         time.sleep(2)
 finally:
     pi.stop()
+    pi.bb_serial_read_close(RX_PIN)
