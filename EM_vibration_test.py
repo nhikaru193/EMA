@@ -80,7 +80,7 @@ while True:
                     if len(parts) > 6 and parts[2] == "A":
                         lat = convert_to_decimal(parts[3], parts[4])
                         lon = convert_to_decimal(parts[5], parts[6])
-    print(f"t:{elapsed_time} | ax:{ax} | ay:{ay} | az:{az} | prs:{prs} | tmp:{tmp} | hum:{hum} | lat:{lat} | lon:{lon}")
+    print(f"t:{elapsed_time:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} | prs:{prs:.2f} | tmp:{tmp:.2f} | hum:{hum:.2f} | lat:{lat} | lon:{lon}")
     writer.writerows([[elapsed_time, ax, ay, az, prs, tmp, hum, lat, lon]])
     f.flush()
     time.sleep(0.2)
