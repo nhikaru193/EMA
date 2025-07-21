@@ -235,7 +235,7 @@ def scan_360_for_red_and_act(driver, bno_sensor_instance, picam2_instance, turn_
     print("\n=== 360度赤色スキャンが完了しました。 ===")
     return False
 
-# --- 初期アライメントスキャン関数 (修正) ---
+# --- 初期アライメントスキャン関数 (変更なし) ---
 def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, alignment_threshold=0.20):
     """
     ローバーを20度ずつ360度回転させ、20%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
@@ -313,7 +313,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
                 # 現在の向きから目標絶対方位への相対回転量を計算
                 angle_to_turn_to_best_red = (target_absolute_heading - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                 
-                # SyntaxErrorを修正したf-string
+                # f-stringの修正
                 print(f"  --> {alignment_threshold:.0%}"
                       f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2%}) が検出された方向 ({target_absolute_heading:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
                 turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=60, angle_tolerance_deg=15)
@@ -364,17 +364,7 @@ if __name__ == "__main__":
     time.sleep(2)
 
     try:
-        # === BNO055キャリブレーション待機 ===
-        print("BNO055のキャリブレーション待機中...")
-        while True:
-            sys_cal, gyro_cal, accel_cal, mag_cal = bno_sensor.getCalibration()
-            print(f"Calib → Sys:{sys_cal}, Gyro:{gyro_cal}, Acc:{accel_cal}, Mag:{mag_cal}", end='\r')
-            sys.stdout.flush()
-            if gyro_cal == 3 and mag_cal == 3:
-                print("\nキャリブレーション完了！自動操縦を開始します。")
-                break
-            time.sleep(0.5)
-
+        
         # メインの自律走行ループ
         while True:
             print("\n--- 新しい走行サイクル開始 ---")
@@ -398,29 +388,57 @@ if __name__ == "__main__":
             else:
                 print("初期アライメントスキャンで赤色は全く検出されませんでした。")
                 
-            # ★★★ アライメント後、前進判断の前に20度回転してから赤色を検知する ★★★
-            print("\n=== 20度回転後、全体赤色検出と前進 (通常の10%閾値) ===")
+            # --- アライメント後、前進判断のための360度スキャン ---
+            print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===")
             
-            # ここで20度回転
+            scanned_and_moved = False # このサイクルで360度スキャンから前進したか
+            
+            # 最初に20度回転してから検知を開始 (アライメント後の最初の動き)
             print("  --> 前進判断のため、20度回転します...")
             turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
             driver.motor_stop_brake()
             time.sleep(0.5)
 
-            current_red_percentage = detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/current_overall_red.jpg")
+            # 360度を20度ずつスキャンし、赤色を検知したら1秒前進
+            for i in range(360 // 20):
+                # 最初のループ(i=0)はすでに20度回転済みなので、それ以降(i>0)に20度回転
+                if i > 0:
+                    print(f"  --> スキャン中: さらに20度回転...")
+                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                    driver.motor_stop_brake()
+                    time.sleep(0.5)
+                
+                current_scan_heading_for_forward = bno_sensor.get_heading()
+                if current_scan_heading_for_forward is None:
+                    print("警告: 360度スキャン中に方位が取得できませんでした。スキップします。")
+                    continue
 
-            if current_red_percentage == -1.0:
-                print("カメラ処理でエラーが発生しました。少し待機します...")
-                time.sleep(2)
-                continue
-            elif current_red_percentage >= 0.10: # 10%以上の赤色を検出した場合
-                print(f"画像全体で赤色を{current_red_percentage:.2%}検出しました！少し前進します。")
-                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=3)
-            else:
-                print(f"画像全体で赤色を検出しませんでした (割合: {current_red_percentage:.2%})。そのまま前進します。")
-                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=5)
+                print(f"--- 360度スキャン中: 現在の方向: {current_scan_heading_for_forward:.2f}度 ---")
 
-            driver.motor_stop_brake()
+                # 赤色を検出（5%閾値）
+                current_red_percentage_scan = detect_red_percentage(
+                    picam2_instance, 
+                    save_path=f"/home/mark1/Pictures/forward_scan_{i*20 + 20:03d}.jpg" # 20度ずつ回転した後の画像
+                )
+
+                if current_red_percentage_scan == -1.0:
+                    print("カメラ処理でエラーが発生しました。現在のスキャンステップをスキップします。")
+                    continue
+                
+                # 5%以上の赤色を検知したら1秒前進し、このスキャンループを抜ける
+                if current_red_percentage_scan >= 0.05: # 5%閾値
+                    print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
+                    following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=1) # 1秒前進
+                    driver.motor_stop_brake()
+                    time.sleep(0.5)
+                    scanned_and_moved = True
+                    break # 赤色を検知して前進したので、360度スキャンを終了
+
+            if not scanned_and_moved:
+                print("360度スキャンで赤色を検出しませんでした (5%閾値未満)。5秒間前進します。")
+                following.follow_forward(driver, bno_sensor, base_speed=70, duration_time=1) # 赤色なしで5秒前進
+                driver.motor_stop_brake()
+                time.sleep(0.5)
 
 
             # --- 周囲確認ロジック (360度スキャン - 10%/40%閾値) ---
@@ -435,7 +453,7 @@ if __name__ == "__main__":
                 driver.motor_stop_brake()
                 time.sleep(1)
                 
-                continue
+                continue # メインループの最初に戻る
 
     except Exception as e:
         print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
