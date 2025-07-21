@@ -236,7 +236,7 @@ def scan_360_for_red_and_act(driver, bno_sensor_instance, picam2_instance, turn_
     return False
 
 # --- 新しい初期アライメントスキャン関数 ---
-def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, alignment_threshold=0.30):
+def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, alignment_threshold=0.20):
     """
     ローバーを20度ずつ360度回転させ、30%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
     アライメントに成功したらTrue、失敗したらFalseを返します。
