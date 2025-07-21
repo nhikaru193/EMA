@@ -105,15 +105,6 @@ try:
     driver.changing_forward(90, 0)
     print("モータの起動を終了します")
     
-    #無線機の起動
-    print("無線通信を開始します")
-    im920 = serial.Serial('/dev/serial1', 19200, timeout=1)
-    time.sleep(1)
-    for i in range(3):
-        data = f'{lat, lon}'
-        msg = f'TXDA 0003,{data}\r'
-        im920.write(msg.encode())
-    
     #カメラの起動
     picam2 = Picamera2()
     config = picam2.create_still_configuration(main={"size": (320, 480)})
@@ -124,9 +115,17 @@ try:
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     image_path = "/home/mark1/_Pictures/vibration_test.jpg"
     cv2.imwrite(image_path, frame)
-
+    
+    #無線機の起動
+    print("無線通信を開始します")
+    im920 = serial.Serial('/dev/serial1', 19200, timeout=1)
+    time.sleep(1)
+    for i in range(3):
+        data = f'{lat, lon}'
+        msg = f'TXDA 0003,{data}\r'
+        im920.write(msg.encode())
 finally:
     driver.cleanup()
+    picam2.close()
     pi.stop()
     err = pi.bb_serial_read_close(RX_PIN)
-    picam2.close()
