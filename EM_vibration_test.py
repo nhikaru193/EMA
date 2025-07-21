@@ -66,8 +66,8 @@ try:
     
     #測定開始
     (count, data) = pi.bb_serial_read(RX_PIN)
+    print("測定を開始します")
     while True:
-        print("測定を開始します")
         current_time = time.time()
         elapsed_time = current_time - start_time
         ax, ay, az = bno.getVector(BNO055.VECTOR_ACCELEROMETER)
