@@ -314,7 +314,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
                 # 現在の向きから目標絶対方位への相対回転量を計算
                 angle_to_turn_to_best_red = (target_absolute_heading - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                 
-                print(f"  --> {alignment_threshold:.0%
+                print(f"  --> {alignment_threshold:.0%}
                 }以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2%}) が検出された方向 ({target_absolute_heading:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
                 turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=60, angle_tolerance_deg=15)
                 driver.motor_stop_brake()
