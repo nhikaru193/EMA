@@ -88,7 +88,7 @@ try:
         writer.writerows([[elapsed_time, ax, ay, az, prs, tmp, hum, lat, lon]])
         f.flush()
         time.sleep(0.2)
-        if elapsed_time > 180:
+        if elapsed_time > 240:
             print("タイムアウト成功です。テグス溶断に移ります")
             f.close()
             break
@@ -124,7 +124,7 @@ try:
     time.sleep(1)
     for i in range(1, 4):
         print(f"{i}番目のデータを送信中")
-        data = f'{lat, lon}'
+        data = f'{ax, ay, az}'
         msg = f'TXDA 0003,{data}\r'
         im920.write(msg.encode())
 finally:
