@@ -134,4 +134,4 @@ finally:
     driver.cleanup()
     picam2.close()
     pi.stop()
-    err = pi.bb_serial_read_close(RX_PIN)
+    pi.bb_serial_read_close(RX_PIN)
