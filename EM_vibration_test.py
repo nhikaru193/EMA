@@ -95,7 +95,9 @@ try:
     
     #テグス溶断
     fusing.circuit()
-    
+
+    print("5秒間の開放待ち")
+    time.sleep(5)
     #モータの起動
     print("モータの起動を行います")
     driver = MotorDriver(
@@ -104,6 +106,7 @@ try:
         STBY=21
     )
     driver.changing_forward(0, 90)
+    time.sleep(1)
     driver.changing_forward(90, 0)
     print("モータの起動を終了します")
     
