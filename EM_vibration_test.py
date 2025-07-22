@@ -118,7 +118,7 @@ try:
     time.sleep(1)
     frame = picam2.capture_array()
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    image_path = "/home/mark1/_Pictures/vibration_test.jpg"
+    image_path = "/home/mark1/1_Pictures/vibration_test.jpg"
     cv2.imwrite(image_path, frame)
     
     #無線機の起動
