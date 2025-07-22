@@ -10,6 +10,8 @@ import serial
 import fusing
 import csv
 import pigpio
+from picamera2 import Picamera2
+import cv2
 
 def convert_to_decimal(coord, direction):
     # 度分（ddmm.mmmm）形式を10進数に変換
