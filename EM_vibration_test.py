@@ -105,9 +105,9 @@ try:
         PWMB=19, BIN1=16, BIN2=26,
         STBY=21
     )
-    driver.changing_forward(0, 90)
-    time.sleep(1)
-    driver.changing_forward(90, 0)
+    driver.changing_forward(0, 100)
+    time.sleep(5)
+    driver.changing_forward(100, 0)
     print("モータの起動を終了します")
     
     #カメラの起動
