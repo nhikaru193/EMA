@@ -88,7 +88,7 @@ try:
         writer.writerows([[elapsed_time, ax, ay, az, prs, tmp, hum, lat, lon]])
         f.flush()
         time.sleep(0.2)
-        if elapsed_time > 240:
+        if elapsed_time > 220:
             print("タイムアウト成功です。テグス溶断に移ります")
             f.close()
             break
