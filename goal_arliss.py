@@ -67,6 +67,13 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         # 反時計回りに90度回転 (カメラが物理的に時計回りに90度傾いている場合)
         rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
         # --- 回転処理ここまで ---
+        directory = os.path.dirname(save_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        
+        # ここを修正します: rotated_frame_bgr を保存するように変更
+        cv2.imwrite(save_path, rotated_frame_bgr) 
+        print(f"通常の画像を保存しました: {save_path}")
 
         # 回転後のフレームの高さと幅を使用
         height, width, _ = rotated_frame_bgr.shape
