@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 from picamera2 import Picamera2
 import camera
+from collections import deque
 
 class PA:
     def __init__(self, bno: BNO055, goal_location: list):
@@ -28,14 +29,10 @@ class PA:
         self.goal_location = goal_location
         self.ANGLE_THRESHOLD_DEG = 10.0
         #------赤色マスクの作成------#
-        self.lower_red1 = np.array([5, 100, 100]) #これはオレンジ色マスクです
-        self.upper_red1 = np.array([15, 255, 255])
-        self.lower_red2 = np.array([0, 120, 70])
-        self.upper_red2 = np.array([25, 255, 255])
-        #self.lower_red1 = np.array([0, 100, 100])
-        #self.upper_red1 = np.array([10, 255, 255])
-        #self.lower_red2 = np.array([160, 100, 100])
-        #self.upper_red2 = np.array([180, 255, 255])
+        self.lower_red1 = np.array([0, 100, 100])
+        self.upper_red1 = np.array([10, 255, 255])
+        self.lower_red2 = np.array([160, 100, 100])
+        self.upper_red2 = np.array([180, 255, 255])
         
         self.RX_PIN = 17
         self.BAUD = 9600
@@ -132,6 +129,9 @@ class PA:
                     time.sleep(0.3)
                     self.driver.motor_stop_brake()
 
+            #過去方位データ蓄積用
+            heading_list = deque(maxlen=5)
+
             while True:
                 # 1. 状態把握
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
@@ -160,12 +160,22 @@ class PA:
                     continue
     
                 heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
                 if heading is None:
                     print("[WARN] BNO055から方位角を取得できません。リトライします...")
                     self.driver.motor_stop_brake()
                     time.sleep(1)
                     continue
-    
+
+                if len(heading_list) == 5:
+                    print("スタック判定を行います")
+                    a = abs((heading_list[2] - heading_list[3] + 360) % 360)
+                    b = abs((heading_list[3] - heading_list[4] + 360) % 360)
+                    C = abs((heading_list[1] - heading_list[2] + 360) % 360)
+                    if a < 5 and b < 5 and c < 5:
+                        
+                        
+                    
                 # 2. 計算
                 bearing_to_goal = self.get_bearing_to_goal(current_location, self.goal_location)
                 angle_error = (bearing_to_goal - heading + 360) % 360
