@@ -192,13 +192,22 @@ class FN:
                         if area_percent >= self.AREA_THRESHOLD_PERCENT:
                             print(f"[{target_name}] に接近完了！")
                             if self.detector.last_image is not None:
-                            # ファイル名を生成 (例: success_三角形_1678886400.png)
-                            filename = f"success_{target_name}_{int(time.time())}.png"
+                            # 1. 保存先のフォルダ名を決める
+                            save_folder = "saved_images"
+                            
+                            # 2. フォルダが存在しなければ作成する
+                            os.makedirs(save_folder, exist_ok=True)
+
+                            # 3. ファイル名とフォルダパスを結合する
+                            base_filename = f"success_{target_name}_{int(time.time())}.png"
+                            full_path = os.path.join(save_folder, base_filename)
+                            
                             # OpenCVはBGR形式で画像を保存するため、RGBから変換する
                             image_to_save = cv2.cvtColor(self.detector.last_image, cv2.COLOR_RGB2BGR)
-                            # 画像をファイルに書き出す
-                            cv2.imwrite(filename, image_to_save)
-                            print(f"✅ 検出画像を {filename} として保存しました。")
+                            
+                            # フルパスを指定して保存
+                            cv2.imwrite(full_path, image_to_save)
+                            print(f"✅ 検出画像を {full_path} として保存しました。")
                             
                             task_completed = True
                             time.sleep(1)
