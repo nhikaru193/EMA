@@ -13,6 +13,7 @@ import numpy as np
 from picamera2 import Picamera2
 import camera
 from collections import deque
+from C_excellent_GPS import GPS
 
 class PA:
     def __init__(self, bno: BNO055, goal_location: list):
@@ -24,7 +25,23 @@ class PA:
         self.picam2 = Picamera2()
         config = self.picam2.create_still_configuration(main={"size": (320, 480)})
         self.picam2.configure(config)
-        self.picam2.start()
+        try:
+            self.picam2.start()
+        except Exception as e:
+            self.camera_check = False
+            print("カメラの起動に失敗しました→例外処理を行います")
+        else:
+            self.camera_check = True
+            print("カメラの起動に成功しました")
+
+        if not self.camera_check:
+            print("フラッグへのgps誘導を行います")
+            e_GPS_StoF = GPS(bno, goal_location = [35.925, 139.91])
+            e_GPS_StoF.run()
+            print("フラッグへの誘導を完了しました。ゴールへの誘導を開始します")
+            e_GPS_FtoG = GPS(bno, goal_location = [35.925, 139.91])
+            e_GPS_FtoG.run()
+            #ここにコードの実行を打ち切るようなコードを入れる
         self.bno = bno
         self.goal_location = goal_location
         self.ANGLE_THRESHOLD_DEG = 10.0
