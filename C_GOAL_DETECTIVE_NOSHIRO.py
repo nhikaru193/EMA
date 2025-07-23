@@ -6,6 +6,8 @@ from motor import MotorDriver
 import camera
 import following
 from BNO055 import BNO055
+import math
+from collections import deque
 
 class GDN:
     def __init__(self, bno: BNO055, counter_max: int=50):
@@ -75,6 +77,7 @@ class GDN:
         counter = self.counter_max
         percentage = 0
         try:
+            heading_list = deque(maxlen=5)
             counter = self.counter_max
             print("ゴール誘導を開始します")
             while True:
@@ -101,6 +104,7 @@ class GDN:
                             self.driver.motor_stop_brake()
                             time.sleep(0.2)
                             after_heading = self.bno.get_heading()
+                            
                             delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
                         else:
                             print("付近にはコーンを検知できなかったため、再度探索を行います")
@@ -171,6 +175,30 @@ class GDN:
                     self.driver.motor_stop_brake()
                     time.sleep(1.0)
                 counter = counter - 1
+                c_heading = self.bno.get_heading()
+                heading_list.append(c_heading)
+                if len(heading_list) == 5:
+                    print("スタック判定を行います")
+                    a = abs((heading_list[4] - heading_list[3] + 180) % 360 - 180)
+                    b = abs((heading_list[3] - heading_list[2] + 180) % 360 - 180)
+                    c = abs((heading_list[2] - heading_list[1] + 180) % 360 - 180)
+                    if a < 5 and b < 5 and c < 5:
+                        print("スタック判定です")
+                        print("スタック離脱を行います")
+                        self.driver.changing_right(0, 90)
+                        time.sleep(3)
+                        self.driver.changing_right(90, 0)
+                        time.sleep(0.5)
+                        self.driver.changing_left(0, 90)
+                        time.sleep(3)
+                        self.driver.changing_left(90, 0)
+                        time.sleep(0.5)
+                        self.driver.changing_forward(0, 90)
+                        time.sleep(0.5)
+                        self.driver.changing_forward(90, 0)
+                        time.sleep(0.5)
+                        print("スタック離脱を終了します")
+                        heading_list.clear()
         finally:
             self.picam2.close()
             self.pi.bb_serial_read_close(17)
