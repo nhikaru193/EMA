@@ -32,7 +32,7 @@ class RD:
                 writer.writerows([[e_time, pressure, ax, ay, az]])
                 f.flush()
                 if delta_pressure > self.p_threshold:
-                    self.p_counter = 3
+                    self.p_counter = self.p_counter - 1
                     if self.p_counter == 0:
                         print("気圧変化による放出判定に成功しました")
                         break
