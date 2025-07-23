@@ -173,9 +173,22 @@ class PA:
                     b = abs((heading_list[3] - heading_list[4] + 360) % 360)
                     C = abs((heading_list[1] - heading_list[2] + 360) % 360)
                     if a < 5 and b < 5 and c < 5:
+                        print("スタック判定です")
+                        print("スタック離脱を行います")
+                        self.driver.changing_right(0, 90)
+                        time.sleep(3)
+                        self.driver.changing_right(90, 0)
+                        time.sleep(0.5)
+                        self.driver.changing_left(0, 90)
+                        time.sleep(3)
+                        self.driver.changing_left(90, 0)
+                        time.sleep(0.5)
+                        self.driver.changing_forward(0, 90)
+                        time.sleep(1)
+                        self.driver.changing_forward(90, 0)
+                        time.sleep(0.5)
+                        print("スタック離脱を終了します")
                         
-                        
-                    
                 # 2. 計算
                 bearing_to_goal = self.get_bearing_to_goal(current_location, self.goal_location)
                 angle_error = (bearing_to_goal - heading + 360) % 360
