@@ -8,6 +8,7 @@ from BNO055 import BNO055
 import smbus
 import struct
 import following
+import collections import deque
 
 class GPS:
     def __init__(
@@ -76,6 +77,7 @@ class GPS:
 
     def run(self):
         try:
+            heading_list = deque(maxlen=5)
             while True:
                 # 1. 状態把握
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
@@ -165,7 +167,7 @@ class GPS:
                     print("スタック判定を行います")
                     a = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
                     b = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                    C = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                    c = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
                     if a < 5 and b < 5 and c < 5:
                         print("スタック判定です")
                         print("スタック離脱を行います")
