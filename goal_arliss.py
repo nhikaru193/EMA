@@ -87,7 +87,7 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         lower_red1 = np.array([0, 90, 90])   # SとVの下限を下げて、より広い範囲の赤を検出
         upper_red1 = np.array([30, 255, 255]) # 色相の上限を少し広げて、オレンジ寄りの赤も含む
 
-        lower_red2 = np.array([150, 100, 100]) # 色相の下限を少し広げ、紫寄りの赤も含む
+        lower_red2 = np.array([150, 80, 80]) # 色相の下限を少し広げ、紫寄りの赤も含む
         upper_red2 = np.array([180, 255, 255])
 
         # マスクを作成し結合 (ガウシアンブラーなし)
