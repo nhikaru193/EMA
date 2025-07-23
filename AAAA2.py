@@ -18,7 +18,7 @@ from motor import MotorDriver
 from Flag_Detector3 import FlagDetector
 
 #ミッション部分
-from C_release import RD
+from C_RELEASE import RD
 from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from C_Flag_Navi import FN
@@ -31,10 +31,11 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 import numpy
 import busio
 from C_Parachute_Avoidance import Parakai
+"""
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
-"""
+
 
 #BNO055の初期設定
 bno = BNO055()
@@ -50,47 +51,7 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
+GOAL = GDN(bno, 30)
+GOAL.run()
 
-"""
-#関数のインスタンス作成
-RELEASE = RD(bno) #ok
-RELEASE.run()
-
-LAND = LD(bno) 
-LAND.run()
-
-AVOIDANCE = PA(bno, goal_location = [35.9201320, 139.9109889]) #ok
-AVOIDANCE.run()
-
-GPS_StoF = GPS(bno, goal_location = [35.9201320, 139.9109889])
-GPS_StoF.run()
-
-FLAG = FN(bno)
-FLAG.run()
-
-SERVO = SM(6)
-SERVO.run()
-"""
-
-"""
-SERVO_PIN = 13  # GPIO13を使用
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(SERVO_PIN, GPIO.OUT)
-pwm = GPIO.PWM(SERVO_PIN, 50)
-pwm.start(0)
-print("逆回転（速い）")
-set_servo_duty(4.0)
-time.sleep(7)
-#set_servo_duty(12.5)
-pwm.stop()
-GPIO.cleanup()
-"""
-
-GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
-GPS_FtoG.run()
-
-#GOAL = GDN(bno, 30)
-#GOAL.run()
-
-#実行文
 print("クラス呼び出し完了です")
