@@ -428,8 +428,8 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                         print("中心方向への向き調整が完了しました。")
                         
-                        print("  --> 中心方向へ向いた後、1秒間前進します。")
-                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1)
+                        print("  --> 中心方向へ向いた後、0.5秒間前進します。")
+                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=0.5)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
                         print("  --> 1秒前進を完了しました。次の「周囲確認（最終確認スキャン）」へ移行します。")
@@ -484,7 +484,7 @@ if __name__ == "__main__":
                     
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1)
+                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=0.5)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
                         any_red_detected_and_moved_this_scan = True 
