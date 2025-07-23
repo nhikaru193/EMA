@@ -118,12 +118,12 @@ class FN:
                             # 履歴が3つ溜まったらスタック判定を行う
                             if len(heading_history) == 4:
                                 # 2回前と1回前、1回前と現在の角度差を計算
-                                diff1 = abs((heading_history[0] - heading_history[1] + 180) % 360 - 180)
-                                diff2 = abs((heading_history[1] - heading_history[2] + 180) % 360 - 180)
-                                diff3 = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
+                                a = abs((heading_history[0] - heading_history[1] + 180) % 360 - 180)
+                                b = abs((heading_history[1] - heading_history[2] + 180) % 360 - 180)
+                                c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
 
                                 # 2回連続で角度の変化が5度未満ならスタックと判断
-                                if diff1 < 5 and diff2 < 5 and diff < 5:
+                                if a < 5 and b < 5 and c < 5:
                                     print("スタックを検知しました！回避行動を開始します。")
                                     # 前後左右に動いてスタックからの脱出を試みる
                                     self.driver.changing_right(0, 90)
