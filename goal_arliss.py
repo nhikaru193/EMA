@@ -76,10 +76,10 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         hsv = cv2.cvtColor(rotated_frame_bgr, cv2.COLOR_BGR2HSV)
 
         # 赤色のHSV範囲を定義 (ご提示のHSV範囲を適用)
-        lower_red1 = np.array([0, 80, 80])
+        lower_red1 = np.array([0, 70, 70])
         upper_red1 = np.array([30, 255, 255])
 
-        lower_red2 = np.array([150, 100, 100])
+        lower_red2 = np.array([150, 90, 90])
         upper_red2 = np.array([180, 255, 255])
 
         # マスクを作成し結合 (ガウシアンブラーなし)
