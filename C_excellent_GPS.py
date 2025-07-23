@@ -8,7 +8,7 @@ from BNO055 import BNO055
 import smbus
 import struct
 import following
-import collections import deque
+from collections import deque
 
 class GPS:
     def __init__(
