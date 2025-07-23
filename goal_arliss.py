@@ -203,7 +203,7 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
     
     # 270度スキャンから360度スキャンに変更
-    for i in range(360 // turn_angle_step): # ★変更点: 360度スキャン
+    for i in range(360 // turn_angle_step): # 360度スキャン
         if i > 0:
             print(f"  --> スキャン中: さらに20度回転...")
             turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
@@ -428,11 +428,13 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                         print("中心方向への向き調整が完了しました。")
                         
-                        print("  --> 中心方向へ向いた後、0.5秒間前進します。")
-                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=0.5)
+                        print("  --> 中心方向へ向いた後、5秒間前進します。")
+                        # ★変更点: petit_forward を petit_petit に変更
+                        driver.petit_petit(5) # base_speedを左右の引数に渡す
+                        time.sleep(1) # 5秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
-                        print("  --> 1秒前進を完了しました。次の「周囲確認（最終確認スキャン）」へ移行します。")
+                        print("  --> 5秒前進を完了しました。次の「周囲確認（最終確認スキャン）」へ移行します。")
                         skip_forward_scan_phase = True # ここでスキップフラグをTrueに設定
                     else:
                         print("警告: 複数赤色検知後の回頭時に現在方位が取得できませんでした。")
@@ -449,11 +451,11 @@ if __name__ == "__main__":
 
             # skip_forward_scan_phaseがTrueの場合、次のフェーズへジャンプ
             if skip_forward_scan_phase:
-                print("--- 「アライメント後、360度スキャンで赤色を探索し前進判断」フェーズをスキップします。 ---") # ★変更点: メッセージ更新
+                print("--- 「アライメント後、360度スキャンで赤色を探索し前進判断」フェーズをスキップします。 ---")
                 pass # そのまま次の処理へ進む
             else:
-                # --- アライメント後、360度スキャンで赤色を探索し前進判断 --- # ★変更点: メッセージ更新
-                print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===") # ★変更点: メッセージ更新
+                # --- アライメント後、360度スキャンで赤色を探索し前進判断 ---
+                print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===")
                 
                 # このフラグは、今回のスキャン中に一度でも5%以上の赤色を検知して前進したかどうかを記録します
                 any_red_detected_and_moved_this_scan = False 
@@ -464,14 +466,14 @@ if __name__ == "__main__":
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
-                # ★変更点: このループで1秒前進したらbreakする (360度スキャン)
-                for i in range(360 // 20): # ★変更点: 360度スキャン
+                # このループで1秒前進したらbreakする (360度スキャン)
+                for i in range(360 // 20): 
                     current_scan_heading_for_forward = bno_sensor.get_heading()
                     if current_scan_heading_for_forward is None:
                         print("警告: スキャン中に方位が取得できませんでした。スキップします。")
                         continue
 
-                    print(f"--- 360度スキャン中: 現在の方向: {current_scan_heading_for_forward:.2f}度 ---") # ★変更点: メッセージ更新
+                    print(f"--- 360度スキャン中: 現在の方向: {current_scan_heading_for_forward:.2f}度 ---")
 
                     current_red_percentage_scan = detect_red_percentage(
                         picam2_instance, 
@@ -484,21 +486,23 @@ if __name__ == "__main__":
                     
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                        following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=0.5)
+                        # ★変更点: petit_forward を petit_petit に変更
+                        driver.petit_petit(90, 90) # base_speedを左右の引数に渡す
+                        time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
                         any_red_detected_and_moved_this_scan = True 
-                        break # ★変更点: 1回でも前進したらここでループを抜ける
+                        break # 1回でも前進したらここでループを抜ける
 
-                    # 1回も検知せず、かつ最後の回転でなければ次の回転 (360度スキャン) # ★変更点: メッセージ更新
-                    if i < (360 // 20) - 1: # ★変更点: 360度スキャン
+                    # 1回も検知せず、かつ最後の回転でなければ次の回転 (360度スキャン)
+                    if i < (360 // 20) - 1: 
                         print(f"  --> スキャン中: さらに20度回転...")
                         turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
 
 
-                # --- 360度スキャンが完了した後での判定ロジック --- # ★変更点: メッセージ更新
+                # --- 360度スキャンが完了した後での判定ロジック ---
                 # ここで、1回でも1秒前進したら、追加の2個スキャンと中央角への調整・前進を行う
                 if any_red_detected_and_moved_this_scan: # スキャン中に一度でも赤色を検知して前進した場合
                     print("\n=== 赤色を検知し1秒前進しました。追加の2個検知スキャンを開始します ===")
@@ -511,7 +515,7 @@ if __name__ == "__main__":
                     driver.motor_stop_brake()
                     time.sleep(0.5)
 
-                    for i in range(360 // 20): # 2回目の360度スキャン # ★変更点: 360度スキャン
+                    for i in range(360 // 20): # 2回目の360度スキャン 
                         current_scan_heading_for_second = bno_sensor.get_heading()
                         if current_scan_heading_for_second is None:
                             print("警告: 2回目スキャン中に方位が取得できませんでした。スキップします。")
@@ -533,8 +537,8 @@ if __name__ == "__main__":
                             print(f"  --> 2回目スキャンで赤色を{0.05:.0%}以上検出！方向を記録します。")
                             second_scan_detected_angles.append(current_scan_heading_for_second)
 
-                        # 最後の回転でなければ次の回転 (360度スキャン) # ★変更点: メッセージ更新
-                        if i < (360 // 20) - 1: # ★変更点: 360度スキャン
+                        # 最後の回転でなければ次の回転 (360度スキャン)
+                        if i < (360 // 20) - 1: 
                             print(f"  --> 2回目スキャン中: さらに20度回転...")
                             turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
                             driver.motor_stop_brake()
@@ -554,7 +558,9 @@ if __name__ == "__main__":
                                 print("中心方向への向き調整が完了しました。")
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
-                                following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=1)
+                                # ★変更点: petit_forward を petit_petit に変更
+                                driver.petit_petit(4) # base_speedを左右の引数に渡す
+                                time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
                                 print("  --> 1秒前進を完了しました。")
@@ -565,18 +571,20 @@ if __name__ == "__main__":
                     else:
                         print("\n=== 2回目スキャンで赤色の複数検知はありませんでした。 ===")
 
-            # --- 周囲確認ロジック (360度スキャン - 4つ以上の赤色検知で終了) --- # ★変更点: メッセージ更新
-            print("\n=== 周囲確認を開始します (360度スキャン - 最終確認用) ===") # ★変更点: メッセージ更新
+            # --- 周囲確認ロジック (360度スキャン - 4つ以上の赤色検知で終了) ---
+            print("\n=== 周囲確認を開始します (360度スキャン - 最終確認用) ===")
             
             if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4):
                 print("最終確認スキャンにより4つ以上の赤色を検知しました。ミッションを終了します。")
                 break
             else:
                 print("最終確認スキャンが完了しましたが、4つ以上の赤色は検出されませんでした。次の走行サイクルに進みます。")
-                # ★変更点★ ここに5秒前進後の処理（アライメントから再開）を移動させる
+                # ここに5秒前進後の処理（アライメントから再開）を移動させる
                 if not any_red_detected_and_moved_this_scan: # もし最初のスキャンで全く前進しなかった場合のみ
-                    print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
-                    following.follow_forward(driver, bno_sensor, base_speed=90, duration_time=3)
+                    print("  --> 赤色を検出しなかったため、5秒間前進し、再度アライメントから開始します。")
+                    # ★変更点: petit_forward を petit_petit に変更
+                    driver.petit_petit(7) # base_speedを左右の引数に渡す
+                    time.sleep(3) # 3秒間前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
                 
