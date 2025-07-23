@@ -25,7 +25,7 @@ class GPS:
             PWMB=19, BIN1=16, BIN2=26,
             STBY=21
         )
-        self.bno    = bno
+        self.bno = bno
         self.RX_PIN = 17
         self.BAUD = 9600
         self.turn_speed = 95
