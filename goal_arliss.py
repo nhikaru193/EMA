@@ -47,12 +47,13 @@ def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_imag
     print(f"画像保存成功: {path}")
     return frame
 
-# --- 赤色検出関数 (ご提示のロジックを適用) ---
+# --- 赤色検出関数 (HSV閾値調整済み、通常画像保存に変更) ---
 def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_detection_overall.jpg"):
     """
     カメラ画像をキャプチャし、画像全体における赤色ピクセルの割合を返します。
     ここではソフトウェア的に回転・反転を行います。
     エラー時は-1.0を返します。
+    保存される画像は、回転後の通常のカラー画像です。
     """
     try:
         frame_rgb = picam2_instance.capture_array()
@@ -67,11 +68,11 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         # 反時計回りに90度回転 (カメラが物理的に時計回りに90度傾いている場合)
         rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
         # --- 回転処理ここまで ---
+
+        # デバッグ用に通常の回転済み画像を保存
         directory = os.path.dirname(save_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        
-        # ここを修正します: rotated_frame_bgr を保存するように変更
         cv2.imwrite(save_path, rotated_frame_bgr) 
         print(f"通常の画像を保存しました: {save_path}")
 
@@ -82,11 +83,11 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         # BGRからHSV色空間に変換 (回転後の画像を使用)
         hsv = cv2.cvtColor(rotated_frame_bgr, cv2.COLOR_BGR2HSV)
 
-        # 赤色のHSV範囲を定義 (ご提示のHSV範囲を適用)
-        lower_red1 = np.array([0, 70, 70])
-        upper_red1 = np.array([30, 255, 255])
+        # 赤色のHSV範囲を定義 (より赤色に近い色も検知するように調整済み)
+        lower_red1 = np.array([0, 50, 50])   # SとVの下限を下げて、より広い範囲の赤を検出
+        upper_red1 = np.array([35, 255, 255]) # 色相の上限を少し広げて、オレンジ寄りの赤も含む
 
-        lower_red2 = np.array([150, 90, 90])
+        lower_red2 = np.array([145, 70, 70]) # 色相の下限を少し広げ、紫寄りの赤も含む
         upper_red2 = np.array([180, 255, 255])
 
         # マスクを作成し結合 (ガウシアンブラーなし)
@@ -100,20 +101,12 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         # 赤色ピクセルの割合を計算
         red_percentage = (red_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
 
-        # デバッグ用に赤色領域をハイライトした画像を保存
-        # rotated_frame_bgr に mask を適用
-        red_highlighted_frame = cv2.bitwise_and(rotated_frame_bgr, rotated_frame_bgr, mask=mask)
-
-        directory = os.path.dirname(save_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        cv2.imwrite(save_path, red_highlighted_frame)
-        print(f"赤色検出画像を保存しました: {save_path} (赤色割合: {red_percentage:.2f}%)")
+        print(f"検出結果: 画像全体の赤色割合: {red_percentage:.2f}%")
 
         return red_percentage / 100.0 # 割合は0-1の範囲で返すように調整
 
     except Exception as e:
-        print(f"カメラ撮影・赤色検出処理中にエラーが発生しました: {e}")
+        print(f"カメラ撮影・処理中にエラーが発生しました: {e}")
         return -1.0
 
 # --- ヘルパー関数: 指定角度へ相対的に回頭する (変更なし) ---
@@ -191,10 +184,10 @@ def calculate_angle_average(angles_deg):
     # 角度を0〜360度の範囲に正規化
     return (average_angle_deg + 360) % 360
 
-# --- 周囲確認ロジック (360度スキャン - 40%閾値、4つ以上検知で終了) (変更なし) ---
+# --- 周囲確認ロジック (270度スキャンに修正) ---
 def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, final_threshold=0.15, min_red_detections_to_terminate=4):
     """
-    ローバーを20度ずつ360度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
+    ローバーを20度ずつ270度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
     最終的にmin_red_detections_to_terminate個以上の赤色を検知した場合、Trueを返して処理を終了します。
     検知しなかった場合はFalseを返します。
     """
@@ -209,7 +202,8 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     print(f"  初回回転: {turn_angle_step}度...")
     turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
     
-    for i in range(360 // turn_angle_step):
+    # 360度スキャンから270度スキャンに変更
+    for i in range(270 // turn_angle_step):
         if i > 0:
             print(f"  --> スキャン中: さらに20度回転...")
             turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
@@ -263,10 +257,10 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
         print(f"\n=== 最終確認スキャンが完了しました。{min_red_detections_to_terminate}ヶ所の赤色は検出されませんでした ({len(final_scan_detected_angles)}ヶ所検出)。 ===")
         return False
 
-# --- 初期アライメントスキャン関数 (変更なし) ---
+# --- 初期アライメントスキャン関数 (270度スキャンに修正) ---
 def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, alignment_threshold=0.10):
     """
-    ローバーを20度ずつ360度回転させ、20%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
+    ローバーを20度ずつ270度回転させ、20%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
     20%以上の赤色が検知されなかった場合は、最も多くの赤が検知された方向に向きを合わせてからTrueを返します。
     戻り値: (aligned_successfully:bool, aligned_heading:float, detected_red_angles:list)
     """
@@ -282,13 +276,16 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
     
     detected_red_angles = []
 
-    print(f"  初回回転: {turn_angle_step}度...")
-    turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+    # 初回回転を270度にする
+    initial_turn_angle = 270 
+    print(f"  初回回転: {initial_turn_angle}度...")
+    turn_to_relative_angle(driver, bno_sensor_instance, initial_turn_angle, turn_speed=60, angle_tolerance_deg=15)
     
-    for i in range(360 // turn_angle_step):
+    # 360度スキャンから270度スキャンに変更
+    for i in range(270 // turn_angle_step):
         current_relative_angle_from_start_of_scan = (i + 1) * turn_angle_step
         
-        if i > 0: 
+        if i > 0: # 初回回転は上記で実施済みのため、2回目以降の回転
             print(f"  回転: {turn_angle_step}度...")
             turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
         
@@ -325,9 +322,10 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
         driver.motor_stop_brake()
         time.sleep(0.5)
 
-        if i < (360 // turn_angle_step) - 1:
-             print(f"  回転: {turn_angle_step}度...")
-             turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+        # 最後の回転でなければ次の回転 (270度スキャンに調整)
+        if i < (270 // turn_angle_step) - 1:
+            print(f"  回転: {turn_angle_step}度...")
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
 
 
     if not detected_red_angles:
@@ -451,11 +449,11 @@ if __name__ == "__main__":
 
             # skip_forward_scan_phaseがTrueの場合、次のフェーズへジャンプ
             if skip_forward_scan_phase:
-                print("--- 「アライメント後、360度スキャンで赤色を探索し前進判断」フェーズをスキップします。 ---")
+                print("--- 「アライメント後、270度スキャンで赤色を探索し前進判断」フェーズをスキップします。 ---")
                 pass # そのまま次の処理へ進む
             else:
-                # --- アライメント後、360度スキャンで赤色を探索し前進判断 ---
-                print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===")
+                # --- アライメント後、270度スキャンで赤色を探索し前進判断 ---
+                print("\n=== アライメント後、270度スキャンで赤色を探索し前進判断 ===")
                 
                 # このフラグは、今回のスキャン中に一度でも5%以上の赤色を検知して前進したかどうかを記録します
                 any_red_detected_and_moved_this_scan = False 
@@ -466,14 +464,14 @@ if __name__ == "__main__":
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
-                # ★変更点: このループで1秒前進したらbreakする
-                for i in range(360 // 20):
+                # ★変更点: このループで1秒前進したらbreakする (270度スキャン)
+                for i in range(270 // 20):
                     current_scan_heading_for_forward = bno_sensor.get_heading()
                     if current_scan_heading_for_forward is None:
-                        print("警告: 360度スキャン中に方位が取得できませんでした。スキップします。")
+                        print("警告: スキャン中に方位が取得できませんでした。スキップします。")
                         continue
 
-                    print(f"--- 360度スキャン中: 現在の方向: {current_scan_heading_for_forward:.2f}度 ---")
+                    print(f"--- 270度スキャン中: 現在の方向: {current_scan_heading_for_forward:.2f}度 ---")
 
                     current_red_percentage_scan = detect_red_percentage(
                         picam2_instance, 
@@ -492,15 +490,15 @@ if __name__ == "__main__":
                         any_red_detected_and_moved_this_scan = True 
                         break # ★変更点: 1回でも前進したらここでループを抜ける
 
-                    # 1回も検知せず、かつ最後の回転でなければ次の回転
-                    if i < (360 // 20) - 1:
+                    # 1回も検知せず、かつ最後の回転でなければ次の回転 (270度スキャン)
+                    if i < (270 // 20) - 1:
                         print(f"  --> スキャン中: さらに20度回転...")
                         turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
 
 
-                # --- 360度スキャンが完了した後での判定ロジック ---
+                # --- 270度スキャンが完了した後での判定ロジック ---
                 # ここで、1回でも1秒前進したら、追加の2個スキャンと中央角への調整・前進を行う
                 if any_red_detected_and_moved_this_scan: # スキャン中に一度でも赤色を検知して前進した場合
                     print("\n=== 赤色を検知し1秒前進しました。追加の2個検知スキャンを開始します ===")
@@ -513,7 +511,7 @@ if __name__ == "__main__":
                     driver.motor_stop_brake()
                     time.sleep(0.5)
 
-                    for i in range(360 // 20): # 2回目の360度スキャン
+                    for i in range(270 // 20): # 2回目の270度スキャン
                         current_scan_heading_for_second = bno_sensor.get_heading()
                         if current_scan_heading_for_second is None:
                             print("警告: 2回目スキャン中に方位が取得できませんでした。スキップします。")
@@ -535,8 +533,8 @@ if __name__ == "__main__":
                             print(f"  --> 2回目スキャンで赤色を{0.05:.0%}以上検出！方向を記録します。")
                             second_scan_detected_angles.append(current_scan_heading_for_second)
 
-                        # 最後の回転でなければ次の回転
-                        if i < (360 // 20) - 1:
+                        # 最後の回転でなければ次の回転 (270度スキャン)
+                        if i < (270 // 20) - 1:
                             print(f"  --> 2回目スキャン中: さらに20度回転...")
                             turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
                             driver.motor_stop_brake()
@@ -567,8 +565,8 @@ if __name__ == "__main__":
                     else:
                         print("\n=== 2回目スキャンで赤色の複数検知はありませんでした。 ===")
 
-            # --- 周囲確認ロジック (360度スキャン - 4つ以上の赤色検知で終了) ---
-            print("\n=== 周囲確認を開始します (360度スキャン - 最終確認用) ===")
+            # --- 周囲確認ロジック (270度スキャン - 4つ以上の赤色検知で終了) ---
+            print("\n=== 周囲確認を開始します (270度スキャン - 最終確認用) ===")
             
             if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4):
                 print("最終確認スキャンにより4つ以上の赤色を検知しました。ミッションを終了します。")
