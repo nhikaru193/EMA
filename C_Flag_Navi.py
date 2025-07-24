@@ -203,7 +203,7 @@ class FN:
                             print(f"[{target_name}] に接近完了！")
                             if self.detector.last_image is not None:
                             # 1. 保存先のフォルダ名を決める
-                                save_folder = "saved_images"
+                                save_folder = '/home/EM/saved_images'
                                 
                                 # 2. フォルダが存在しなければ作成する
                                 os.makedirs(save_folder, exist_ok=True)
