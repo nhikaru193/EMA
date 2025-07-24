@@ -545,7 +545,7 @@ if __name__ == "__main__":
 
                                     print("  --> 調整後、1秒間前進します。")
                                     # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                    driver.petit_petit(5) # 前進速度を左右の引数に渡す (例: 90)
+                                    driver.petit_petit(4) # 前進速度を左右の引数に渡す (例: 90)
                                     time.sleep(1) # 1秒間前進
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
@@ -669,7 +669,7 @@ if __name__ == "__main__":
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
                                 # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                driver.petit_petit(3) # 前進速度を左右の引数に渡す (例: 90)
+                                driver.petit_petit(5) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
