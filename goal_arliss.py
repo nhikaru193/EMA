@@ -110,7 +110,7 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         return -1.0
 
 # --- ヘルパー関数: 指定角度へ相対的に回頭する (変更なし) ---
-def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=40, angle_tolerance_deg=10.0, max_turn_attempts=100):
+def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=60, angle_tolerance_deg=10.0, max_turn_attempts=100):
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
     """
@@ -200,13 +200,13 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     final_scan_detected_angles = []
 
     print(f"  初回回転: {turn_angle_step}度...")
-    turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+    turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
     
     # 360度スキャンに変更
     for i in range(360 // turn_angle_step): 
         if i > 0:
             print(f"  --> スキャン中: さらに20度回転...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
             driver.motor_stop_brake()
             time.sleep(0.5)
         
@@ -279,7 +279,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
     # 初回回転を270度にする (変更なし)
     initial_turn_angle = 270 
     print(f"  初回回転: {initial_turn_angle}度...")
-    turn_to_relative_angle(driver, bno_sensor_instance, initial_turn_angle, turn_speed=60, angle_tolerance_deg=15)
+    turn_to_relative_angle(driver, bno_sensor_instance, initial_turn_angle, turn_speed=60, angle_tolerance_deg=10)
     
     # 270度スキャン (変更なし)
     for i in range(270 // turn_angle_step):
@@ -287,7 +287,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
         
         if i > 0: # 初回回転は上記で実施済みのため、2回目以降の回転
             print(f"  回転: {turn_angle_step}度...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
         
         current_scan_heading = bno_sensor_instance.get_heading()
         if current_scan_heading is None:
@@ -325,7 +325,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
         # 最後の回転でなければ次の回転 (270度スキャンに調整) (変更なし)
         if i < (270 // turn_angle_step) - 1:
             print(f"  回転: {turn_angle_step}度...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
 
 
     if not detected_red_angles:
