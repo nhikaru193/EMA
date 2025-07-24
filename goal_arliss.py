@@ -445,8 +445,8 @@ if __name__ == "__main__":
                         print("中心方向への向き調整が完了しました。")
                         
                         print("  --> 中心方向へ向いた後、1秒間前進します。")
-                        # driver.petit_forward に変更
-                        driver.petit_forward(9) # 前進速度を左右の引数に渡す (例: 90)
+                        # driver.petit_petit に変更
+                        driver.petit_petit(9) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -510,8 +510,8 @@ if __name__ == "__main__":
 
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                        # driver.petit_forward に変更
-                        driver.petit_forward(4) # 前進速度を左右の引数に渡す (例: 90)
+                        # driver.petit_petit に変更
+                        driver.petit_petit(4) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -559,8 +559,8 @@ if __name__ == "__main__":
                                     print("向き調整が完了しました。")
 
                                     print("  --> 調整後、1秒間前進します。")
-                                    # driver.petit_forward に変更
-                                    driver.petit_forward(4) # 前進速度を左右の引数に渡す (例: 90)
+                                    # driver.petit_petit に変更
+                                    driver.petit_petit(4) # 前進速度を左右の引数に渡す (例: 90)
                                     time.sleep(1) # 1秒間前進
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
@@ -683,8 +683,8 @@ if __name__ == "__main__":
                                 print("中心方向への向き調整が完了しました。")
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
-                                # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                driver.petit_forward(8) # 前進速度を左右の引数に渡す (例: 90)
+                                # ★変更点: following.follow_forward を driver.petit_petit に変更
+                                driver.petit_petit(8) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
@@ -707,8 +707,8 @@ if __name__ == "__main__":
                 # ここに5秒前進後の処理（アライメントから再開）を移動させる
                 if not any_red_detected_and_moved_this_scan: # もし最初のスキャンで全く前進しなかった場合のみ
                     print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
-                    # ★変更点: following.follow_forward を driver.petit_forward に変更
-                    driver.petit_forward(10) # 前進速度を左右の引数に渡す (例: 90)
+                    # ★変更点: following.follow_forward を driver.petit_petit に変更
+                    driver.petit_petit(10) # 前進速度を左右の引数に渡す (例: 90)
                     time.sleep(3) # 3秒間前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
