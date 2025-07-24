@@ -40,7 +40,7 @@ RX_PIN = 17
 def save_image_for_debug(picam2_instance, path="/home/mark1/Pictures/paravo_image.jpg"):
     frame = picam2_instance.capture_array()
     if frame is None:
-        print("画像キャプチャ失敗：フレームがNoneです。")
+        print("画像キャプ手失敗：フレームがNoneです。")
         return None
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     cv2.imwrite(path, frame_bgr)
@@ -411,6 +411,21 @@ if __name__ == "__main__":
             # best_heading_for_red を初期アライメントスキャンから取得するために返り値に追加
             aligned_in_initial_scan, initial_aligned_heading, initial_scan_detected_angles = perform_initial_alignment_scan(driver, bno_sensor, picam2_instance)
 
+            # --- 初期アライメントで4つ以上の赤色を検知した場合、最終処理へスキップ ---
+            # ここで、perform_final_scan_and_terminate の min_red_detections_to_terminate (デフォルト4) と比較
+            if len(initial_scan_detected_angles) >= 4: # 4つ以上の赤色を検出
+                print(f"\n=== 初期アライメントスキャンで{len(initial_scan_detected_angles)}ヶ所の赤色を検知しました。最終確認スキャンへスキップします。 ===")
+                # perform_final_scan_and_terminate を呼び出し、その結果に基づいてループを終了
+                if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4):
+                    print("最終確認スキャンにより4つ以上の赤色を検知したため、ミッションを終了します。")
+                    break # メインループを終了
+                else:
+                    print("最終確認スキャンは完了しましたが、ミッション終了条件を満たしませんでした。通常フローに戻ります。")
+                    # ここで通常フローに戻るが、このシナリオは通常終了なのでありえないはず。念のため。
+                    continue # メインループの最初に戻る
+            # --- 初期アライメントスキップ処理ここまで ---
+
+
             if aligned_in_initial_scan:
                 print(f"初期アライメントスキャンによって、何らかの赤色へアライメントされました。方位: {initial_aligned_heading:.2f}度")
             else:
@@ -430,8 +445,8 @@ if __name__ == "__main__":
                         print("中心方向への向き調整が完了しました。")
                         
                         print("  --> 中心方向へ向いた後、1秒間前進します。")
-                        # ★変更点: following.follow_forward を driver.petit_forward に変更
-                        driver.petit_petit(7) # 前進速度を左右の引数に渡す (例: 90)
+                        # driver.petit_forward に変更
+                        driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -495,8 +510,8 @@ if __name__ == "__main__":
 
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                        # ★変更点: following.follow_forward を driver.petit_forward に変更
-                        driver.petit_petit(2) # 前進速度を左右の引数に渡す (例: 90)
+                        # driver.petit_forward に変更
+                        driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -534,7 +549,7 @@ if __name__ == "__main__":
 
                             if best_red_after_initial_alignment:
                                 target_heading_for_second_best = best_red_after_initial_alignment['heading']
-                                print(f"  --> 2番目に赤の割合が大きかった方向 ({target_heading_for_second_best:.2f}度, 割合: {best_red_after_initial_alignment['percentage']:.2%}) へ向きを調整し、1秒前進します。")
+                                print(f"  --> 2番目に赤の割合が大きかった方向 ({target_heading_for_second_best:.2f}度, 割合: {best_red_after_initial_alignment['percentage']:.2%}) へ向きを調整し、1秒間前進します。")
                                 current_heading_before_adjust = bno_sensor.get_heading()
                                 if current_heading_before_adjust is not None:
                                     angle_to_turn = (target_heading_for_second_best - current_heading_before_adjust + 180 + 360) % 360 - 180
@@ -544,14 +559,14 @@ if __name__ == "__main__":
                                     print("向き調整が完了しました。")
 
                                     print("  --> 調整後、1秒間前進します。")
-                                    # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                    driver.petit_petit(4) # 前進速度を左右の引数に渡す (例: 90)
+                                    # driver.petit_forward に変更
+                                    driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
                                     time.sleep(1) # 1秒間前進
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
                                     print("  --> 1秒前進を完了しました。")
 
-                                    # ★追加の要求: 1秒前進後、もう一度360度回転して、2つの赤が検知されたらその間の方向へ向く
+                                    # 追加の要求: 1秒前進後、もう一度360度回転して、2つの赤が検知されたらその間の方向へ向く
                                     print("\n=== 1秒前進後、追加の360度スキャンと中心方向への調整を開始します ===")
                                     post_forward_scan_detected_angles = []
                                     # 最初に20度回転してから検知を開始 (新たなスキャンサイクル)
@@ -669,7 +684,7 @@ if __name__ == "__main__":
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
                                 # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                driver.petit_petit(5) # 前進速度を左右の引数に渡す (例: 90)
+                                driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
@@ -693,7 +708,7 @@ if __name__ == "__main__":
                 if not any_red_detected_and_moved_this_scan: # もし最初のスキャンで全く前進しなかった場合のみ
                     print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
                     # ★変更点: following.follow_forward を driver.petit_forward に変更
-                    driver.petit_petit(7) # 前進速度を左右の引数に渡す (例: 90)
+                    driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
                     time.sleep(3) # 3秒間前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
