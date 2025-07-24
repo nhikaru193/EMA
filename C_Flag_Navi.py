@@ -248,7 +248,6 @@ class FN:
         print("--- 制御を終了します ---")
         self.driver.cleanup()
         self.detector.close()
-        self.GPIO.cleanup() #いらないよ
         #cv2.destroyAllWindows()
 
 # メインの実行ブロック
