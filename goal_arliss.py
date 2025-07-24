@@ -14,7 +14,7 @@ import math
 # カスタムモジュールのインポート
 from motor import MotorDriver
 from BNO055 import BNO055
-import following
+# import following # followingモジュールはもう使いません
 
 # --- BNO055用のラッパークラス (変更なし) ---
 class BNO055Wrapper:
@@ -202,8 +202,8 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     print(f"  初回回転: {turn_angle_step}度...")
     turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
     
-    # 270度スキャンから360度スキャンに変更
-    for i in range(360 // turn_angle_step): # 360度スキャン
+    # 360度スキャンに変更
+    for i in range(360 // turn_angle_step): 
         if i > 0:
             print(f"  --> スキャン中: さらに20度回転...")
             turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=15)
@@ -408,6 +408,7 @@ if __name__ == "__main__":
             # --- 初期アライメントスキャンを実行 ---
             # 初期アライメントスキャンで2つ以上の赤色を検知した場合、次のフェーズをスキップするためのフラグ
             skip_forward_scan_phase = False 
+            # best_heading_for_red を初期アライメントスキャンから取得するために返り値に追加
             aligned_in_initial_scan, initial_aligned_heading, initial_scan_detected_angles = perform_initial_alignment_scan(driver, bno_sensor, picam2_instance)
 
             if aligned_in_initial_scan:
@@ -428,13 +429,13 @@ if __name__ == "__main__":
                         time.sleep(0.5)
                         print("中心方向への向き調整が完了しました。")
                         
-                        print("  --> 中心方向へ向いた後、5秒間前進します。")
-                        # ★変更点: petit_forward を petit_petit に変更
-                        driver.petit_petit(5) # base_speedを左右の引数に渡す
-                        time.sleep(1) # 5秒間前進
+                        print("  --> 中心方向へ向いた後、1秒間前進します。")
+                        # ★変更点: following.follow_forward を driver.petit_forward に変更
+                        driver.petit_petit(3) # 前進速度を左右の引数に渡す (例: 90)
+                        time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
-                        print("  --> 5秒前進を完了しました。次の「周囲確認（最終確認スキャン）」へ移行します。")
+                        print("  --> 1秒前進を完了しました。次の「周囲確認（最終確認スキャン）」へ移行します。")
                         skip_forward_scan_phase = True # ここでスキップフラグをTrueに設定
                     else:
                         print("警告: 複数赤色検知後の回頭時に現在方位が取得できませんでした。")
@@ -442,10 +443,12 @@ if __name__ == "__main__":
                 else:
                     print("警告: 検出された角度からの中心角度計算に失敗しました。")
                     skip_forward_scan_phase = False
+            # 初期アライメントスキャンで1か所しか検知しなかった場合の処理
             elif len(initial_scan_detected_angles) == 1:
                 print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]:.2f}度) しました。その方向へ向きを調整済みです。")
+                # スキップフラグはFalseのままにし、下のelseブロックで処理されるようにします。
                 skip_forward_scan_phase = False
-            else:
+            else: # 赤色検知が全くなかった場合
                 print("\n=== 赤色検知がなかったため、次の行動に移ります。 ===")
                 skip_forward_scan_phase = False
 
@@ -458,8 +461,11 @@ if __name__ == "__main__":
                 print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===")
                 
                 # このフラグは、今回のスキャン中に一度でも5%以上の赤色を検知して前進したかどうかを記録します
-                any_red_detected_and_moved_this_scan = False 
+                any_red_detected_and_moved_this_scan = False  
                 
+                # スキャン中に検出された赤色の割合と方位を記録するリスト
+                scan_detections = []
+
                 # 最初に20度回転してから検知を開始
                 print("  --> 前進判断のため、20度回転します...")
                 turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
@@ -484,14 +490,17 @@ if __name__ == "__main__":
                         print("カメラ処理でエラーが発生しました。現在のスキャンステップをスキップします。")
                         continue
                     
+                    # 検出結果を記録 (割合と方位のペア)
+                    scan_detections.append({'percentage': current_red_percentage_scan, 'heading': current_scan_heading_for_forward})
+
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
-                        # ★変更点: petit_forward を petit_petit に変更
-                        driver.petit_petit(90, 90) # base_speedを左右の引数に渡す
+                        # ★変更点: following.follow_forward を driver.petit_forward に変更
+                        driver.petit_petit(3) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
-                        any_red_detected_and_moved_this_scan = True 
+                        any_red_detected_and_moved_this_scan = True  # 前進したのでフラグを立てる
                         break # 1回でも前進したらここでループを抜ける
 
                     # 1回も検知せず、かつ最後の回転でなければ次の回転 (360度スキャン)
@@ -501,9 +510,110 @@ if __name__ == "__main__":
                         driver.motor_stop_brake()
                         time.sleep(0.5)
 
-
                 # --- 360度スキャンが完了した後での判定ロジック ---
-                # ここで、1回でも1秒前進したら、追加の2個スキャンと中央角への調整・前進を行う
+                # 初期アライメントで1か所しか検知しなかった場合の追加処理
+                # かつ、この360度スキャン中に一度も5%以上の赤色を検出しなかった場合
+                if not any_red_detected_and_moved_this_scan and len(initial_scan_detected_angles) == 1:
+                    print("\n=== 初期アライメントスキャンで赤色を1ヶ所のみ検知。360度スキャンで2番目に赤の割合が大きかった方向へ前進します。 ===")
+                    
+                    # scan_detectionsから、最も割合が大きいものを除外し、残りのうちで2番目に大きいものを探す
+                    if scan_detections:
+                        # 割合でソート（降順）
+                        sorted_detections = sorted(scan_detections, key=lambda x: x['percentage'], reverse=True)
+                        
+                        best_red_after_initial_alignment = None
+                        if len(sorted_detections) >= 2:
+                            # 初期アライメント時の方向と「十分に離れている」ものを2番目の候補とする
+                            for det in sorted_detections:
+                                # 検出された角度と初期アライメントでアライメントされた角度との差を計算
+                                angle_diff = (det['heading'] - initial_aligned_heading + 180 + 360) % 360 - 180
+                                # 検出された角度が初期アライメント時の角度からある程度離れている場合を「異なる」と判断
+                                if abs(angle_diff) > 20: # 例えば20度以上離れていれば異なる方向とみなす
+                                    best_red_after_initial_alignment = det
+                                    break # 最初の異なる最高割合を見つけたら終了
+
+                            if best_red_after_initial_alignment:
+                                target_heading_for_second_best = best_red_after_initial_alignment['heading']
+                                print(f"  --> 2番目に赤の割合が大きかった方向 ({target_heading_for_second_best:.2f}度, 割合: {best_red_after_initial_alignment['percentage']:.2%}) へ向きを調整し、1秒前進します。")
+                                current_heading_before_adjust = bno_sensor.get_heading()
+                                if current_heading_before_adjust is not None:
+                                    angle_to_turn = (target_heading_for_second_best - current_heading_before_adjust + 180 + 360) % 360 - 180
+                                    turn_to_relative_angle(driver, bno_sensor, angle_to_turn, turn_speed=60, angle_tolerance_deg=10)
+                                    driver.motor_stop_brake()
+                                    time.sleep(0.5)
+                                    print("向き調整が完了しました。")
+
+                                    print("  --> 調整後、1秒間前進します。")
+                                    # ★変更点: following.follow_forward を driver.petit_forward に変更
+                                    driver.petit_petit(3) # 前進速度を左右の引数に渡す (例: 90)
+                                    time.sleep(1) # 1秒間前進
+                                    driver.motor_stop_brake()
+                                    time.sleep(0.5)
+                                    print("  --> 1秒前進を完了しました。")
+
+                                    # ★追加の要求: 1秒前進後、もう一度360度回転して、2つの赤が検知されたらその間の方向へ向く
+                                    print("\n=== 1秒前進後、追加の360度スキャンと中心方向への調整を開始します ===")
+                                    post_forward_scan_detected_angles = []
+                                    # 最初に20度回転してから検知を開始 (新たなスキャンサイクル)
+                                    print("  --> 追加スキャンのため、20度回転します...")
+                                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                                    driver.motor_stop_brake()
+                                    time.sleep(0.5)
+
+                                    for j in range(360 // 20):
+                                        current_post_forward_heading = bno_sensor.get_heading()
+                                        if current_post_forward_heading is None:
+                                            print("警告: 追加スキャン中に方位が取得できませんでした。スキップします。")
+                                            continue
+
+                                        print(f"--- 追加スキャン中: 現在の方向: {current_post_forward_heading:.2f}度 ---")
+                                        
+                                        current_red_percentage_post_forward_scan = detect_red_percentage(
+                                            picam2_instance,
+                                            save_path=f"/home/mark1/Pictures/post_forward_scan_{j*20 + 20:03d}.jpg"
+                                        )
+
+                                        if current_red_percentage_post_forward_scan == -1.0:
+                                            print("カメラ処理エラーのため、現在の追加スキャンステップをスキップします。")
+                                            continue
+
+                                        if current_red_percentage_post_forward_scan >= 0.05: # 5%閾値
+                                            print(f"  --> 追加スキャンで赤色を{0.05:.0%}以上検出！方向を記録します。")
+                                            post_forward_scan_detected_angles.append(current_post_forward_heading)
+                                        
+                                        if j < (360 // 20) - 1:
+                                            print(f"  --> 追加スキャン中: さらに20度回転...")
+                                            turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                                            driver.motor_stop_brake()
+                                            time.sleep(0.5)
+                                    
+                                    if len(post_forward_scan_detected_angles) >= 2:
+                                        target_center_angle_post_forward = calculate_angle_average(post_forward_scan_detected_angles)
+                                        if target_center_angle_post_forward is not None:
+                                            print(f"\n=== 追加スキャンで複数赤色検知！中心 ({target_center_angle_post_forward:.2f}度) へ向きを調整します ===")
+                                            current_heading_at_post_forward_end = bno_sensor.get_heading()
+                                            if current_heading_at_post_forward_end is not None:
+                                                angle_to_turn_post_forward = (target_center_angle_post_forward - current_heading_at_post_forward_end + 180 + 360) % 360 - 180
+                                                turn_to_relative_angle(driver, bno_sensor, angle_to_turn_post_forward, turn_speed=60, angle_tolerance_deg=15)
+                                                driver.motor_stop_brake()
+                                                time.sleep(0.5)
+                                                print("追加スキャン後の中心方向への向き調整が完了しました。")
+                                            else:
+                                                print("警告: 追加スキャン後の中心回頭時に方位が取得できませんでした。")
+                                        else:
+                                            print("警告: 追加スキャンで検出された角度からの中心角度計算に失敗しました。")
+                                    else:
+                                        print("\n=== 追加スキャンで赤色の複数検知はありませんでした。 ===")
+                                    # 追加スキャン後の処理完了
+                                else:
+                                    print("警告: 2番目の方向への回頭時に現在方位が取得できませんでした。")
+                            else:
+                                print("警告: 2番目に適した赤色検出方向が見つかりませんでした。")
+                        else:
+                            print("警告: 2番目に適した赤色検出方向を特定するためのデータが不足しています。")
+
+
+                # ここで、1回でも1秒前進したら、追加の2個検知スキャンと中央角への調整・前進を行う
                 if any_red_detected_and_moved_this_scan: # スキャン中に一度でも赤色を検知して前進した場合
                     print("\n=== 赤色を検知し1秒前進しました。追加の2個検知スキャンを開始します ===")
                     
@@ -558,8 +668,8 @@ if __name__ == "__main__":
                                 print("中心方向への向き調整が完了しました。")
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
-                                # ★変更点: petit_forward を petit_petit に変更
-                                driver.petit_petit(4) # base_speedを左右の引数に渡す
+                                # ★変更点: following.follow_forward を driver.petit_forward に変更
+                                driver.petit_petit(5) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
@@ -581,9 +691,9 @@ if __name__ == "__main__":
                 print("最終確認スキャンが完了しましたが、4つ以上の赤色は検出されませんでした。次の走行サイクルに進みます。")
                 # ここに5秒前進後の処理（アライメントから再開）を移動させる
                 if not any_red_detected_and_moved_this_scan: # もし最初のスキャンで全く前進しなかった場合のみ
-                    print("  --> 赤色を検出しなかったため、5秒間前進し、再度アライメントから開始します。")
-                    # ★変更点: petit_forward を petit_petit に変更
-                    driver.petit_petit(7) # base_speedを左右の引数に渡す
+                    print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
+                    # ★変更点: following.follow_forward を driver.petit_forward に変更
+                    driver.petit_petit(7) # 前進速度を左右の引数に渡す (例: 90)
                     time.sleep(3) # 3秒間前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
