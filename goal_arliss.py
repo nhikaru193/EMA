@@ -446,7 +446,7 @@ if __name__ == "__main__":
                         
                         print("  --> 中心方向へ向いた後、1秒間前進します。")
                         # driver.petit_forward に変更
-                        driver.petit_forward(10) # 前進速度を左右の引数に渡す (例: 90)
+                        driver.petit_forward(9) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
