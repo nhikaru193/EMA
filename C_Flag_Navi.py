@@ -14,9 +14,7 @@ from collections import deque
 class FN:
     # --- クラスの初期化メソッド ---
     def __init__(self, bno: BNO055):
-        """
-        ロボットのハードウェアと設定を初期化します。
-        """
+       
         # --- 設定値 ---
         self.TARGET_SHAPES = ["三角形", "長方形"] #, "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 18.0
