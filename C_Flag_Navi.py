@@ -201,6 +201,8 @@ class FN:
                         # 面積の比較
                         if area_percent >= self.AREA_THRESHOLD_PERCENT:
                             print(f"[{target_name}] に接近完了！")
+
+                            """
                             if self.detector.last_image is not None:
                             # 1. 保存先のフォルダ名を決める
                                 save_folder = '/home/EM/saved_images'
@@ -218,6 +220,7 @@ class FN:
                                 # フルパスを指定して保存
                                 cv2.imwrite(full_path, image_to_save)
                                 print(f"✅ 検出画像を {full_path} として保存しました。")
+                                """
                             
                             task_completed = True
                             time.sleep(1)
