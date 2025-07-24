@@ -110,7 +110,7 @@ def detect_red_percentage(picam2_instance, save_path="/home/mark1/Pictures/red_d
         return -1.0
 
 # --- ヘルパー関数: 指定角度へ相対的に回頭する (変更なし) ---
-def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=60, angle_tolerance_deg=10.0, max_turn_attempts=100):
+def turn_to_relative_angle(driver, bno_sensor_instance, angle_offset_deg, turn_speed=90, angle_tolerance_deg=10.0, max_turn_attempts=100):
     """
     現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
     """
@@ -200,13 +200,13 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     final_scan_detected_angles = []
 
     print(f"  初回回転: {turn_angle_step}度...")
-    turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
+    turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=90, angle_tolerance_deg=10)
     
     # 360度スキャンに変更
     for i in range(360 // turn_angle_step): 
         if i > 0:
             print(f"  --> スキャン中: さらに20度回転...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=90, angle_tolerance_deg=10)
             driver.motor_stop_brake()
             time.sleep(0.5)
         
@@ -279,7 +279,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
     # 初回回転を270度にする (変更なし)
     initial_turn_angle = 270 
     print(f"  初回回転: {initial_turn_angle}度...")
-    turn_to_relative_angle(driver, bno_sensor_instance, initial_turn_angle, turn_speed=60, angle_tolerance_deg=10)
+    turn_to_relative_angle(driver, bno_sensor_instance, initial_turn_angle, turn_speed=90, angle_tolerance_deg=10)
     
     # 270度スキャン (変更なし)
     for i in range(270 // turn_angle_step):
@@ -287,7 +287,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
         
         if i > 0: # 初回回転は上記で実施済みのため、2回目以降の回転
             print(f"  回転: {turn_angle_step}度...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=90, angle_tolerance_deg=10)
         
         current_scan_heading = bno_sensor_instance.get_heading()
         if current_scan_heading is None:
@@ -325,7 +325,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
         # 最後の回転でなければ次の回転 (270度スキャンに調整) (変更なし)
         if i < (270 // turn_angle_step) - 1:
             print(f"  回転: {turn_angle_step}度...")
-            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=60, angle_tolerance_deg=10)
+            turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=90, angle_tolerance_deg=10)
 
 
     if not detected_red_angles:
@@ -338,7 +338,7 @@ def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance,
                 
                 print(f"  --> {alignment_threshold*100.0:.0f}%"
                       f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
-                turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=60, angle_tolerance_deg=15)
+                turn_to_relative_angle(driver, bno_sensor_instance, angle_to_turn_to_best_red, turn_speed=90, angle_tolerance_deg=15)
                 driver.motor_stop_brake()
                 time.sleep(0.5)
                 aligned = True
@@ -439,14 +439,14 @@ if __name__ == "__main__":
                     current_heading = bno_sensor.get_heading()
                     if current_heading is not None:
                         angle_to_turn = (target_center_angle - current_heading + 180 + 360) % 360 - 180
-                        turn_to_relative_angle(driver, bno_sensor, angle_to_turn, turn_speed=60, angle_tolerance_deg=10)
+                        turn_to_relative_angle(driver, bno_sensor, angle_to_turn, turn_speed=90, angle_tolerance_deg=10)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
                         print("中心方向への向き調整が完了しました。")
                         
                         print("  --> 中心方向へ向いた後、1秒間前進します。")
                         # driver.petit_forward に変更
-                        driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
+                        driver.petit_forward(10) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
                 # 最初に20度回転してから検知を開始
                 print("  --> 前進判断のため、20度回転します...")
-                turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                 driver.motor_stop_brake()
                 time.sleep(0.5)
 
@@ -511,7 +511,7 @@ if __name__ == "__main__":
                     if current_red_percentage_scan >= 0.05: # 5%閾値
                         print(f"  --> 赤色を{0.05:.0%}以上検出！この方向に1秒前進します。")
                         # driver.petit_forward に変更
-                        driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
+                        driver.petit_forward(4) # 前進速度を左右の引数に渡す (例: 90)
                         time.sleep(1) # 1秒間前進
                         driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -521,7 +521,7 @@ if __name__ == "__main__":
                     # 1回も検知せず、かつ最後の回転でなければ次の回転 (360度スキャン)
                     if i < (360 // 20) - 1: 
                         print(f"  --> スキャン中: さらに20度回転...")
-                        turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                        turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                         driver.motor_stop_brake()
                         time.sleep(0.5)
 
@@ -553,14 +553,14 @@ if __name__ == "__main__":
                                 current_heading_before_adjust = bno_sensor.get_heading()
                                 if current_heading_before_adjust is not None:
                                     angle_to_turn = (target_heading_for_second_best - current_heading_before_adjust + 180 + 360) % 360 - 180
-                                    turn_to_relative_angle(driver, bno_sensor, angle_to_turn, turn_speed=60, angle_tolerance_deg=10)
+                                    turn_to_relative_angle(driver, bno_sensor, angle_to_turn, turn_speed=90, angle_tolerance_deg=10)
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
                                     print("向き調整が完了しました。")
 
                                     print("  --> 調整後、1秒間前進します。")
                                     # driver.petit_forward に変更
-                                    driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
+                                    driver.petit_forward(4) # 前進速度を左右の引数に渡す (例: 90)
                                     time.sleep(1) # 1秒間前進
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
@@ -571,7 +571,7 @@ if __name__ == "__main__":
                                     post_forward_scan_detected_angles = []
                                     # 最初に20度回転してから検知を開始 (新たなスキャンサイクル)
                                     print("  --> 追加スキャンのため、20度回転します...")
-                                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                                     driver.motor_stop_brake()
                                     time.sleep(0.5)
 
@@ -598,7 +598,7 @@ if __name__ == "__main__":
                                         
                                         if j < (360 // 20) - 1:
                                             print(f"  --> 追加スキャン中: さらに20度回転...")
-                                            turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                                            turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                                             driver.motor_stop_brake()
                                             time.sleep(0.5)
                                     
@@ -609,7 +609,7 @@ if __name__ == "__main__":
                                             current_heading_at_post_forward_end = bno_sensor.get_heading()
                                             if current_heading_at_post_forward_end is not None:
                                                 angle_to_turn_post_forward = (target_center_angle_post_forward - current_heading_at_post_forward_end + 180 + 360) % 360 - 180
-                                                turn_to_relative_angle(driver, bno_sensor, angle_to_turn_post_forward, turn_speed=60, angle_tolerance_deg=15)
+                                                turn_to_relative_angle(driver, bno_sensor, angle_to_turn_post_forward, turn_speed=90, angle_tolerance_deg=15)
                                                 driver.motor_stop_brake()
                                                 time.sleep(0.5)
                                                 print("追加スキャン後の中心方向への向き調整が完了しました。")
@@ -636,7 +636,7 @@ if __name__ == "__main__":
                     
                     # 最初に20度回転してから検知を開始 (2回目のスキャン)
                     print("  --> 2回目スキャンのため、20度回転します...")
-                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                    turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                     driver.motor_stop_brake()
                     time.sleep(0.5)
 
@@ -665,7 +665,7 @@ if __name__ == "__main__":
                         # 最後の回転でなければ次の回転 (360度スキャン)
                         if i < (360 // 20) - 1: 
                             print(f"  --> 2回目スキャン中: さらに20度回転...")
-                            turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=60, angle_tolerance_deg=15)
+                            turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                             driver.motor_stop_brake()
                             time.sleep(0.5)
 
@@ -677,14 +677,14 @@ if __name__ == "__main__":
                             current_heading_before_adjust_second = bno_sensor.get_heading()
                             if current_heading_before_adjust_second is not None:
                                 angle_to_turn_second = (target_center_angle_second_scan - current_heading_before_adjust_second + 180 + 360) % 360 - 180
-                                turn_to_relative_angle(driver, bno_sensor, angle_to_turn_second, turn_speed=60, angle_tolerance_deg=10)
+                                turn_to_relative_angle(driver, bno_sensor, angle_to_turn_second, turn_speed=90, angle_tolerance_deg=10)
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
                                 print("中心方向への向き調整が完了しました。")
                                 
                                 print("  --> 中心方向へ向いた後、1秒間前進します。")
                                 # ★変更点: following.follow_forward を driver.petit_forward に変更
-                                driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
+                                driver.petit_forward(8) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
@@ -708,7 +708,7 @@ if __name__ == "__main__":
                 if not any_red_detected_and_moved_this_scan: # もし最初のスキャンで全く前進しなかった場合のみ
                     print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
                     # ★変更点: following.follow_forward を driver.petit_forward に変更
-                    driver.petit_forward(90, 90) # 前進速度を左右の引数に渡す (例: 90)
+                    driver.petit_forward(10) # 前進速度を左右の引数に渡す (例: 90)
                     time.sleep(3) # 3秒間前進
                     driver.motor_stop_brake()
                     time.sleep(0.5)
