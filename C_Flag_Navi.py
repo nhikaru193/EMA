@@ -19,6 +19,8 @@ class FN:
         self.TARGET_SHAPES = ["三角形", "長方形"] #, "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 18.0
         self.turn_speed = 45
+        self.F_lat = 35.920324666
+        self.F_lon = 139.9112945
         #self.flag_lat = 35.920324666
         #self.flag_lon = 139.9112945
 
@@ -137,7 +139,16 @@ class FN:
                                     self.driver.changing_forward(90, 0)
                                     time.sleep(0.5)
                                     print(" 回避行動を終了しました。探索を再開します。")
-                                    heading_history.clear() # スタック解消後は履歴をクリア
+                                    heading_history.clear()
+                                    
+                                    self.driver.cleanup()
+                                    self.pi.bb_serial_read_close(self.RX_PIN)
+                                    self.pi.stop()
+
+                                    GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
+                                    GPS_StoF.run()
+                                    
+
                              # ===== スタック判定処理ここまで =====
                             
                             time.sleep(0.5) #7/16追加
@@ -145,7 +156,7 @@ class FN:
                             target_flag = self.find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
                             rotation_count += 1
-                                
+                            
                 # 回転しても見つからなかったら、このターゲットは諦めて次の輪郭検知　ここむずい　by中川
                 if target_flag is None:
                     print(f"探索しましたが [{target_name}] は見つかりませんでした。次の目標に移ります。")
