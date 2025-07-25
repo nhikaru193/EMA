@@ -111,7 +111,7 @@ class GDA:
                     b_time = time.time()
                     deltaa_time = b_time - a_time
                     if deltaa_time > 10:
-                        deltaa_heading = ((heading - start_heading + 180) % 360 - 180)
+                        deltaa_heading = abs((heading - start_heading + 180) % 360 - 180)
                         if deltaa_heading < 10:
                             break
                     heading_list.append(heading)
