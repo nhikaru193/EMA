@@ -64,7 +64,7 @@ class FlagDetector:
         輪郭から頂点数や重心・垂心の一致度を用いて図形を判別する。
         """
         shape_name = "不明"
-        epsilon = 0.003 * cv2.arcLength(contour, True)
+        epsilon = 0.02 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         vertices = len(approx)
 
