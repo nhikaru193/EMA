@@ -139,8 +139,27 @@ class FlagDetector:
 
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
             _, binary_roi = cv2.threshold(gray_roi, 60, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
+
+            # --- 黒領域内部の白 ---
+
+            # 1. マスク画像を作成 (ROIと同じサイズの真っ黒な画像)
+            mask = np.zeros(roi_img.shape[:2], dtype="uint8")
+
+            # 2. 黒領域の輪郭座標をROIのローカル座標に変換
+            shifted_contour = region_contour - (x, y)
+
+            # 3. マスク画像に、実際の黒領域の形を白で塗りつぶして描画
+            cv2.drawContours(mask, [shifted_contour], -1, 255, -1)
+
+            # 4. 元の二値化画像とマスクをAND演算し、黒領域内のみの白い部分を抽出
+            masked_binary_roi = cv2.bitwise_and(binary_roi, binary_roi, mask=mask)
+
+            # 5. マスク処理された画像から輪郭を探す
+            contours_in_roi, _ = cv2.findContours(masked_binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
-            contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # --- 追加・変更はここまで ---
+            
+            #contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             shapes_in_flag = []
             for cnt in contours_in_roi:
