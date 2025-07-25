@@ -279,6 +279,7 @@ if __name__ == '__main__':
 
     # --- メインクラスのインスタンスを作成し、実行 ---
     # 3. FlagNavigatorにdriverとbnoを渡してインスタンス化
+    flag_location = None
     robot = FN(bno, flag_location)
 
     try:
