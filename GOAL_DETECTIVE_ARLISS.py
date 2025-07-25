@@ -67,77 +67,80 @@ class GDA:
         max_ratio = max(red_ratios)
         if max_ratio < 0.08:
             print("❌ 赤色が検出されません（全ブロックで密度低）")
-            return None  # 全体的に赤が少なすぎる場合
+            return -1  # 全体的に赤が少なすぎる場合
         else:
             print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
             return red_ratios.index(max_ratio) + 1
 
     def run(self):
-        heading_list = deque(maxlen=4)
-        percent_list = deque(maxlen=4)
-        turn_counter = 4
-        start_heading = self.bno.get_heading()
-        a_time = time.time()
-        #ゴール内部からのスタートであることに注意
-        #以下のwhile True構文はコーンの情報把握
-        while True:
-            frame = self.picam2.capture_array()
-            time.sleep(0.2)
-            percentage = self.get_percentage(frame)
-            time.sleep(0.2)
-            number = self.get_block_number_by_density(frame)
-            time.sleep(0.2)
-            if number == 1:
-                self.driver.petit_left(0, 100)
-                self.driver.motor_stop_brake()
-                time.sleep(0.6)
-            elif number == 2:
-                self.driver.petit_left(0, 100)
-                self.driver.motor_stop_brake()
-                time.sleep(0.6)
-            elif number == 4:
-                self.driver.petit_right(0, 100)
-                self.driver.motor_stop_brake()
-                time.sleep(0.6)
-            elif number == 5:
-                self.driver.petit_right(0, 100)
-                self.driver.motor_stop_brake()
-                time.sleep(0.6)
-            #以下は中央にある場合であるので情報を記憶し格納する
-            else:
-                heading = self.bno.get_heading()
-                #スタート位置との差が小さければループを抜ける
-                b_time = time.time()
-                deltaa_time = b_time - a_time
-                if deltaa_time > 10:
-                    deltaa_heading = ((heading - start_heading + 180) % 360 - 180)
-                    if deltaa_heading < 10:
-                        break
-                heading_list.append(heading)
-                percent_list.append(percentage)
-                turn_counter = turn_counter - 1
-                #すべてのコーンを格納済み
-                if turn_counter == 0:
-                    print("すべてのコーンの割合と方位角の情報を保持しました")
-                #次のコーンを検知するまで回頭
-                print("コーンの探索を行います")
-                start_time = time.time()
-                while True:
+        try:
+            heading_list = deque(maxlen=4)
+            percent_list = deque(maxlen=4)
+            turn_counter = 4
+            start_heading = self.bno.get_heading()
+            a_time = time.time()
+            #ゴール内部からのスタートであることに注意
+            #以下のwhile True構文はコーンの情報把握
+            while True:
+                frame = self.picam2.capture_array()
+                time.sleep(0.2)
+                percentage = self.get_percentage(frame)
+                time.sleep(0.2)
+                number = self.get_block_number_by_density(frame)
+                time.sleep(0.2)
+                if number == 1:
                     self.driver.petit_left(0, 100)
                     self.driver.motor_stop_brake()
                     time.sleep(0.6)
-                    current_time = time.time()
-                    frame = self.picam2.capture_array()
-                    number = self.get_block_number_by_density(frame)
-                    if number == 2:
-                        print("次のコーンを検知しました。")
-                        break
-                    elif number == 1:
-                        print("次のコーンを検知しました。")
-                        break
-                    delta_time = current_time - start_time
-                    if delta_time > 4:
-                        if number == 3:
+                elif number == 2:
+                    self.driver.petit_left(0, 100)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.6)
+                elif number == 4:
+                    self.driver.petit_right(0, 100)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.6)
+                elif number == 5:
+                    self.driver.petit_right(0, 100)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.6)
+                #以下は中央にある場合であるので情報を記憶し格納する
+                else:
+                    heading = self.bno.get_heading()
+                    #スタート位置との差が小さければループを抜ける
+                    b_time = time.time()
+                    deltaa_time = b_time - a_time
+                    if deltaa_time > 10:
+                        deltaa_heading = ((heading - start_heading + 180) % 360 - 180)
+                        if deltaa_heading < 10:
+                            break
+                    heading_list.append(heading)
+                    percent_list.append(percentage)
+                    turn_counter = turn_counter - 1
+                    #すべてのコーンを格納済み
+                    if turn_counter == 0:
+                        print("すべてのコーンの割合と方位角の情報を保持しました")
+                    #次のコーンを検知するまで回頭
+                    print("コーンの探索を行います")
+                    start_time = time.time()
+                    while True:
+                        self.driver.petit_left(0, 100)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.6)
+                        current_time = time.time()
+                        frame = self.picam2.capture_array()
+                        number = self.get_block_number_by_density(frame)
+                        if number == 2:
                             print("次のコーンを検知しました。")
                             break
-            
+                        elif number == 1:
+                            print("次のコーンを検知しました。")
+                            break
+                        delta_time = current_time - start_time
+                        if delta_time > 4:
+                            if number == 3:
+                                print("次のコーンを検知しました。")
+                                break
+        finally:
+            self.driver.cleanup()
+            self.picam2.close()
