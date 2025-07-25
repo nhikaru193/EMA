@@ -144,7 +144,7 @@ class FN:
                                     self.pi.bb_serial_read_close(self.RX_PIN)
                                     self.pi.stop()
 
-                                    GPS_StoF = GPS(bno, goal_location = [self.flag_location[0], self.flag_location[1]])
+                                    GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
                                     GPS_StoF.run()
                                     
 
