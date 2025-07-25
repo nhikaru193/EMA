@@ -105,7 +105,7 @@ class GDA:
                     self.driver.motor_stop_brake()
                     time.sleep(0.6)
                 #以下は中央にある場合であるので情報を記憶し格納する
-                else:
+                elif number == 3:
                     heading = self.bno.get_heading()
                     #スタート位置との差が小さければループを抜ける
                     b_time = time.time()
