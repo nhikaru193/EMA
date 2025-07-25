@@ -689,7 +689,7 @@ if __name__ == "__main__":
                             second_scan_detected_angles.append(current_scan_heading_for_second)
 
                         # 最後の回転でなければ次の回転 (360度スキャン)
-                        if i < (360 // 20) - 1: 
+                        if i < (360 // 20) - 1:
                             print(f"  --> 2回目スキャン中: さらに20度回転...")
                             turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                             driver.motor_stop_brake()
