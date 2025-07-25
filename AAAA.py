@@ -36,7 +36,6 @@ def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
 
-
 #BNO055の初期設定
 bno = BNO055()
 bno.begin()
@@ -51,7 +50,6 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
-
 
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
