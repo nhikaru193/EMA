@@ -437,7 +437,7 @@ if __name__ == "__main__":
                 # perform_final_scan_and_terminate の戻り値が True ならば、ここで continue
                 # ★変更点: perform_final_scan_and_terminateの再帰呼び出しを処理するために、if文を修正
                 while True: # 最終確認スキャンが成功するまで繰り返すためのループ
-                    if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
+                    if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40):
                         print("最終確認スキャンが再実行されます（40%検出で即座に180度回転前進、または4つ検知条件）。")
                         # Trueが返されたので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
                         continue
@@ -723,7 +723,7 @@ if __name__ == "__main__":
             
             # ★変更点: perform_final_scan_and_terminateがTrueを返した場合に、再度同じ関数を呼び出す
             while True:
-                if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
+                if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40):
                     # Trueが返された（40%検出で即時移動、または4つ検知条件）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
                     print("最終確認スキャン条件達成（40%検出で即時移動、または4つ検知）。最終確認スキャンを再実行します。")
                     continue
