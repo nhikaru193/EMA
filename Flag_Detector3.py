@@ -159,7 +159,7 @@ class FlagDetector:
             
             """
             
-            #contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours_in_roi, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             shapes_in_flag = []
             for cnt in contours_in_roi:
