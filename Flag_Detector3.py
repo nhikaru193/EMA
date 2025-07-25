@@ -11,7 +11,7 @@ class FlagDetector:
     重心・垂心の一致度を利用して、より高精度に図形を識別する。
     """
 
-    def __init__(self, width=640, height=480, min_black_area=1000, triangle_tolerance=0.3):
+    def __init__(self, width=640, height=480, min_black_area=500, triangle_tolerance=0.3):
         """
         コンストラクタ（初期化処理）
         Args:
@@ -121,7 +121,7 @@ class FlagDetector:
         # --- 1. 黒い領域を特定 ---
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 40]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
+        upper_black = np.array([180, 255, 30]) # この値は環境に応じて調整　60とかにしたら明度上がって、背景の森も読み取ってしまう
         black_mask = cv2.inRange(hsv, lower_black, upper_black)
         kernel = np.ones((5, 5), np.uint8)
         black_mask = cv2.morphologyEx(black_mask, cv2.MORPH_CLOSE, kernel)
@@ -138,7 +138,7 @@ class FlagDetector:
             roi_img = img[y:y+h, x:x+w]
 
             gray_roi = cv2.cvtColor(roi_img, cv2.COLOR_RGB2GRAY)
-            _, binary_roi = cv2.threshold(gray_roi, 60, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
+            _, binary_roi = cv2.threshold(gray_roi, 70, 255, cv2.THRESH_BINARY) #80にすると、グレーを読み取る。一方で120などにすると、黒領域の白飛び部分を検出するとがある
 
             # --- 黒領域内部の白 ---
 
