@@ -83,9 +83,7 @@ class GDA:
             #以下のwhile True構文はコーンの情報把握
             while True:
                 frame = self.picam2.capture_array()
-                time.sleep(0.2)
                 percentage = self.get_percentage(frame)
-                time.sleep(0.2)
                 number = self.get_block_number_by_density(frame)
                 time.sleep(0.2)
                 if number == 1:
@@ -141,6 +139,10 @@ class GDA:
                             if number == 3:
                                 print("次のコーンを検知しました。")
                                 break
+            #ここから中央への移動を行う
+            if 
+
+        
         finally:
             self.driver.cleanup()
             self.picam2.close()
