@@ -14,6 +14,11 @@ class GDA:
         self,
         bno: BNO055
     ):
+        self.driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,
+            PWMB=19, BIN1=16, BIN2=26,
+            STBY=21
+        )
         self.bno = bno
         self.picam2 = Picamera2()
         config = self.picam2.create_still_configuration(main={"size": (320, 480)})
@@ -67,7 +72,7 @@ class GDA:
             print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
             return red_ratios.index(max_ratio) + 1
 
-    def run():
+    def run(self):
         heading_list = deque(maxlen=4)
         percent_list = deque(maxlen=4)
         turn_counter = 4
@@ -122,6 +127,8 @@ class GDA:
                     self.driver.motor_stop_brake()
                     time.sleep(0.6)
                     current_time = time.time()
+                    frame = self.picam2.capture_array()
+                    number = self.get_block_number_by_density(frame)
                     if number == 2:
                         print("次のコーンを検知しました。")
                         break
