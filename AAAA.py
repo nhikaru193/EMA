@@ -66,7 +66,7 @@ AVOIDANCE.run()
 GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
 GPS_StoF.run()
 
-FLAG = FN(bno) #self.F_lat, self.F_lon がいます。設定してくれ
+FLAG = FN(bno, flag_location = [, ]) 
 FLAG.run()
 """
 SERVO = SM(6)
