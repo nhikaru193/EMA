@@ -188,19 +188,18 @@ def calculate_angle_average(angles_deg):
 def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
     """
     ローバーを20度ずつ360度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
-    最終的にmin_red_detections_to_terminate個以上の赤色を検知し、
-    かつhigh_red_threshold以上の赤色を一度でも検知した場合、180度回転して前進し、Trueを返します。
-    それ以外の場合はFalseを返します。
+    - 40%以上の赤色を検知した場合、即座に180度回転して前進し、Trueを返します。
+    - それ以外で、15%以上の赤色を4か所以上検知した場合もTrueを返しますが、移動は行いません。
+    - どちらの条件も満たさない場合はFalseを返します。
     """
-    print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で180度回転前進) ===")
+    print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で即座に180度回転前進) ===")
     initial_heading = bno_sensor_instance.get_heading()
     if initial_heading is None:
         print("警告: 最終確認スキャン開始時に方位が取得できませんでした。")
         return False
 
     final_scan_detected_angles = []
-    high_red_percentage_detected = False # 40%以上の赤色を検出したかどうかのフラグ
-
+    
     print(f"  初回回転: {turn_angle_step}度...")
     turn_to_relative_angle(driver, bno_sensor_instance, turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
     
@@ -232,22 +231,31 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
 
         print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2%}")
 
+        # ★追加: 40%以上の赤色を検知したら即座に180度回転して前進し、関数を終了
+        if overall_red_ratio >= high_red_threshold: # 40%以上の赤色を検出
+            print(f"\n  --> **高い赤色割合 ({high_red_threshold:.0%}) を検出しました！即座に180度回転して前進します。**")
+            turn_to_relative_angle(driver, bno_sensor_instance, 180, turn_speed=90, angle_tolerance_deg=15)
+            driver.motor_stop_brake()
+            time.sleep(0.5)
+            
+            driver.petit_petit(4) # 前進速度を調整
+            time.sleep(2) # 2秒間前進
+            driver.motor_stop_brake()
+            time.sleep(0.5)
+            print("  --> 180度回転して前進が完了しました。最終確認スキャンを最初から再開します。")
+            return True # 即座にTrueを返して、メインループでこの関数を再呼び出しさせる
+
         if overall_red_ratio >= final_threshold: # 15%以上の赤色を検出
             print(f"  --> 赤色を{final_threshold:.0%}以上検出！方向を記録します。")
             final_scan_detected_angles.append(current_scan_heading)
         
-        if overall_red_ratio >= high_red_threshold: # 40%以上の赤色を検出
-            print(f"  --> 高い赤色割合 ({high_red_threshold:.0%}) を検出しました！")
-            high_red_percentage_detected = True # フラグを立てる
-
         driver.motor_stop_brake()
         time.sleep(0.5)
 
-    # 最終的な判定ロジック
-    if len(final_scan_detected_angles) >= min_red_detections_to_terminate and high_red_percentage_detected:
-        print(f"\n  --> 最終確認スキャンで{min_red_detections_to_terminate}ヶ所以上の赤色を検出し、かつ{high_red_threshold:.0%}以上の赤色も検出しました。")
+    # スキャンが完了しても40%以上の検出がなかった場合、通常の4箇所検知ロジック
+    if len(final_scan_detected_angles) >= min_red_detections_to_terminate:
+        print(f"\n  --> 最終確認スキャンで{min_red_detections_to_terminate}ヶ所以上の赤色を検出しました ({len(final_scan_detected_angles)}ヶ所)。")
         
-        # 検出された赤色の中心方向への調整（後退時と同じく実施）
         target_center_angle = calculate_angle_average(final_scan_detected_angles)
         if target_center_angle is not None:
             print(f"  --> 検出された赤色の中心 ({target_center_angle:.2f}度) へ向きを調整します。")
@@ -260,23 +268,11 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
                 print("  --> 中心方向への向き調整が完了しました。")
             else:
                 print("警告: 最終スキャン後の中心回頭時に方位が取得できませんでした。")
-
-        # ★変更点: 180度回転して前進する処理
-        print("\n  --> 条件を満たしたため、180度回転して前進します。")
-        turn_to_relative_angle(driver, bno_sensor_instance, 180, turn_speed=90, angle_tolerance_deg=15)
-        driver.motor_stop_brake()
-        time.sleep(0.5)
         
-        driver.petit_petit(8) # 前進速度を調整
-        time.sleep(2) # 2秒間前進
-        driver.motor_stop_brake()
-        time.sleep(0.5)
-        print("  --> 180度回転して前進が完了しました。")
-        
-        print("  --> 最終確認スキャンを最初から再開します。")
-        return True # メインループに戻り、最終確認スキャンを再開するシグナル
+        print("  --> 4ヶ所検知の条件は満たしましたが、40%以上の高割合検出はなかったため、そのまま次の走行サイクルに進みます。")
+        return False # 4箇所検知だけでは最終確認スキャンを繰り返さない
     else:
-        print(f"\n=== 最終確認スキャンが完了しました。条件を満たしませんでした (検出箇所: {len(final_scan_detected_angles)}ヶ所, 高割合検出: {high_red_percentage_detected})。 ===")
+        print(f"\n=== 最終確認スキャンが完了しました。条件を満たしませんでした (検出箇所: {len(final_scan_detected_angles)}ヶ所)。 ===")
         return False
 
 # --- 初期アライメントスキャン関数 (270度スキャンは維持) ---
@@ -442,7 +438,7 @@ if __name__ == "__main__":
                 # ★変更点: perform_final_scan_and_terminateの再帰呼び出しを処理するために、if文を修正
                 while True: # 最終確認スキャンが成功するまで繰り返すためのループ
                     if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                        print("最終確認スキャンにより4つ以上の赤色を検知し、高割合検出後、180度回転して前進しました。最終確認スキャンを再開します。")
+                        print("最終確認スキャンが再実行されます（40%検出で即座に180度回転前進、または4つ検知条件）。")
                         # Trueが返されたので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
                         continue
                     else:
@@ -728,16 +724,15 @@ if __name__ == "__main__":
             # ★変更点: perform_final_scan_and_terminateがTrueを返した場合に、再度同じ関数を呼び出す
             while True:
                 if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                    # Trueが返された（条件を満たして180度回転して前進した）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
-                    print("最終確認スキャン条件達成、180度回転して前進。最終確認スキャンを再実行します。")
+                    # Trueが返された（40%検出で即時移動、または4つ検知条件）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
+                    print("最終確認スキャン条件達成（40%検出で即時移動、または4つ検知）。最終確認スキャンを再実行します。")
                     continue
                 else:
-                    # Falseが返された（条件を満たさなかった）ので、このループを抜けてメインループの続きへ
+                    # Falseが返された（どちらの条件も満たさなかった）ので、このループを抜けてメインループの続きへ
                     print("最終確認スキャンが条件を満たしませんでした。次の走行サイクルに進みます。")
                     break
             
             # 最終確認スキャンが条件を満たさなかった場合、メインループの続き（前進など）を行う
-            # ここに5秒前進後の処理（アライメントから再開）を移動させる
             if not any_red_detected_and_moved_this_scan and len(initial_scan_detected_angles) == 0: # 最初のスキャンで全く前進せず、かつ初期アライメントでも赤色を検知しなかった場合のみ
                 print("  --> 赤色を検出しなかったため、3秒間前進し、再度アライメントから開始します。")
                 # ★変更点: following.follow_forward を driver.petit_petit に変更
