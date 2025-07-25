@@ -11,7 +11,7 @@ class FlagDetector:
     重心・垂心の一致度を利用して、より高精度に図形を識別する。
     """
 
-    def __init__(self, width=640, height=480, min_black_area=500, triangle_tolerance=0.3):
+    def __init__(self, width=640, height=480, min_black_area=500, triangle_tolerance=0.2):
         """
         コンストラクタ（初期化処理）
         Args:
@@ -64,7 +64,7 @@ class FlagDetector:
         輪郭から頂点数や重心・垂心の一致度を用いて図形を判別する。
         """
         shape_name = "不明"
-        epsilon = 0.01 * cv2.arcLength(contour, True)
+        epsilon = 0.003 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         vertices = len(approx)
 
