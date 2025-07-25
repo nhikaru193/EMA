@@ -188,15 +188,16 @@ def calculate_angle_average(angles_deg):
 def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
     """
     ローバーを20度ずつ360度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
-    - 40%以上の赤色を検知した場合、即座に180度回転して前進し、Trueを返します。
-    - それ以外で、15%以上の赤色を4か所以上検知した場合もTrueを返しますが、移動は行いません。
-    - どちらの条件も満たさない場合はFalseを返します。
+    - 40%以上の赤色を検知した場合、即座に180度回転して前進し、Trueを返します（最終確認スキャンを再開）。
+    - スキャン終了後、15%以上の赤色をmin_red_detections_to_terminate個以上検知した場合、Falseを返します（プログラム終了指示）。
+    - どちらの条件も満たさない場合はNoneを返します（次の走行サイクルへ）。
     """
     print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で即座に180度回転前進) ===")
     initial_heading = bno_sensor_instance.get_heading()
     if initial_heading is None:
         print("警告: 最終確認スキャン開始時に方位が取得できませんでした。")
-        return False
+        # エラー発生時はNoneを返し、メインループで適切な処理を行う
+        return None 
 
     final_scan_detected_angles = []
     
@@ -252,7 +253,7 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
         driver.motor_stop_brake()
         time.sleep(0.5)
 
-    # スキャンが完了しても40%以上の検出がなかった場合、通常の4箇所検知ロジック
+    # スキャンが完了しても40%以上の検出がなかった場合
     if len(final_scan_detected_angles) >= min_red_detections_to_terminate:
         print(f"\n  --> 最終確認スキャンで{min_red_detections_to_terminate}ヶ所以上の赤色を検出しました ({len(final_scan_detected_angles)}ヶ所)。")
         
@@ -269,11 +270,11 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
             else:
                 print("警告: 最終スキャン後の中心回頭時に方位が取得できませんでした。")
         
-        print("  --> 4ヶ所検知の条件は満たしましたが、40%以上の高割合検出はなかったため、そのまま次の走行サイクルに進みます。")
-        return False # 4箇所検知だけでは最終確認スキャンを繰り返さない
+        print("  --> 4ヶ所検知の条件（ただし40%未満）を満たしたため、ミッションを終了します。")
+        return False # プログラム終了を指示するFalse
     else:
         print(f"\n=== 最終確認スキャンが完了しました。条件を満たしませんでした (検出箇所: {len(final_scan_detected_angles)}ヶ所)。 ===")
-        return False
+        return None # 次の走行サイクルに進むことを指示するNone
 
 # --- 初期アライメントスキャン関数 (270度スキャンは維持) ---
 def perform_initial_alignment_scan(driver, bno_sensor_instance, picam2_instance, turn_angle_step=20, alignment_threshold=0.10):
@@ -435,14 +436,17 @@ if __name__ == "__main__":
                 print(f"\n=== 初期アライメントスキャンで{len(initial_scan_detected_angles)}ヶ所の赤色を検知しました。最終確認スキャンへスキップします。 ===")
                 # perform_final_scan_and_terminate を呼び出し、その結果に基づいてループを終了
                 # perform_final_scan_and_terminate の戻り値が True ならば、ここで continue
-                # ★変更点: perform_final_scan_and_terminateの再帰呼び出しを処理するために、if文を修正
+                # False ならばプログラム終了、None ならばメインループの次のサイクルへ
                 while True: # 最終確認スキャンが成功するまで繰り返すためのループ
-                    if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                        print("最終確認スキャンが再実行されます（40%検出で即座に180度回転前進、または4つ検知条件）。")
-                        # Trueが返されたので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
-                        continue
-                    else:
-                        print("最終確認スキャンは完了しましたが、ミッション終了条件を満たしませんでした。メインループの通常フローに戻ります。")
+                    final_scan_result = perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40)
+                    if final_scan_result is True:
+                        print("最終確認スキャン条件達成（40%検出で即座に180度回転前進）。最終確認スキャンを再実行します。")
+                        continue # Trueが返されたので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
+                    elif final_scan_result is False:
+                        print("最終確認スキャンが完了し、プログラム終了条件を満たしました。ミッションを終了します。")
+                        sys.exit(0) # プログラムを終了
+                    else: # final_scan_result is None
+                        print("最終確認スキャンは条件を満たしませんでした。メインループの通常フローに戻ります。")
                         break # 最終確認スキャンが条件を満たさなかった場合はこのループを抜けて、メインループの続きへ
                 continue # このouter continueは、最終確認スキャンが条件を満たさなかった場合に、メインループの最初に戻るためのもの
             # --- 初期アライメントスキップ処理ここまで ---
@@ -657,12 +661,12 @@ if __name__ == "__main__":
                     second_scan_detected_angles = [] # 2回目のスキャンで検出された角度を格納するリスト
                     
                     # 最初に20度回転してから検知を開始 (2回目のスキャン)
-                    print("  --> 2回目スキャンのため、20度回転します...")
+                    print("  --> 2回目スキャンのため、20度回転します...")
                     turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                     driver.motor_stop_brake()
                     time.sleep(0.5)
 
-                    for i in range(360 // 20): # 2回目の360度スキャン 
+                    for i in range(360 // 20): # 2回目の360度スキャン 
                         current_scan_heading_for_second = bno_sensor.get_heading()
                         if current_scan_heading_for_second is None:
                             print("警告: 2回目スキャン中に方位が取得できませんでした。スキップします。")
@@ -681,12 +685,12 @@ if __name__ == "__main__":
                         
                         # 2回目のスキャンでは、赤色を検出したらリストに追加
                         if current_red_percentage_second_scan >= 0.05: # 同じく5%閾値で検知
-                            print(f"  --> 2回目スキャンで赤色を{0.05:.0%}以上検出！方向を記録します。")
+                            print(f"  --> 2回目スキャンで赤色を{0.05:.0%}以上検出！方向を記録します。")
                             second_scan_detected_angles.append(current_scan_heading_for_second)
 
                         # 最後の回転でなければ次の回転 (360度スキャン)
-                        if i < (360 // 20) - 1: 
-                            print(f"  --> 2回目スキャン中: さらに20度回転...")
+                        if i < (360 // 20) - 1: 
+                            print(f"  --> 2回目スキャン中: さらに20度回転...")
                             turn_to_relative_angle(driver, bno_sensor, 20, turn_speed=90, angle_tolerance_deg=15)
                             driver.motor_stop_brake()
                             time.sleep(0.5)
@@ -704,13 +708,13 @@ if __name__ == "__main__":
                                 time.sleep(0.5)
                                 print("中心方向への向き調整が完了しました。")
                                 
-                                print("  --> 中心方向へ向いた後、1秒間前進します。")
+                                print("  --> 中心方向へ向いた後、1秒間前進します。")
                                 # ★変更点: following.follow_forward を driver.petit_petit に変更
                                 driver.petit_petit(8) # 前進速度を左右の引数に渡す (例: 90)
                                 time.sleep(1) # 1秒間前進
                                 driver.motor_stop_brake()
                                 time.sleep(0.5)
-                                print("  --> 1秒前進を完了しました。")
+                                print("  --> 1秒前進を完了しました。")
                             else:
                                 print("警告: 2回目スキャン後の回頭時に現在方位が取得できませんでした。")
                         else:
@@ -723,14 +727,19 @@ if __name__ == "__main__":
             
             # ★変更点: perform_final_scan_and_terminateがTrueを返した場合に、再度同じ関数を呼び出す
             while True:
-                if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                    # Trueが返された（40%検出で即時移動、または4つ検知条件）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
-                    print("最終確認スキャン条件達成（40%検出で即時移動、または4つ検知）。最終確認スキャンを再実行します。")
-                    continue
-                else:
-                    # Falseが返された（どちらの条件も満たさなかった）ので、このループを抜けてメインループの続きへ
-                    print("最終確認スキャンが条件を満たしませんでした。次の走行サイクルに進みます。")
-                    break
+                final_scan_result = perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40)
+                if final_scan_result is True:
+                    # 40%検出で即時移動が発生した場合
+                    print("最終確認スキャン条件達成（40%検出で即座に180度回転前進）。最終確認スキャンを再実行します。")
+                    continue # Trueが返されたので、このwhileループを続行し、perform_final_scan_and_terminateを再度実行
+                elif final_scan_result is False:
+                    # 4つ検知条件を満たした場合
+                    print("最終確認スキャンが完了し、プログラム終了条件を満たしました。ミッションを終了します。")
+                    sys.exit(0) # プログラム全体を終了
+                else: # final_scan_result is None
+                    # どちらの条件も満たさなかった場合
+                    print("最終確認スキャンは条件を満たしませんでした。メインループの次の走行サイクルに進みます。")
+                    break # このwhileループを抜けて、メインループの続きへ
             
             # 最終確認スキャンが条件を満たさなかった場合、メインループの続き（前進など）を行う
             if not any_red_detected_and_moved_this_scan and len(initial_scan_detected_angles) == 0: # 最初のスキャンで全く前進せず、かつ初期アライメントでも赤色を検知しなかった場合のみ
