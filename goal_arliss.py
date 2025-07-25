@@ -19,7 +19,7 @@ from BNO055 import BNO055
 # --- BNO055用のラッパークラス (変更なし) ---
 class BNO055Wrapper:
     def __init__(self, adafruit_bno055_sensor):
-        self.sensor = adafa.sensor = adafruit_bno055_sensor
+        self.sensor = adafruit_bno055_sensor
 
     def get_heading(self):
         heading = self.sensor.euler[0]
@@ -189,10 +189,10 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     """
     ローバーを20度ずつ360度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
     最終的にmin_red_detections_to_terminate個以上の赤色を検知し、
-    かつhigh_red_threshold以上の赤色を一度でも検知した場合、後退してTrueを返します。
+    かつhigh_red_threshold以上の赤色を一度でも検知した場合、180度回転して前進し、Trueを返します。
     それ以外の場合はFalseを返します。
     """
-    print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で後退) ===")
+    print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で180度回転前進) ===")
     initial_heading = bno_sensor_instance.get_heading()
     if initial_heading is None:
         print("警告: 最終確認スキャン開始時に方位が取得できませんでした。")
@@ -247,6 +247,7 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
     if len(final_scan_detected_angles) >= min_red_detections_to_terminate and high_red_percentage_detected:
         print(f"\n  --> 最終確認スキャンで{min_red_detections_to_terminate}ヶ所以上の赤色を検出し、かつ{high_red_threshold:.0%}以上の赤色も検出しました。")
         
+        # 検出された赤色の中心方向への調整（後退時と同じく実施）
         target_center_angle = calculate_angle_average(final_scan_detected_angles)
         if target_center_angle is not None:
             print(f"  --> 検出された赤色の中心 ({target_center_angle:.2f}度) へ向きを調整します。")
@@ -260,13 +261,17 @@ def perform_final_scan_and_terminate(driver, bno_sensor_instance, picam2_instanc
             else:
                 print("警告: 最終スキャン後の中心回頭時に方位が取得できませんでした。")
 
-        # ★後退処理
-        print("\n  --> 条件を満たしたため、後退します。")
-        driver.petit_petit(-5) # 後退速度を調整 (負の値を渡す)
-        time.sleep(2) # 2秒間後退
+        # ★変更点: 180度回転して前進する処理
+        print("\n  --> 条件を満たしたため、180度回転して前進します。")
+        turn_to_relative_angle(driver, bno_sensor_instance, 180, turn_speed=90, angle_tolerance_deg=15)
         driver.motor_stop_brake()
         time.sleep(0.5)
-        print("  --> 後退が完了しました。")
+        
+        driver.petit_petit(8) # 前進速度を調整
+        time.sleep(2) # 2秒間前進
+        driver.motor_stop_brake()
+        time.sleep(0.5)
+        print("  --> 180度回転して前進が完了しました。")
         
         print("  --> 最終確認スキャンを最初から再開します。")
         return True # メインループに戻り、最終確認スキャンを再開するシグナル
@@ -437,7 +442,7 @@ if __name__ == "__main__":
                 # ★変更点: perform_final_scan_and_terminateの再帰呼び出しを処理するために、if文を修正
                 while True: # 最終確認スキャンが成功するまで繰り返すためのループ
                     if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                        print("最終確認スキャンにより4つ以上の赤色を検知し、高割合検出後、後退しました。最終確認スキャンを再開します。")
+                        print("最終確認スキャンにより4つ以上の赤色を検知し、高割合検出後、180度回転して前進しました。最終確認スキャンを再開します。")
                         # Trueが返されたので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
                         continue
                     else:
@@ -723,8 +728,8 @@ if __name__ == "__main__":
             # ★変更点: perform_final_scan_and_terminateがTrueを返した場合に、再度同じ関数を呼び出す
             while True:
                 if perform_final_scan_and_terminate(driver, bno_sensor, picam2_instance, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
-                    # Trueが返された（条件を満たして後退した）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
-                    print("最終確認スキャン条件達成、後退。最終確認スキャンを再実行します。")
+                    # Trueが返された（条件を満たして180度回転して前進した）ので、再度perform_final_scan_and_terminateを呼び出すためにループを続ける
+                    print("最終確認スキャン条件達成、180度回転して前進。最終確認スキャンを再実行します。")
                     continue
                 else:
                     # Falseが返された（条件を満たさなかった）ので、このループを抜けてメインループの続きへ
