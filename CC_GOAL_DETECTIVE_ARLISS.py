@@ -140,7 +140,8 @@ class GDA:
                                 print("次のコーンを検知しました。")
                                 break
             #ここから中央への移動を行う
-            if 
+            if len(heading_list) ==3:
+                #三角形の重心計算
 
         
         finally:
