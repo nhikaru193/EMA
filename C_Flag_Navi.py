@@ -14,16 +14,14 @@ from collections import deque
 
 class FN:
     # --- クラスの初期化メソッド ---
-    def __init__(self, bno: BNO055):
+    def __init__(self, bno: BNO055, flag_location):
        
         # --- 設定値 ---
         self.TARGET_SHAPES = ["T字", "十字"] #"三角形", "長方形", "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 30.0
         self.turn_speed = 45
-        self.F_lat = 35.920324666
-        self.F_lon = 139.9112945
-        #self.flag_lat = 35.920324666
-        #self.flag_lon = 139.9112945
+        self.F_lat = flag_location[0]
+        self.F_lon = flag_location[1]
 
         # --- 初期化処理 ---
         self.detector = FlagDetector(triangle_tolerance=0.5)
