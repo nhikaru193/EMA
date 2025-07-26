@@ -5,7 +5,7 @@ import BME280
 import csv
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 200):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 20):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
