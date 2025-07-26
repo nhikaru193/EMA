@@ -33,7 +33,7 @@ try:
     
     """
     print("収納")
-    t = 14
+    t = 12.5
     set_servo_duty(t)
     time.sleep(6)
 
