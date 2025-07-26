@@ -36,6 +36,10 @@ def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
 
+#初期設定
+Flag_location = [,]
+Goal_location = [,]
+
 #BNO055の初期設定
 bno = BNO055()
 bno.begin()
@@ -58,13 +62,13 @@ RELEASE.run()
 LAND = LD(bno) 
 LAND.run()
 
-AVOIDANCE = PA(bno, goal_location = [35.9175612, 139.9087922]) #ok
+AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
+GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
 
-FLAG = FN(bno, flag_location = [, ]) 
+FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
 """
 SERVO = SM(6)
@@ -82,7 +86,7 @@ set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
 
-GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
+GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
