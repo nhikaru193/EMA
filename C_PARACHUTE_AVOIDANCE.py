@@ -137,7 +137,7 @@ class PA:
             print("収納ホルダから脱出します")
             while True:
                 if self.detective_red() is False:
-                    following.follow_forward(self.driver, self.bno, 90, 3)
+                    following.follow_forward(self.driver, self.bno, 90, 1.5)
                     print("脱出を終了します")
                     break
                 else:
