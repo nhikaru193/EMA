@@ -212,7 +212,7 @@ class Flag_B: # 変更: クラス名をより汎用的に
 
 if __name__ == '__main__':
     # 白い紙の上の黒い図形などを検出する場合
-    detector = ShapeInAreaDetector(triangle_tolerance=5.0)
+    detector = Flag_B(triangle_tolerance=5.0)
 
     try:
         detected_data = detector.detect()
