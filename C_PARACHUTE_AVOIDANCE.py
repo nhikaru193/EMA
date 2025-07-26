@@ -189,7 +189,7 @@ class PA:
                     a = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
                     b = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
                     c = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                    if a < 5 and b < 5 and c < 5:
+                    if a < 3 and b < 3 and c < 3:
                         print("スタック判定です")
                         print("スタック離脱を行います")
                         self.driver.changing_right(0, 90)
