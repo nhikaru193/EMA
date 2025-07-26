@@ -21,7 +21,7 @@ class Flag_B: # 変更: クラス名をより汎用的に
 
     # --- 変更: 色・画像処理パラメータを「白領域内の黒図形」検出用に変更 ---
     # 白領域を検出するためのHSV範囲 (彩度が低く、明度が高い)
-    LOWER_OUTER_AREA_HSV = np.array([0, 0, 160])
+    LOWER_OUTER_AREA_HSV = np.array([0, 0, 120])
     UPPER_OUTER_AREA_HSV = np.array([180, 50, 255])
     
     # 領域内の「黒い図形」を抽出するための二値化しきい値
