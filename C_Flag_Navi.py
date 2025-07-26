@@ -122,7 +122,7 @@ class FN:
                                 c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
 
                                 # 2回連続で角度の変化が5度未満ならスタックと判断
-                                if a < 5 and b < 5 and c < 5:
+                                if a < 3 and b < 3 and c < 3:
                                     print("スタックを検知しました！回避行動を開始します。")
                                     # 前後左右に動いてスタックからの脱出を試みる
                                     self.driver.changing_right(0, 90)
