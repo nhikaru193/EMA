@@ -32,16 +32,10 @@ try:
     time.sleep(3)
     
     """
-    print("ほうしゅつ4.0")
-    set_servo_duty(4.0)
+    t = 4
+    print(f"放出デューティ比{t}")
+    set_servo_duty(t)
     time.sleep(6)
-    print("放出5.0")
-    set_servo_duty(5.0)
-    time.sleep(6)
-    print("放出6.0")
-    set_servo_duty(6.0)
-    time.sleep(6)
-    #set_servo_duty(12.5)
     time.sleep(3)
     """
 
