@@ -32,16 +32,10 @@ try:
     time.sleep(3)
     
     """
-    print("逆回転（速い）")
-    #set_servo_duty(4.0)
-    time.sleep(5)
-    set_servo_duty(12.5)
-    time.sleep(3)
-    """
-
-    print("停止")
-    changing_servo_reverse(10, 7.5)
-    """
+    print("収納")
+    t = 14
+    set_servo_duty(t)
+    time.sleep(6)
 
     set
 
