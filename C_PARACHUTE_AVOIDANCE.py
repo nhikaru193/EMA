@@ -188,7 +188,7 @@ class PA:
                     print("スタック判定を行います")
                     a = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
                     b = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                    C = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                    c = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
                     if a < 5 and b < 5 and c < 5:
                         print("スタック判定です")
                         print("スタック離脱を行います")
@@ -283,7 +283,7 @@ class PA:
                 print("前進します")
                 following.follow_forward(self.driver, self.bno, 90, 8)
                 
-        except keyboardInterrupt:
+        except KeyboardInterrupt:
             print("回避行動を中断します")
 
         finally:
