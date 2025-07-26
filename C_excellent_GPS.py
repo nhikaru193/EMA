@@ -156,6 +156,7 @@ class GPS:
 
                 #------簡単なスタック判定の追加-------#
                 heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                print(f"lat:{lat}, lon:{lon}, heading:{heading}")
                 heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
                 if heading is None:
                     print("[WARN] BNO055から方位角を取得できません。リトライします...")
@@ -168,7 +169,7 @@ class GPS:
                     a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
                     b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
                     c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                    if a_delta < 5 and b_delta < 5 and c_delta < 5:
+                    if a_delta < 3 and b_delta < 3 and c_delta < 3:
                         print("スタック判定です")
                         print("スタック離脱を行います")
                         self.driver.changing_right(0, 90)
@@ -188,7 +189,7 @@ class GPS:
                     else:
                         print("長時間のスタックはしていないため、GPS誘導を継続します")
                 #----------------------------#
-        
+                
         except KeyboardInterrupt:
             print("\n[STOP] 手動で停止されました。")
         except Exception as e:
