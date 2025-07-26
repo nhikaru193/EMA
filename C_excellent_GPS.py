@@ -184,6 +184,9 @@ class GPS:
                         self.driver.changing_forward(90, 0)
                         time.sleep(0.5)
                         print("スタック離脱を終了します")
+                        heading_list.clear()
+                    else:
+                        print("長時間のスタックはしていないため、GPS誘導を継続します")
                 #----------------------------#
         
         except KeyboardInterrupt:
