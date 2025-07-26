@@ -108,8 +108,8 @@ class GDN:
                             delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
                         else:
                             print("付近にはコーンを検知できなかったため、再度探索を行います")
-                        if percentage > 15:
-                            print("15%以上の赤面積を検知したため、探索プログラムを終えます")
+                        if percentage > 10:
+                            print("10%以上の赤面積を検知したため、探索プログラムを終えます")
                             break    
                 frame = self.picam2.capture_array()
                 time.sleep(0.2)
