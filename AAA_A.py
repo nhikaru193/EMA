@@ -25,6 +25,7 @@ from C_Flag_Navi import FN
 from C_Servo import SM
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
+import C_GOAL_DETECTIVE_ARLISS
 
 #おそらく未使用のモジュール
 """
@@ -66,10 +67,7 @@ GPS_StoF.run()
 
 FLAG = FN(bno, flag_location = [, ]) 
 FLAG.run()
-"""
-SERVO = SM(6)
-SERVO.run()
-"""
+
 SERVO_PIN = 13  # GPIO13を使用
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SERVO_PIN, GPIO.OUT)
@@ -85,7 +83,12 @@ GPIO.cleanup()
 GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
 GPS_FtoG.run()
 
+"""
 GOAL = GDN(bno, 30)
+GOAL.run()
+"""
+
+GOAL = goal_detective_arliss()
 GOAL.run()
 
 print("クラス呼び出し完了です")
