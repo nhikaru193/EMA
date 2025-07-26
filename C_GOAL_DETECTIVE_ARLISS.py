@@ -10,15 +10,10 @@ from libcamera import Transform
 import sys
 import os
 import math
-
-# カスタムモジュールのインポート
-# MotorDriverとBNO055は外部ファイルとして存在すると仮定します。
-# 例: motor.py, BNO055.py
 from motor import MotorDriver
-from BNO055 import BNO055 # あなたのカスタムBNO055クラス
+from BNO055 import BNO055
 
-# --- RoverController クラス定義 ---
-class RoverController:
+class GDA:
     def __init__(self, pwma_pin=12, ain1_pin=23, ain2_pin=18,
                  pwmb_pin=19, bin1_pin=16, bin2_pin=26,
                  stby_pin=21, bno_address=0x28, rx_pin=17):
