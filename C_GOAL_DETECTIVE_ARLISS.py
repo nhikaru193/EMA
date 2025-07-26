@@ -19,8 +19,8 @@ from BNO055 import BNO055
 
 # --- BNO055用のラッパークラス (変更なし) ---
 class BNO055Wrapper:
-    def __init__(self, adafruit_bno055_sensor):
-        self.sensor = adafruit_bno055_sensor
+    def __init__(self, bno055_sensor):
+        self.sensor = bno055_sensor
 
     def get_heading(self):
         heading = self.sensor.euler[0]
