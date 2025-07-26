@@ -170,8 +170,8 @@ class GDN:
                     time.sleep(1.0)
         
                 elif number is None:
-                    self.driver.petit_left(0, 80)
-                    self.driver.petit_left(80, 0)
+                    self.driver.petit_left(0, 100)
+                    self.driver.petit_left(100, 0)
                     self.driver.motor_stop_brake()
                     time.sleep(1.0)
                 counter = counter - 1
@@ -182,7 +182,7 @@ class GDN:
                     a = abs((heading_list[4] - heading_list[3] + 180) % 360 - 180)
                     b = abs((heading_list[3] - heading_list[2] + 180) % 360 - 180)
                     c = abs((heading_list[2] - heading_list[1] + 180) % 360 - 180)
-                    if a < 2 and b < 2 and c < 2:
+                    if a < 1.5 and b < 1.5 and c < 1.5:
                         print("スタック判定です")
                         print("スタック離脱を行います")
                         self.driver.changing_right(0, 90)
