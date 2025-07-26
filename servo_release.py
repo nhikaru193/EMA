@@ -37,6 +37,7 @@ try:
     time.sleep(6)
     print("放出5.0")
     set_servo_duty(5.0)
+    time.sleep(6)
     print("放出6.0")
     set_servo_duty(6.0)
     time.sleep(6)
