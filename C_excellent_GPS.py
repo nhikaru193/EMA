@@ -165,10 +165,10 @@ class GPS:
                     
                 if len(heading_list) == 5:
                     print("スタック判定を行います")
-                    a = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
-                    b = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                    c = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                    if a < 5 and b < 5 and c < 5:
+                    a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
+                    b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
+                    c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                    if a_delta < 5 and b_delta < 5 and c_delta < 5:
                         print("スタック判定です")
                         print("スタック離脱を行います")
                         self.driver.changing_right(0, 90)
