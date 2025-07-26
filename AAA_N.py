@@ -82,7 +82,6 @@ pwm.start(0)
 print("逆回転（速い）")
 set_servo_duty(4.0)
 time.sleep(7)
-set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
 
