@@ -85,8 +85,10 @@ time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
 
+"""
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
+"""
 
 GOAL = GDN(bno, 30)
 GOAL.run()
