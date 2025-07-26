@@ -32,7 +32,10 @@ try:
     time.sleep(3)
     
     """
-    print("逆回転（速い）")
+    print("ほうしゅつ4.0")
+    set_servo_duty(4.0)
+    time.sleep(6)
+    print("放出5.0")
     set_servo_duty(4.0)
     time.sleep(6)
     #set_servo_duty(12.5)
