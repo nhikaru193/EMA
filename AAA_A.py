@@ -24,8 +24,7 @@ from C_PARACHUTE_AVOIDANCE import PA
 from C_Flag_Navi import FN
 from C_Servo import SM
 from C_excellent_GPS import GPS
-from C_GOAL_DETECTIVE_NOSHIRO import GDN
-import C_GOAL_DETECTIVE_ARLISS
+from C_GOAL_DETECTIVE_ARLISS import GDA
 
 #おそらく未使用のモジュール
 """
@@ -88,7 +87,7 @@ GOAL = GDN(bno, 30)
 GOAL.run()
 """
 
-GOAL = goal_detective_arliss()
+GOAL = GDA(bno, 30)
 GOAL.run()
 
 print("クラス呼び出し完了です")
