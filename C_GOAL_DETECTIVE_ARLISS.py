@@ -90,13 +90,13 @@ class GDA:
         BNO055センサーから現在の方位を取得します。
         Noneの場合のリトライロジックを含みます。
         """
-        heading = self.bno_sensor.euler[0]
+        heading = self.bno_sensor.get_heading()
         if heading is None:
             wait_start_time = time.time()
             max_wait_time = 0.5
             while heading is None and (time.time() - wait_start_time < max_wait_time):
                 time.sleep(0.01)
-                heading = self.bno_sensor.euler[0]
+                heading = self.bno_sensor.get_heading()
         if heading is None:
             return 0.0 # 最終的にNoneなら0.0を返す
         return heading
