@@ -11,26 +11,25 @@ import sys
 import os
 import math
 from motor import MotorDriver
-from BNO055 import BNO055
+from BNO055 import BNO055 # あなたのカスタムBNO055クラス
 
 class GDA:
-    def __init__(self, pwma_pin=12, ain1_pin=23, ain2_pin=18,
-                 pwmb_pin=19, bin1_pin=16, bin2_pin=26,
-                 stby_pin=21, bno_address=0x28, rx_pin=17):
+    def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
+                 motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
+                 motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17): # bno_sensor_instance を引数として追加
         
-        self.pwma_pin = pwma_pin
-        self.ain1_pin = ain1_pin
-        self.ain2_pin = ain2_pin
-        self.pwmb_pin = pwmb_pin
-        self.bin1_pin = bin1_pin
-        self.bin2_pin = bin2_pin
-        self.stby_pin = stby_pin
-        self.bno_address = bno_address
+        self.motor_pwma_pin = motor_pwma_pin
+        self.motor_ain1_pin = motor_ain1_pin
+        self.motor_ain2_pin = motor_ain2_pin
+        self.motor_pwmb_pin = motor_pwmb_pin
+        self.motor_bin1_pin = motor_bin1_pin
+        self.motor_bin2_pin = motor_bin2_pin
+        self.motor_stby_pin = motor_stby_pin
         self.rx_pin = rx_pin
 
         self.driver = None
         self.pi_instance = None
-        self.bno_sensor = None # BNO055Wrapperはもう使いません
+        self.bno_sensor = bno_sensor_instance # 渡されたBNO055インスタンスを保持
         self.picam2_instance = None
 
         self._initialize_devices()
@@ -42,9 +41,9 @@ class GDA:
 
         try:
             self.driver = MotorDriver(
-                PWMA=self.pwma_pin, AIN1=self.ain1_pin, AIN2=self.ain2_pin,
-                PWMB=self.pwmb_pin, BIN1=self.bin1_pin, BIN2=self.bin2_pin,
-                STBY=self.stby_pin
+                PWMA=self.motor_pwma_pin, AIN1=self.motor_ain1_pin, AIN2=self.motor_ain2_pin,
+                PWMB=self.motor_pwmb_pin, BIN1=self.motor_bin1_pin, BIN2=self.motor_bin2_pin,
+                STBY=self.motor_stby_pin
             )
             print("MotorDriver initialized.")
         except Exception as e:
@@ -62,19 +61,14 @@ class GDA:
             self.cleanup()
             sys.exit(1)
         
-        try:
-            # BNO055Wrapperを使わないので、直接BNO055のインスタンスを保持
-            self.bno_sensor = BNO055(address=self.bno_address)
-            if not self.bno_sensor.begin():
-                raise RuntimeError("BNO055センサーの初期化に失敗しました。")
-            self.bno_sensor.setMode(BNO055.OPERATION_MODE_NDOF)
-            self.bno_sensor.setExternalCrystalUse(True)
-            time.sleep(1)
-            print("BNO055 sensor initialized.")
-        except Exception as e:
-            print(f"BNO055センサーの初期化に失敗しました: {e}")
+        # BNO055インスタンスは引数で受け取るので、ここでは初期化は行いません。
+        # 渡されたインスタンスが有効であることを確認します。
+        if self.bno_sensor is None:
+            print("BNO055センサーインスタンスが渡されませんでした。")
             self.cleanup()
             sys.exit(1)
+        # ここでは、センサーが既にbegin()されていることを想定します。
+        print("BNO055 sensor instance received.")
 
         try:
             self.picam2_instance = Picamera2()
@@ -108,7 +102,6 @@ class GDA:
         return heading
 
     def _save_image_for_debug(self, path="/home/mark1/Pictures/paravo_image.jpg"):
-        # 変更なし
         frame = self.picam2_instance.capture_array()
         if frame is None:
             print("画像キャプチャ失敗：フレームがNoneです。")
@@ -119,7 +112,6 @@ class GDA:
         return frame
 
     def _detect_red_percentage(self, save_path="/home/mark1/Pictures/red_detection_overall.jpg"):
-        # 変更なし
         try:
             frame_rgb = self.picam2_instance.capture_array()
             if frame_rgb is None:
@@ -163,8 +155,8 @@ class GDA:
         現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
         BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
         """
-        initial_heading = self._get_bno_heading() # ここを変更
-        if initial_heading is None: # _get_bno_heading()は0.0を返すので、このNoneチェックは通常不要になりますが、念のため残します
+        initial_heading = self._get_bno_heading()
+        if initial_heading is None:
             print("警告: turn_to_relative_angle: 初期方位が取得できませんでした。")
             return False
         
@@ -174,8 +166,8 @@ class GDA:
         loop_count = 0
         
         while loop_count < max_turn_attempts:
-            current_heading = self._get_bno_heading() # ここを変更
-            if current_heading is None: # 上記と同様、通常Noneは返ってきません
+            current_heading = self._get_bno_heading()
+            if current_heading is None:
                 print("警告: turn_to_relative_angle: 旋回中に方位が取得できませんでした。スキップします。")
                 self.driver.motor_stop_brake()
                 time.sleep(0.1)
@@ -210,7 +202,6 @@ class GDA:
         return False
 
     def _calculate_angle_average(self, angles_deg):
-        # 変更なし
         if not angles_deg:
             return None
 
@@ -230,7 +221,7 @@ class GDA:
         BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
         """
         print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で即座に180度回転前進) ===")
-        initial_heading = self._get_bno_heading() # ここを変更
+        initial_heading = self._get_bno_heading()
         if initial_heading is None:
             print("警告: 最終確認スキャン開始時に方位が取得できませんでした。")
             return None 
@@ -247,7 +238,7 @@ class GDA:
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             
-            current_scan_heading = self._get_bno_heading() # ここを変更
+            current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
                 print("警告: 最終確認スキャン中に方位が取得できませんでした。スキップします。")
                 self.driver.motor_stop_brake()
@@ -292,7 +283,7 @@ class GDA:
             target_center_angle = self._calculate_angle_average(final_scan_detected_angles)
             if target_center_angle is not None:
                 print(f"  --> 検出された赤色の中心 ({target_center_angle:.2f}度) へ向きを調整します。")
-                current_heading_at_end = self._get_bno_heading() # ここを変更
+                current_heading_at_end = self._get_bno_heading()
                 if current_heading_at_end is not None:
                     angle_to_turn = (target_center_angle - current_heading_at_end + 180 + 360) % 360 - 180
                     self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
@@ -313,7 +304,7 @@ class GDA:
         BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
         """
         print("\n=== 初期赤色アライメントスキャンを開始します (20%閾値) ===")
-        initial_heading_at_start = self._get_bno_heading() # ここを変更
+        initial_heading_at_start = self._get_bno_heading()
         if initial_heading_at_start is None:
             print("警告: 初期アライメントスキャン開始時に方位が取得できません。")
             return False, None, []
@@ -335,7 +326,7 @@ class GDA:
                 print(f"  回転: {turn_angle_step}度...")
                 self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
             
-            current_scan_heading = self._get_bno_heading() # ここを変更
+            current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
                 print("警告: 初期アライメントスキャン中に方位が取得できませんでした。スキップします。")
                 self.driver.motor_stop_brake()
@@ -375,7 +366,7 @@ class GDA:
         if not detected_red_angles:
             print(f"初期アライメントスキャンで{alignment_threshold*100.0:.0f}%以上の赤色は検出されませんでした。")
             if max_red_ratio > -1.0:
-                current_heading_at_end_of_scan = self._get_bno_heading() # ここを変更
+                current_heading_at_end_of_scan = self._get_bno_heading()
                 
                 if current_heading_at_end_of_scan is not None:
                     angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
@@ -406,7 +397,7 @@ class GDA:
                 print("\n--- 新しい走行サイクル開始 ---")
                 
                 print("\n=== 現在方位確認 ===")
-                current_bno_heading_for_info = self._get_bno_heading() # ここを変更
+                current_bno_heading_for_info = self._get_bno_heading()
                 if current_bno_heading_for_info is None:
                     print("警告: 現在方位が取得できませんでした。")
                     time.sleep(2)
@@ -416,13 +407,11 @@ class GDA:
                 time.sleep(0.5)
 
                 skip_forward_scan_phase = False 
-                # _perform_initial_alignment_scanへの引数からbno_wrapperとpicam2_instanceを削除
                 aligned_in_initial_scan, initial_aligned_heading, initial_scan_detected_angles = self._perform_initial_alignment_scan() 
 
                 if len(initial_scan_detected_angles) >= 4:
                     print(f"\n=== 初期アライメントスキャンで{len(initial_scan_detected_angles)}ヶ所の赤色を検知しました。最終確認スキャンへスキップします。 ===")
                     while True:
-                        # _perform_final_scan_and_terminateへの引数からbno_wrapperとpicam2_instanceを削除
                         final_scan_result = self._perform_final_scan_and_terminate(final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40)
                         if final_scan_result is True:
                             print("最終確認スキャン条件達成（40%検出で即座に180度回転前進）。最終確認スキャンを再実行します。")
@@ -444,7 +433,7 @@ class GDA:
                     target_center_angle = self._calculate_angle_average(initial_scan_detected_angles)
                     if target_center_angle is not None:
                         print(f"\n=== 初期アライメントスキャンで複数赤色検知地点の中心 ({target_center_angle:.2f}度) へ向きを調整します ===")
-                        current_heading = self._get_bno_heading() # ここを変更
+                        current_heading = self._get_bno_heading()
                         if current_heading is not None:
                             angle_to_turn = (target_center_angle - current_heading + 180 + 360) % 360 - 180
                             self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
@@ -487,7 +476,7 @@ class GDA:
                     time.sleep(0.5)
 
                     for i in range(360 // 20): 
-                        current_scan_heading_for_forward = self._get_bno_heading() # ここを変更
+                        current_scan_heading_for_forward = self._get_bno_heading()
                         if current_scan_heading_for_forward is None:
                             print("警告: スキャン中に方位が取得できませんでした。スキップします。")
                             continue
@@ -536,7 +525,7 @@ class GDA:
                                 if best_red_after_initial_alignment:
                                     target_heading_for_second_best = best_red_after_initial_alignment['heading']
                                     print(f"  --> 2番目に赤の割合が大きかった方向 ({target_heading_for_second_best:.2f}度, 割合: {best_red_after_initial_alignment['percentage']:.2%}) へ向きを調整し、1秒間前進します。")
-                                    current_heading_before_adjust = self._get_bno_heading() # ここを変更
+                                    current_heading_before_adjust = self._get_bno_heading()
                                     if current_heading_before_adjust is not None:
                                         angle_to_turn = (target_heading_for_second_best - current_heading_before_adjust + 180 + 360) % 360 - 180
                                         self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
@@ -559,7 +548,7 @@ class GDA:
                                         time.sleep(0.5)
 
                                         for j in range(360 // 20):
-                                            current_post_forward_heading = self._get_bno_heading() # ここを変更
+                                            current_post_forward_heading = self._get_bno_heading()
                                             if current_post_forward_heading is None:
                                                 print("警告: 追加スキャン中に方位が取得できませんでした。スキップします。")
                                                 continue
@@ -588,7 +577,7 @@ class GDA:
                                             target_center_angle_post_forward = self._calculate_angle_average(post_forward_scan_detected_angles)
                                             if target_center_angle_post_forward is not None:
                                                 print(f"\n=== 追加スキャンで複数赤色検知！中心 ({target_center_angle_post_forward:.2f}度) へ向きを調整します ===")
-                                                current_heading_at_post_forward_end = self._get_bno_heading() # ここを変更
+                                                current_heading_at_post_forward_end = self._get_bno_heading()
                                                 if current_heading_at_post_forward_end is not None:
                                                     angle_to_turn_post_forward = (target_center_angle_post_forward - current_heading_at_post_forward_end + 180 + 360) % 360 - 180
                                                     self._turn_to_relative_angle(angle_to_turn_post_forward, turn_speed=90, angle_tolerance_deg=15)
@@ -619,7 +608,7 @@ class GDA:
                         time.sleep(0.5)
 
                         for i in range(360 // 20):
-                            current_scan_heading_for_second = self._get_bno_heading() # ここを変更
+                            current_scan_heading_for_second = self._get_bno_heading()
                             if current_scan_heading_for_second is None:
                                 print("警告: 2回目スキャン中に方位が取得できませんでした。スキップします。")
                                 continue
@@ -648,7 +637,7 @@ class GDA:
                             target_center_angle_second_scan = self._calculate_angle_average(second_scan_detected_angles)
                             if target_center_angle_second_scan is not None:
                                 print(f"\n=== 2回目スキャンで複数赤色検知！中心 ({target_center_angle_second_scan:.2f}度) へ向きを調整し、1秒前進します ===")
-                                current_heading_before_adjust_second = self._get_bno_heading() # ここを変更
+                                current_heading_before_adjust_second = self._get_bno_heading()
                                 if current_heading_before_adjust_second is not None:
                                     angle_to_turn_second = (target_center_angle_second_scan - current_heading_before_adjust_second + 180 + 360) % 360 - 180
                                     self._turn_to_relative_angle(angle_to_turn_second, turn_speed=90, angle_tolerance_deg=15)
@@ -672,7 +661,6 @@ class GDA:
                 print("\n=== 周囲確認を開始します (360度スキャン - 最終確認用) ===")
                 
                 while True:
-                    # _perform_final_scan_and_terminateへの引数からbno_wrapperとpicam2_instanceを削除
                     final_scan_result = self._perform_final_scan_and_terminate(final_threshold=0.07, min_red_detections_to_terminate=4, high_red_threshold=0.40)
                     if final_scan_result is True:
                         print("最終確認スキャン条件達成（40%検出で即座に180度回転前進）。最終確認スキャンを再実行します。")
@@ -701,7 +689,6 @@ class GDA:
             self.cleanup()
 
     def cleanup(self):
-        # 変更なし
         if self.driver:
             self.driver.cleanup()
             print("MotorDriver cleaned up.")
@@ -715,7 +702,50 @@ class GDA:
         print("GPIO cleaned up.")
         print("=== 処理を終了しました。 ===")
 
+---
+
+### 使用方法 (`if __name__ == "__main__":` ブロック)
+
+`GDA`クラスをインスタンス化する前に、**BNO055センサーを初期化し、`GDA`クラスのコンストラクタに渡す**必要があります。
+
+```python
 # --- メインシーケンス ---
 if __name__ == "__main__":
-    rover = RoverController()
-    rover.start_autonomous_driving()
+    # BNO055センサーの初期化はGDAクラスの外部で行います
+    bno_sensor_address = 0x28 # BNO055のアドレス
+    bno_sensor = None # 初期化のためNoneで宣言
+
+    try:
+        bno_sensor = BNO055(address=bno_sensor_address)
+        if not bno_sensor.begin():
+            raise RuntimeError("BNO055センサーの初期化に失敗しました。終了します。")
+        bno_sensor.setMode(BNO055.OPERATION_MODE_NDOF)
+        bno_sensor.setExternalCrystalUse(True)
+        time.sleep(1)
+        print("BNO055 sensor initialized outside GDA class.")
+        
+        # GDAクラスのインスタンスを作成し、初期化したBNO055センサーを渡す
+        # モーターピンの引数名もより明確にしました
+        rover = GDA(
+            motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
+            motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
+            motor_stby_pin=21, 
+            bno_sensor_instance=bno_sensor, # ここでBNO055インスタンスを渡します
+            rx_pin=17
+        )
+        rover.start_autonomous_driving()
+
+    except Exception as e:
+        print(f"プログラム全体の初期化または実行中に予期せぬエラーが発生しました: {e}")
+    finally:
+        # GDAインスタンスが作成されなかった場合でもcleanupを試みる
+        if 'rover' in locals():
+            rover.cleanup()
+        else:
+            # GDAインスタンスが作成される前にエラーが発生した場合のクリーンアップ
+            if bno_sensor:
+                # BNO055には直接的なクリーンアップメソッドがない場合が多いので、
+                # 必要であればここに追加します。
+                pass 
+            GPIO.cleanup() # GPIOはGDAの初期化前に設定される可能性があるのでここでもクリーンアップ
+        print("=== プログラムを終了しました。 ===")
