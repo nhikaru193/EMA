@@ -23,7 +23,7 @@ class Flag_B:
     UPPER_OUTER_AREA_HSV = np.array([180, 50, 255])
     
     # 領域内の「黒い図形」を抽出するための二値化しきい値
-    INNER_SHAPE_BINARY_THRESHOLD = 60 # 80より小さくすると、より黒くなる
+    INNER_SHAPE_BINARY_THRESHOLD = 70 # 80より小さくすると、より黒くなる
     MORPHOLOGY_KERNEL_SIZE = (5, 5)
 
     def __init__(self, width: int = 640, height: int = 480, min_outer_area: int = 1000, triangle_tolerance: float = 5.0):
