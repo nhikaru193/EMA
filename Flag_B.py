@@ -228,4 +228,4 @@ if __name__ == '__main__':
     
     finally:
         detector.close()
-        cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()
