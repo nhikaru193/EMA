@@ -388,7 +388,7 @@ class GDA:
         print("=== 初期赤色アライメントスキャンが完了しました。 ===")
         return aligned, best_heading_for_red, detected_red_angles
 
-    def start_autonomous_driving(self):
+    def HAT_TRICK(self):
         """メインの自律走行ループを開始します。"""
         try:
             print("BNO055のキャリブレーション待機はスキップされました。自動操縦を開始します。")
@@ -702,13 +702,7 @@ class GDA:
         print("GPIO cleaned up.")
         print("=== 処理を終了しました。 ===")
 
----
 
-### 使用方法 (`if __name__ == "__main__":` ブロック)
-
-`GDA`クラスをインスタンス化する前に、**BNO055センサーを初期化し、`GDA`クラスのコンストラクタに渡す**必要があります。
-
-```python
 # --- メインシーケンス ---
 if __name__ == "__main__":
     # BNO055センサーの初期化はGDAクラスの外部で行います
@@ -733,7 +727,7 @@ if __name__ == "__main__":
             bno_sensor_instance=bno_sensor, # ここでBNO055インスタンスを渡します
             rx_pin=17
         )
-        rover.start_autonomous_driving()
+        rover.HAT_TRICK()
 
     except Exception as e:
         print(f"プログラム全体の初期化または実行中に予期せぬエラーが発生しました: {e}")
