@@ -5,7 +5,7 @@ from picamera2 import Picamera2
 from time import sleep
 from typing import Tuple, List, Dict, Optional, Any
 
-class Flag_B: # 変更: クラス名をより汎用的に
+class Flag_B:
     """
     カメラ画像から指定された色の領域を探し、その中に描かれた
     反対色（黒または白）の特定の図形を検出・識別するクラス。
@@ -19,8 +19,6 @@ class Flag_B: # 変更: クラス名をより汎用的に
     CROSS_SHAPE_VERTEX_RANGE = (11, 13)
     CROSS_SHAPE_MAX_SOLIDITY = 0.75
 
-    # --- 変更: 色・画像処理パラメータを「白領域内の黒図形」検出用に変更 ---
-    # 白領域を検出するためのHSV範囲 (彩度が低く、明度が高い)
     LOWER_OUTER_AREA_HSV = np.array([0, 0, 120])
     UPPER_OUTER_AREA_HSV = np.array([180, 50, 255])
     
@@ -37,11 +35,11 @@ class Flag_B: # 変更: クラス名をより汎用的に
         """
         self.width = width
         self.height = height
-        self.min_outer_area = min_outer_area # 変更: 変数名
+        self.min_outer_area = min_outer_area
         self.triangle_tolerance = triangle_tolerance
 
         self.last_image: Optional[np.ndarray] = None
-        self.detected_areas: List[Dict[str, Any]] = [] # 変更: 変数名
+        self.detected_areas: List[Dict[str, Any]] = []
 
         self.camera = Picamera2()
         config = self.camera.create_still_configuration(main={"size": (self.width, self.height)})
@@ -50,9 +48,6 @@ class Flag_B: # 変更: クラス名をより汎用的に
         print("カメラを初期化しました。")
         sleep(2)
 
-    # _calculate_distance, _calculate_centroid, _calculate_orthocenter, _classify_shape
-    # の各メソッドは形状を判定するロジックなので、変更はありません。
-    # (ここでは簡潔さのため省略しますが、上のコードからコピーして使用してください)
     def _calculate_distance(self, p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
         """2点間のユークリッド距離を計算する"""
         return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
@@ -136,7 +131,7 @@ class Flag_B: # 変更: クラス名をより汎用的に
             roi_bgr = img_bgr[y:y+h, x:x+w]
             gray_roi = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2GRAY)
 
-            # 変更: しきい値より「暗い」部分を白(255)にするため、THRESH_BINARY_INV を使用
+            #閾値より"暗い"部分を白(255)にするため、THRESH_BINARY_INV を使用
             _, binary_roi_inv = cv2.threshold(
                 gray_roi, self.INNER_SHAPE_BINARY_THRESHOLD, 255, cv2.THRESH_BINARY_INV
             )
