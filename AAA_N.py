@@ -90,14 +90,14 @@ driver = MotorDriver(
         PWMB=19, BIN1=16, BIN2=26,
         STBY=21
     )
-degree_rotation(-90)
+degree_rotation(-90, threshold_deg = 10)
 time.sleep(0.3)
 driver.motor_stop_brake()
 time.sleep(1)
 following.follow_forward(driver, bno, 80, 2)
 driver.motor_stop_free()
 time.sleep(2)
-degree_rotation(90)
+degree_rotation(90, threshold_deg = 10)
 driver.motor_stop_brake()
 time.sleep(1)
 following.follow_forward(driver, bno, 80, 4)
