@@ -37,8 +37,8 @@ def set_servo_duty(duty):
     time.sleep(0.5)
 
 #初期設定
-Flag_location = [35.9181526, 139.9083178]
-Goal_location = [35.9181214, 139.9082591]
+Flag_location = [35.9241336, 139.9113936]
+Goal_location = [35.9241615, 139.9111737]
 
 #BNO055の初期設定
 bno = BNO055()
@@ -76,7 +76,6 @@ def degree_rotation(degree, threshold_deg = 5, sleeping = 0.01):
             driver.motor_stop_brake()
             time.sleep(0.5)
 #関数のインスタンス作成
-"""
 RELEASE = RD(bno) #ok
 RELEASE.run()
 
@@ -111,7 +110,7 @@ AVOIDANCE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
-"""
+
 
 FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
@@ -130,10 +129,8 @@ time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
 
-"""
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
-"""
 
 GOAL = GDN(bno, 30)
 GOAL.run()
