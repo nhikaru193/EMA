@@ -24,7 +24,7 @@ class FN:
         self.F_lon = flag_location[1]
 
         # --- 初期化処理 ---
-        self.detector = FlagDetector(triangle_tolerance=0.5)
+        self.detector = Flag_B(triangle_tolerance=0.5)
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,   
             PWMB=19, BIN1=16, BIN2=26,   
