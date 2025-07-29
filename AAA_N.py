@@ -63,6 +63,7 @@ RELEASE.run()
 LAND = LD(bno) 
 LAND.run()
 """
+time.sleep(3)
 
 driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
