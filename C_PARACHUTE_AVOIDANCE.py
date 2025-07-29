@@ -97,13 +97,13 @@ class PA:
             if abs(delta_heading) <= threshold_deg:
                 break
             elif delta_heading < -1 * threshold_deg:
-                self.driver.petit_left(0, 90)
+                self.driver.petit_left(0, 80)
                 time.sleep(sleeping)
                 time.sleep(0.05)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             elif delta_heading > threshold_deg:
-                self.driver.petit_right(0, 99)
+                self.driver.petit_right(0, 75)
                 time.sleep(sleeping)
                 time.sleep(0.05)
                 self.driver.motor_stop_brake()
@@ -192,7 +192,7 @@ class PA:
                     if a < 3 and b < 3 and c < 3:
                         print("スタック判定です")
                         print("スタック離脱を行います")
-                        self.driver.changing_right(0, 90)
+                        self.driver.changing_right(0, 80)
                         time.sleep(3)
                         self.driver.changing_right(90, 0)
                         time.sleep(0.5)
@@ -217,13 +217,13 @@ class PA:
             
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
                         print(f"[TURN] 左に回頭します ")
-                        self.driver.petit_left(0, 90) 
+                        self.driver.petit_left(0, 80) 
                         time.sleep(0.025)
                         self.driver.motor_stop_brake()
                         
                     else: # 時計回り（右）に回る方が近い
                         print(f"[TURN] 右に回頭します")
-                        self.driver.petit_right(0, 90) 
+                        self.driver.petit_right(0, 80) 
                         time.sleep(0.025)
                         self.driver.motor_stop_brake()
                 
