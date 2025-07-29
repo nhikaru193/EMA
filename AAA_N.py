@@ -37,8 +37,8 @@ def set_servo_duty(duty):
     time.sleep(0.5)
 
 #初期設定
-Flag_location = [35.9241360, 139.9113158]
-Goal_location = [35.9242194, 139.9115415]
+Flag_location = [35.9182251, 139.9082658]
+Goal_location = [35.9181214, 139.9082591]
 
 #BNO055の初期設定
 bno = BNO055()
