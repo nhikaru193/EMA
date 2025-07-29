@@ -17,7 +17,7 @@ class FN:
     def __init__(self, bno: BNO055, flag_location):
         
         # --- 設定値 ---
-        self.TARGET_SHAPES = ["三角形", "長方形", "T字", "十字"] #"三角形", "長方形", "T字", "十字"を追加する
+        self.TARGET_SHAPES = ["T字", "十字"] #"三角形", "長方形", "T字", "十字"を追加する
         self.AREA_THRESHOLD_PERCENT = 60.0
         self.turn_speed = 45
         self.F_lat = flag_location[0]
