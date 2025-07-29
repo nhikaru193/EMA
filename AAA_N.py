@@ -56,11 +56,13 @@ while True:
         break
 
 #関数のインスタンス作成
+"""
 RELEASE = RD(bno) #ok
 RELEASE.run()
 
 LAND = LD(bno) 
 LAND.run()
+"""
 
 driver = MotorDriver(
         PWMA=12, AIN1=23, AIN2=18,
