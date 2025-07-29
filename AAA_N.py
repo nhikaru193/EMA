@@ -81,7 +81,7 @@ driver.petit_right(0, 90)
 time.sleep(0.3)
 driver.motor_stop_brake()
 time.sleep(1)
-following.follow_forward(driver, bno, 80, 2)
+following.follow_forward(driver, bno, 80, 4)
 driver.motor_stop_free()
 time.sleep(2)
 
