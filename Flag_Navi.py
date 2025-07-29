@@ -194,8 +194,8 @@ class FN:
                     else: # 中央にいる場合
                         # ===== ここからが修正箇所 =====
                         # 'flag_contour' が存在するかを安全にチェック
-                        if 'flag_contour' in target_flag:
-                            flag_area = cv2.contourArea(target_flag['flag_contour'])
+                        if 'area_contour' in target_flag:
+                            flag_area = cv2.contourArea(target_flag['area_contour'])
                             area_percent = (flag_area / self.screen_area) * 100
                             print(f"中央に補足。接近中... (画面占有率: {area_percent:.1f}%)")
 
