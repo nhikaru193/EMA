@@ -18,7 +18,7 @@ class FN:
         
         # --- 設定値 ---
         self.TARGET_SHAPES = ["T字", "十字"] #"三角形", "長方形", "T字", "十字"を追加する
-        self.AREA_THRESHOLD_PERCENT = 60.0
+        self.AREA_THRESHOLD_PERCENT = 4.2
         self.turn_speed = 45
         self.F_lat = flag_location[0]
         self.F_lon = flag_location[1]
