@@ -43,6 +43,17 @@ class FN:
                     return flag
         return None
 
+    # === 追加したヘルパー関数 ===
+    def get_shape_from_flag(self, flag_data, shape_name):
+        """
+        指定されたフラッグデータの中から、目的の図形データを検索して返す
+        """
+        if 'shapes' in flag_data:
+            for shape in flag_data['shapes']:
+                if shape['name'] == shape_name:
+                    return shape
+        return None
+
     def left_20_degree_rotation(self):
         before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
         target_heading = (before_heading - 20) % 360
@@ -193,11 +204,15 @@ class FN:
                     # --- 接近 ---
                     else: # 中央にいる場合
                         # ===== ここからが修正箇所 =====
-                        # 'flag_contour' が存在するかを安全にチェック
-                        if 'area_contour' in target_flag:
-                            flag_area = cv2.contourArea(target_flag['area_contour'])
-                            area_percent = (flag_area / self.screen_area) * 100
-                            print(f"中央に補足。接近中... (画面占有率: {area_percent:.1f}%)")
+                        # 目的の図形（'T字'など）のデータを取得する
+                        target_shape_data = self.get_shape_from_flag(target_flag, target_name)
+
+                        # 図形データとその輪郭('contour')が存在するかを安全にチェック
+                        if target_shape_data and 'contour' in target_shape_data:
+                            # ★★★ 白領域ではなく、対象の黒図形の面積を計算 ★★★
+                            shape_area = cv2.contourArea(target_shape_data['contour'])
+                            area_percent = (shape_area / self.screen_area) * 100
+                            print(f"中央に補足。接近中... (図形 '{target_name}' の画面占有率: {area_percent:.1f}%)")
 
                             # 面積の比較
                             if area_percent >= self.AREA_THRESHOLD_PERCENT:
@@ -210,8 +225,8 @@ class FN:
                                 self.driver.petit_petit(2)
                         
                         else:
-                            # 'flag_contour' がないという予期せぬ事態に対応
-                            print(f"エラー: [{target_name}]は中央にありますが、輪郭データがありません。再探索します。")
+                            # 'contour' がないという予期せぬ事態に対応
+                            print(f"エラー: [{target_name}]は中央にありますが、その図形データがありません。再探索します。")
                             break # 追跡ループを抜けて探索からやり直す
                         # ===== ここまでが修正箇所 =====
 
@@ -246,7 +261,7 @@ if __name__ == '__main__':
     """
     driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,    # 左モーター用（モータA）
     PWMB=19, BIN1=16, BIN2=26,    # 右モーター用（モータB）
-    STBY=21    )
+    STBY=21   )
     """
     
     # 2. BNO055（9軸センサー）の初期化
