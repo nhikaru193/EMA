@@ -8,7 +8,7 @@ import numpy as np
 from picamera2 import Picamera2
 from BNO055 import BNO055
 from motor import MotorDriver
-from Flag_Detector3 import FlagDetector
+from Flag_B import Flag_B
 import RPi.GPIO as GPIO
 from collections import deque
 
