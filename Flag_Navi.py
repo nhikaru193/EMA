@@ -55,7 +55,7 @@ class FN:
                 self.driver.petit_left(0, 90)
                 self.driver.motor_stop_brake()
             elif delta_heading > 3:
-                self.driver.petit_right(0, 80)
+                self.driver.petit_right(0, 80)\\値が変わるのは右回りでも左回りでも同じだけ回ると同じ場所しか見れないため
                 self.driver.motor_stop_brake()
             
     def run(self):
