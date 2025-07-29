@@ -62,11 +62,31 @@ RELEASE.run()
 LAND = LD(bno) 
 LAND.run()
 
+driver = MotorDriver(
+        PWMA=12, AIN1=23, AIN2=18,
+        PWMB=19, BIN1=16, BIN2=26,
+        STBY=21
+    )
+driver.petit_left(0, 90)
+time.sleep(0.3)
+driver.motor_stop_brake()
+time.sleep(1)
+driver.petit_right(0, 90)
+time.sleep(0.3)
+driver.motor_stop_brake()
+time.sleep(1)
+following.follow_forward(driver, bno, 80, 2)
+motor_stop_free()
+time.sleep(2)
+
+driver.cleanup()
+"""
 AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
+"""
 
 FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
@@ -85,10 +105,10 @@ time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
 
-
+"""
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
-
+"""
 
 GOAL = GDN(bno, 30)
 GOAL.run()
