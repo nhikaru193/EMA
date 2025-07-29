@@ -48,14 +48,14 @@ class FN:
         target_heading = (before_heading - 20) % 360
         while True:
             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
+            delta_heading = ((target_heading - current_heading + 180) % 360) - 180 #値を代入すればわかる
             if abs(delta_heading) <= 3:
                 break
             elif delta_heading < -3:
                 self.driver.petit_left(0, 90)
                 self.driver.motor_stop_brake()
             elif delta_heading > 3:
-                self.driver.petit_right(0, 80)\\値が変わるのは右回りでも左回りでも同じだけ回ると同じ場所しか見れないため
+                self.driver.petit_right(0, 80)　#値が変わるのは右回りでも左回りでも同じだけ回ると同じ場所しか見れないため
                 self.driver.motor_stop_brake()
             
     def run(self):
