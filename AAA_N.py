@@ -55,6 +55,26 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
 
+def degree_rotation(degree, threshold_deg = 5, sleeping = 0.01):
+    before_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+    target_heading = (before_heading + degree) % 360
+    while True:
+        current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
+        delta_heading = ((target_heading - current_heading + 180) % 360) - 180
+        if abs(delta_heading) <= threshold_deg:
+            break
+        elif delta_heading < -1 * threshold_deg:
+            driver.petit_left(0, 90)
+            time.sleep(sleeping)
+            time.sleep(0.05)
+            driver.motor_stop_brake()
+            time.sleep(0.5)
+        elif delta_heading > threshold_deg:
+            driver.petit_right(0, 99)
+            time.sleep(sleeping)
+            time.sleep(0.05)
+            driver.motor_stop_brake()
+            time.sleep(0.5)
 #関数のインスタンス作成
 """
 RELEASE = RD(bno) #ok
