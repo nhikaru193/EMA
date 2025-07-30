@@ -106,6 +106,9 @@ time.sleep(2)
 
 driver.cleanup()
 """
+print("パラシュート回避を始めます")
+time.sleep(3)
+
 AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
 
