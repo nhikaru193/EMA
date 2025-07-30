@@ -12,8 +12,8 @@ class RD:
         self.timeout = timeout
 
     def run(self):
-        #current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
-        #filename = f"bme280_data_{current_time_str}.csv"
+        current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+        filename = f"bme280_data_{current_time_str}.csv"
         
         try:
             with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
