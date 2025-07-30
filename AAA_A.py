@@ -92,6 +92,6 @@ GOAL.run()
 """
 
 GOAL = GDA(bno_sensor_instance = bno)
-GOAL.run()
+GOAL.HAT_TRICK()
 
 print("クラス呼び出し完了です")
