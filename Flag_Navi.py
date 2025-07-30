@@ -54,6 +54,7 @@ class FN:
                     return shape
         return None
 
+    """
     def left_10_degree_rotation(self):
         before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
         target_heading = (before_heading - 20) % 360
@@ -68,6 +69,7 @@ class FN:
             elif delta_heading > 5:
                 self.driver.petit_right(0, 60) #値が変わるのは右回りでも左回りでも同じだけ回ると同じ場所しか見れないため
                 self.driver.motor_stop_brake()
+                """
             
     def run(self):
         """
@@ -119,7 +121,9 @@ class FN:
                         
                         rotation_count = 0
                         while target_flag is None and rotation_count < 45:
-                            self.left_20_degree_rotation()
+                            self.petit_right(self, 0, 60)
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.5)
 
                             # ===== ここからスタック判定処理 =====
                             current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
