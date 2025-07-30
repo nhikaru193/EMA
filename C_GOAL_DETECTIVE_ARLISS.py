@@ -229,12 +229,12 @@ class GDA:
         final_scan_detected_angles = []
         
         print(f"  初回回転: {turn_angle_step}度...")
-        self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+        self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
         
         for i in range(360 // turn_angle_step): 
             if i > 0:
                 print(f"  --> スキャン中: さらに{turn_angle_step}度回転...")
-                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             
@@ -259,7 +259,7 @@ class GDA:
 
             if overall_red_ratio >= high_red_threshold:
                 print(f"\n  --> **高い赤色割合 ({high_red_threshold:.0%}) を検出しました！即座に180度回転して前進します。**")
-                self._turn_to_relative_angle(180, turn_speed=90, angle_tolerance_deg=15)
+                self._turn_to_relative_angle(180, turn_speed=90, angle_tolerance_deg=20)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
                 
@@ -286,7 +286,7 @@ class GDA:
                 current_heading_at_end = self._get_bno_heading()
                 if current_heading_at_end is not None:
                     angle_to_turn = (target_center_angle - current_heading_at_end + 180 + 360) % 360 - 180
-                    self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
+                    self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=20)
                     self.driver.motor_stop_brake()
                     time.sleep(1.0)
                     print("  --> 中心方向への向き調整が完了しました。")
@@ -317,14 +317,14 @@ class GDA:
 
         initial_turn_angle = 270 
         print(f"  初回回転: {initial_turn_angle}度...")
-        self._turn_to_relative_angle(initial_turn_angle, turn_speed=90, angle_tolerance_deg=15)
+        self._turn_to_relative_angle(initial_turn_angle, turn_speed=90, angle_tolerance_deg=20)
         
         for i in range(270 // turn_angle_step):
             current_relative_angle_from_start_of_scan = (i + 1) * turn_angle_step
             
             if i > 0:
                 print(f"  回転: {turn_angle_step}度...")
-                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
             
             current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
@@ -360,7 +360,7 @@ class GDA:
 
             if i < (270 // turn_angle_step) - 1:
                 print(f"  回転: {turn_angle_step}度...")
-                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
 
 
         if not detected_red_angles:
@@ -373,7 +373,7 @@ class GDA:
                     
                     print(f"  --> {alignment_threshold*100.0:.0f}%"
                           f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
-                    self._turn_to_relative_angle(angle_to_turn_to_best_red, turn_speed=90, angle_tolerance_deg=15)
+                    self._turn_to_relative_angle(angle_to_turn_to_best_red, turn_speed=90, angle_tolerance_deg=20)
                     self.driver.motor_stop_brake()
                     time.sleep(0.5)
                     aligned = True
@@ -436,7 +436,7 @@ class GDA:
                         current_heading = self._get_bno_heading()
                         if current_heading is not None:
                             angle_to_turn = (target_center_angle - current_heading + 180 + 360) % 360 - 180
-                            self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
+                            self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=20)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             print("中心方向への向き調整が完了しました。")
@@ -471,7 +471,7 @@ class GDA:
                     scan_detections = []
 
                     print("  --> 前進判断のため、20度回転します...")
-                    self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                    self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                     self.driver.motor_stop_brake()
                     time.sleep(0.5)
 
@@ -504,7 +504,7 @@ class GDA:
 
                         if i < (360 // 20) - 1: 
                             print(f"  --> スキャン中: さらに20度回転...")
-                            self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                            self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
 
@@ -528,7 +528,7 @@ class GDA:
                                     current_heading_before_adjust = self._get_bno_heading()
                                     if current_heading_before_adjust is not None:
                                         angle_to_turn = (target_heading_for_second_best - current_heading_before_adjust + 180 + 360) % 360 - 180
-                                        self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=15)
+                                        self._turn_to_relative_angle(angle_to_turn, turn_speed=90, angle_tolerance_deg=20)
                                         self.driver.motor_stop_brake()
                                         time.sleep(0.5)
                                         print("向き調整が完了しました。")
@@ -543,7 +543,7 @@ class GDA:
                                         print("\n=== 1秒前進後、追加の360度スキャンと中心方向への調整を開始します ===")
                                         post_forward_scan_detected_angles = []
                                         print("  --> 追加スキャンのため、20度回転します...")
-                                        self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                                        self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                                         self.driver.motor_stop_brake()
                                         time.sleep(0.5)
 
@@ -569,7 +569,7 @@ class GDA:
                                             
                                             if j < (360 // 20) - 1:
                                                 print(f"  --> 追加スキャン中: さらに20度回転...")
-                                                self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                                                self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                                                 self.driver.motor_stop_brake()
                                                 time.sleep(0.5)
                                         
@@ -580,7 +580,7 @@ class GDA:
                                                 current_heading_at_post_forward_end = self._get_bno_heading()
                                                 if current_heading_at_post_forward_end is not None:
                                                     angle_to_turn_post_forward = (target_center_angle_post_forward - current_heading_at_post_forward_end + 180 + 360) % 360 - 180
-                                                    self._turn_to_relative_angle(angle_to_turn_post_forward, turn_speed=90, angle_tolerance_deg=15)
+                                                    self._turn_to_relative_angle(angle_to_turn_post_forward, turn_speed=90, angle_tolerance_deg=20)
                                                     self.driver.motor_stop_brake()
                                                     time.sleep(0.5)
                                                     print("追加スキャン後の中心方向への向き調整が完了しました。")
@@ -603,7 +603,7 @@ class GDA:
                         second_scan_detected_angles = []
                         
                         print("  --> 2回目スキャンのため、20度回転します...")
-                        self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                        self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
 
@@ -629,7 +629,7 @@ class GDA:
 
                             if i < (360 // 20) - 1:
                                 print(f"  --> 2回目スキャン中: さらに20度回転...")
-                                self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
+                                self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
 
@@ -640,7 +640,7 @@ class GDA:
                                 current_heading_before_adjust_second = self._get_bno_heading()
                                 if current_heading_before_adjust_second is not None:
                                     angle_to_turn_second = (target_center_angle_second_scan - current_heading_before_adjust_second + 180 + 360) % 360 - 180
-                                    self._turn_to_relative_angle(angle_to_turn_second, turn_speed=90, angle_tolerance_deg=15)
+                                    self._turn_to_relative_angle(angle_to_turn_second, turn_speed=90, angle_tolerance_deg=20)
                                     self.driver.motor_stop_brake()
                                     time.sleep(0.5)
                                     print("中心方向への向き調整が完了しました。")
