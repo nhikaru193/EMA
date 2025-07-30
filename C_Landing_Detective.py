@@ -9,9 +9,9 @@ from motor import MotorDriver
 class LD:
     def __init__(self, bno: BNO055, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.20, h_threshold = 0.10):
         self.driver = MotorDriver(
-            PWMA=12, AIN1=23, AIN2=18,   
-            PWMB=19, BIN1=16, BIN2=26,   
-            STBY=21                      
+            PWMA=12, AIN1=23, AIN2=18,    
+            PWMB=19, BIN1=16, BIN2=26,    
+            STBY=21                     
         )
         self.bno = bno
         self.p_counter = p_counter
@@ -39,6 +39,7 @@ class LD:
                 print(f"t = {delta_time}||heading = {before_heading}")
                 time.sleep(1)
                 after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                # after_headingがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
                 delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
                 if delta_heading < self.h_threshold:
                     self.h_counter = self.h_counter - 1
@@ -52,7 +53,7 @@ class LD:
                 if delta_time > self.timeout:
                     print("方位角:timeoutによる着地判定")
                     break
-    
+        
             #環境センサの初期設定
             BME280.init_bme280()
             BME280.read_compensate()
@@ -68,6 +69,7 @@ class LD:
                 print(f"t = {delta_time}||pressure = {before_pressure}")
                 time.sleep(5)
                 after_pressure = BME280.get_pressure()
+                # after_pressureがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
                 delta_pressure = after_pressure - before_pressure
                 if delta_pressure < self.p_threshold:
                     self.p_counter = self.p_counter - 1
@@ -81,21 +83,21 @@ class LD:
                 if delta_time > self.timeout:
                     print("気圧:timeoutによる着地判定")
                     break
-    
+        
             #溶断回路作動
-            #print("着地判定正常終了。テグス溶断シーケンスに入ります")
-            #time.sleep(3)
-            #fusing.circuit()
-            #print("テグス溶断を完了しました。テグス溶断の確認を行います")
-            #before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            #self.driver.petit_left(0, 80)
-            #self.driver.petit_left(80, 0)
-            #after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            #delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
-            #if delta_heading < 5:
-                #print("溶断の不良を確認しました。再度溶断シーケンスを行います")
-                #fusing.circuit()
-                #print("テグス溶断の再起動を終了しました")
+            print("着地判定正常終了。テグス溶断シーケンスに入ります")
+            time.sleep(3)
+            fusing.circuit()
+            print("テグス溶断を完了しました。テグス溶断の確認を行います")
+            before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+            self.driver.petit_left(0, 80)
+            self.driver.petit_left(80, 0)
+            after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+            delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
+            if delta_heading < 5:
+                print("溶断の不良を確認しました。再度溶断シーケンスを行います")
+                fusing.circuit()
+                print("テグス溶断の再起動を終了しました")
         except KeyboardInterrupt:
             print("割り込みにより、着地判定をスキップします")
         finally:
