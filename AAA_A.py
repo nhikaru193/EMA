@@ -32,6 +32,9 @@ import numpy
 import busio
 from C_Parachute_Avoidance import Parakai
 """
+Flag_location = [ ,]
+Goal_location = [ ,]
+
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
@@ -64,7 +67,7 @@ AVOIDANCE.run()
 GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
 
-FLAG = FN(bno, flag_location = [, ]) 
+FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
 
 SERVO_PIN = 13  # GPIO13を使用
