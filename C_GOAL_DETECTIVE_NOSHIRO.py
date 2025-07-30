@@ -8,6 +8,7 @@ import following
 from BNO055 import BNO055
 import math
 from collections import deque
+import pigpio
 
 class GDN:
     def __init__(self, bno: BNO055, counter_max: int=50):
@@ -27,6 +28,9 @@ class GDN:
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
+        self.pi = pigpio.pi() 
+        if not self.pi.connected:
+            raise RuntimeError("pigpioデーモンに接続できません。`sudo pigpiod`を実行して確認してください。")
         
     def get_percentage(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
