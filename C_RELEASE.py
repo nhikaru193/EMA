@@ -12,16 +12,16 @@ class RD:
         self.timeout = timeout
 
     def run(self):
-        current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
-        filename = f"bme280_data_{current_time_str}.csv"
+        #current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+        #filename = f"bme280_data_{current_time_str}.csv"
         
         try:
-            with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
-                writer = csv.writer(f)
+            #with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
+                #writer = csv.writer(f)
                 
                 # CSVヘッダーを書き込む
-                writer.writerow(["Time", "Pressure(hPa)", "Acceleration_X(m/s^2)", "Acceleration_Y(m/s^2)", "Acceleration_Z(m/s^2)"])
-                print(f"データロギングを開始します。ファイル名: {filename}")
+                #writer.writerow(["Time", "Pressure(hPa)", "Acceleration_X(m/s^2)", "Acceleration_Y(m/s^2)", "Acceleration_Z(m/s^2)"])
+                #print(f"データロギングを開始します。ファイル名: {filename}")
                 BME280.init_bme280()
                 BME280.read_compensate()
                 start_time = time.time()
@@ -35,8 +35,8 @@ class RD:
                     current_time = time.time()
                     e_time = current_time - start_time
                     print(f"t:{e_time:.2f} | p:{pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
-                    writer.writerow([e_time, pressure, ax, ay, az])
-                    f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
+                    #writer.writerow([e_time, pressure, ax, ay, az])
+                    #f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
                     if delta_pressure > self.p_threshold:
                         self.p_counter -= 1 # デクリメント演算子を使う
                         if self.p_counter == 0:
@@ -51,18 +51,19 @@ class RD:
                     
                     time.sleep(0.4)
 
-        except PermissionError:
-            print(f"\nエラー: ファイル '{filename}' への書き込み権限がありません。")
-            print("以下のいずれかを確認してください:")
-            print("1. そのファイルが他のプログラム（Excelなど）で開かれていないか。")
-            print("2. ファイルまたは保存先のフォルダに書き込み権限があるか。")
-            print("3. プログラムを管理者権限（sudo）で実行する必要があるか。")
-            return # エラー時はここで処理を終了
+        #except PermissionError:
+            #print(f"\nエラー: ファイル '{filename}' への書き込み権限がありません。")
+            #print("以下のいずれかを確認してください:")
+            #print("1. そのファイルが他のプログラム（Excelなど）で開かれていないか。")
+            #print("2. ファイルまたは保存先のフォルダに書き込み権限があるか。")
+            #print("3. プログラムを管理者権限（sudo）で実行する必要があるか。")
+            #return # エラー時はここで処理を終了
 
-        except Exception as e:
+        #except Exception as e:
             # その他の予期せぬエラーをキャッチ
-            print(f"\n予期せぬエラーが発生しました: {e}")
-            return # エラー時はここで処理を終了
+            #print(f"\n予期せぬエラーが発生しました: {e}")
+            #return # エラー時はここで処理を終了
 
         finally:
             print("放出判定を終了します")
+       
