@@ -76,11 +76,11 @@ def degree_rotation(degree, threshold_deg = 5, sleeping = 0.01):
             driver.motor_stop_brake()
             time.sleep(0.5)
 #関数のインスタンス作成
-RELEASE = RD(bno) #ok
-RELEASE.run()
+#RELEASE = RD(bno) #ok
+#RELEASE.run()
 
-LAND = LD(bno) 
-LAND.run()
+#LAND = LD(bno) 
+#LAND.run()
 """
 time.sleep(3)
 
