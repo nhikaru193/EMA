@@ -58,10 +58,10 @@ RELEASE.run()
 LAND = LD(bno) 
 LAND.run()
 
-AVOIDANCE = PA(bno, goal_location = [35.9175612, 139.9087922]) #ok
+AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = [35.9175612, 139.9087922])
+GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
 
 FLAG = FN(bno, flag_location = [, ]) 
@@ -79,7 +79,7 @@ set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
 
-GPS_FtoG = GPS(bno, goal_location = [35.9243464,139.9113269])
+GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
 
 """
@@ -87,7 +87,7 @@ GOAL = GDN(bno, 30)
 GOAL.run()
 """
 
-GOAL = GDA(bno, 30)
+GOAL = GDA(bno_sensor_instance = bno)
 GOAL.run()
 
 print("クラス呼び出し完了です")
