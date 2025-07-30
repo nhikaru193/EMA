@@ -121,7 +121,7 @@ class FN:
                         
                         rotation_count = 0
                         while target_flag is None and rotation_count < 45:
-                            self.driver.petit_right(self, 0, 60)
+                            self.driver.petit_right(0, 60)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
 
