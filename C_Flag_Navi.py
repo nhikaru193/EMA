@@ -144,12 +144,12 @@ class FN:
                                     print(" 回避行動を終了しました。探索を再開します。")
                                     heading_history.clear()
                                     
-                                    self.driver.cleanup()
-                                    self.pi.bb_serial_read_close(self.RX_PIN)
-                                    self.pi.stop()
+                                    #self.driver.cleanup()
+                                    #self.pi.bb_serial_read_close(self.RX_PIN)
+                                    #self.pi.stop()
 
-                                    GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
-                                    GPS_StoF.run()
+                                    #GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
+                                    #GPS_StoF.run()
                                     
 
                              # ===== スタック判定処理ここまで =====
