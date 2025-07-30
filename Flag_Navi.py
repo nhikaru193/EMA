@@ -18,7 +18,7 @@ class FN:
         
         # --- 設定値 ---
         self.TARGET_SHAPES = ["T字", "十字"] #"三角形", "長方形", "T字", "十字"を追加する
-        self.AREA_THRESHOLD_PERCENT = 4.2
+        self.AREA_THRESHOLD_PERCENT = 3.5
         self.turn_speed = 45
         self.F_lat = flag_location[0]
         self.F_lon = flag_location[1]
@@ -121,7 +121,7 @@ class FN:
                         
                         rotation_count = 0
                         while target_flag is None and rotation_count < 45:
-                            self.petit_right(self, 0, 60)
+                            self.driver.petit_right(self, 0, 60)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
 
