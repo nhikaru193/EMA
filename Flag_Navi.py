@@ -154,10 +154,6 @@ class FN:
                                     time.sleep(0.5)
                                     print(" 回避行動を終了しました。探索を再開します。")
                                     heading_history.clear()
-                                    
-                                    self.driver.cleanup()
-                                    self.pi.bb_serial_read_close(self.RX_PIN)
-                                    self.pi.stop()
 
                                     GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
                                     GPS_StoF.run()
@@ -256,6 +252,8 @@ class FN:
         print("--- 制御を終了します ---")
         self.driver.cleanup()
         self.detector.close()
+        self.pi.bb_serial_read_close(self.RX_PIN)
+        self.pi.stop()
         #cv2.destroyAllWindows()
 
 # メインの実行ブロック
