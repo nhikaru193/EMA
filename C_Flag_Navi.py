@@ -34,6 +34,10 @@ class FN:
         
         # === BNO055 初期化 ===
         self.bno = bno
+        self.pi = pigpio.pi() 
+        if not self.pi.connected:
+            raise RuntimeError("pigpioデーモンに接続できません。`sudo pigpiod`を実行して確認してください。")
+        self.RX_PIN = 15
 
     def find_target_flag(self, detected_data, target_name):
         """検出データから指定された図形(target_name)のフラッグを探して返す"""
