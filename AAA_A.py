@@ -33,8 +33,8 @@ import busio
 from C_Parachute_Avoidance import Parakai
 """
 
-Flag_location = [ ,]
-Goal_location = [ ,]
+Flag_location = [35.9242090, 139.9113949]
+Goal_location = [35.9243095, 139.9113758]
 
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
