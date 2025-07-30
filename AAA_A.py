@@ -32,6 +32,7 @@ import numpy
 import busio
 from C_Parachute_Avoidance import Parakai
 """
+
 Flag_location = [ ,]
 Goal_location = [ ,]
 
