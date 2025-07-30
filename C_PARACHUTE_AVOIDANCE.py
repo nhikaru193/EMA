@@ -99,13 +99,13 @@ class PA:
             elif delta_heading < -1 * threshold_deg:
                 self.driver.petit_left(0, 80)
                 time.sleep(sleeping)
-                time.sleep(0.05)
+                time.sleep(0.03)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             elif delta_heading > threshold_deg:
-                self.driver.petit_right(0, 75)
+                self.driver.petit_right(0, 70)
                 time.sleep(sleeping)
-                time.sleep(0.05)
+                time.sleep(0.03)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
                 
