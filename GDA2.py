@@ -10,7 +10,7 @@ import math
 from collections import deque
 import pigpio
 
-class GDN:
+class GDA:
     def __init__(self, bno: BNO055, counter_max: int=50):
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,
