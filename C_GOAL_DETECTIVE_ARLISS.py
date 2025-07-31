@@ -17,12 +17,8 @@ class GDA:
     def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
                  motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
                  motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17):
-        # GPIO設定はMotorDriver内で完結させるか、このクラスで一元管理する
-        # ここでは、MotorDriverがGPIO設定を行う前提で進めます。
-        # もしMotorDriverがsetmode/setwarningsを呼ばないなら、ここで呼ぶ
-        # 例:
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setwarnings(False)
+        # GPIO設定はメインシーケンスで一括して行うため、ここでは行いません。
+        # MotorDriverは内部でGPIO設定を行うことを想定します。
 
         self.RX_PIN = rx_pin
         self.BAUD = 9600
@@ -30,9 +26,13 @@ class GDA:
         # Picamera2の初期化
         try:
             self.picam2_instance = Picamera2()
-            config = self.picam2_instance.create_still_configuration(main={"size": (320, 480)})
+            # Still Configurationを使用し、メインループで画像を回転させるようにします。
+            # また、解像度を少し上げて、より詳細な赤色検出を可能にします。
+            config = self.picam2_instance.create_still_configuration(main={"size": (640, 480)}) # 解像度を640x480に変更
             self.picam2_instance.configure(config)
             self.picam2_instance.start()
+            print("Picamera2 initialized and started.")
+            time.sleep(1) # カメラ起動待ち
         except Exception as e:
             print(f"Picamera2の初期化に失敗しました: {e}")
             raise # 初期化失敗は致命的なので、例外を再発生させる
@@ -44,15 +44,19 @@ class GDA:
                 PWMB=motor_pwmb_pin, BIN1=motor_bin1_pin, BIN2=motor_bin2_pin,
                 STBY=motor_stby_pin
             )
+            print("MotorDriver initialized.")
         except Exception as e:
             print(f"MotorDriverの初期化に失敗しました: {e}")
-            # MotorDriverの初期化失敗はPicamera2も閉じるべき
-            if self.picam2_instance:
+            # MotorDriverの初期化失敗時はPicamera2も閉じるべき
+            if hasattr(self, 'picam2_instance') and self.picam2_instance:
                 self.picam2_instance.close()
             raise # 初期化失敗は致命的なので、例外を再発生させる
 
         # BNO055インスタンスの保持（外部で初期化済み）
-        self.bno_sensor = bno_sensor_instance 
+        self.bno_sensor = bno_sensor_instance
+        if self.bno_sensor is None:
+            raise ValueError("BNO055センサーインスタンスがGDAクラスに渡されませんでした。")
+        print("BNO055 sensor instance received.")
 
         # pigpioの初期化
         try:
@@ -63,12 +67,13 @@ class GDA:
             if err != 0:
                 self.pi_instance.stop() # 接続はできたが、シリアル設定に失敗した場合
                 raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+            print("pigpio initialized and soft UART opened.")
         except Exception as e:
             print(f"pigpioの初期化またはソフトUART設定に失敗しました: {e}")
-            # pigpio初期化失敗はMotorDriverとPicamera2も閉じるべき
-            if self.driver:
-                self.driver.cleanup() # MotorDriverはGPIO設定も含む可能性あり
-            if self.picam2_instance:
+            # pigpio初期化失敗時はMotorDriverとPicamera2も閉じるべき
+            if hasattr(self, 'driver') and self.driver:
+                self.driver.cleanup()
+            if hasattr(self, 'picam2_instance') and self.picam2_instance:
                 self.picam2_instance.close()
             raise # 初期化失敗は致命的なので、例外を再発生させる
         
@@ -106,7 +111,13 @@ class GDA:
                 return -1.0 
 
             frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-            rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            # Picamera2のTransform(rotation=90)に対応するため、ここでは反時計回りに90度回転します。
+            # 通常のカメラ向きで撮る場合はこの回転は不要です。
+            # rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            # ただし、mainのpicam2.configureでtransform=Transform(rotation=90)を使っているので、
+            # capture_array()が既に回転後の画像を提供している可能性があります。
+            # もし画像が横向きになる場合は、上記コメントアウトを外し、以下の行を有効にしてください。
+            rotated_frame_bgr = frame_bgr # 暫定的に回転しない（Picamera2のTransformに任せる）
             
             directory = os.path.dirname(save_path)
             if not os.path.exists(directory):
@@ -119,9 +130,11 @@ class GDA:
 
             hsv = cv2.cvtColor(rotated_frame_bgr, cv2.COLOR_BGR2HSV)
 
-            lower_red1 = np.array([0, 100, 100])
-            upper_red1 = np.array([10, 255, 255])
-            lower_red2 = np.array([170, 100, 100])
+            # 赤色のHSV範囲を定義 (より赤色に近い色も検知するように調整済み)
+            lower_red1 = np.array([0, 100, 100])  # SとVの下限を下げて、より広い範囲の赤を検出
+            upper_red1 = np.array([10, 255, 255]) # 色相の上限を少し広げて、オレンジ寄りの赤も含む
+
+            lower_red2 = np.array([170, 100, 100]) # 色相の下限を少し広げ、紫寄りの赤も含む
             upper_red2 = np.array([180, 255, 255])
 
             mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -131,7 +144,7 @@ class GDA:
             red_pixels = cv2.countNonZero(mask)
             red_percentage = (red_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
             print(f"検出結果: 画像全体の赤色割合: {red_percentage:.2f}%")
-            return red_percentage / 100.0
+            return red_percentage / 100.0 # 割合は0-1の範囲で返すように調整
 
         except Exception as e:
             print(f"カメラ撮影・処理中にエラーが発生しました: {e}")
@@ -189,23 +202,34 @@ class GDA:
         return False
 
     def _calculate_angle_average(self, angles_deg):
+        """
+        複数の角度（度数法）の平均値を計算します。角度の連続性を考慮し、ベクトル平均を使用します。
+        例: [350, 10] の平均は 0 に近い値になります。
+        """
         if not angles_deg:
             return None
 
+        # 各角度をラジアンに変換し、X成分とY成分に分解
         x_coords = [math.cos(math.radians(angle)) for angle in angles_deg]
         y_coords = [math.sin(math.radians(angle)) for angle in angles_deg]
 
+        # X成分とY成分の合計
         sum_x = sum(x_coords)
         sum_y = sum(y_coords)
 
+        # 合計ベクトルから平均角度を計算
         average_angle_rad = math.atan2(sum_y, sum_x)
         average_angle_deg = math.degrees(average_angle_rad)
 
+        # 角度を0〜360度の範囲に正規化
         return (average_angle_deg + 360) % 360
 
     def _perform_final_scan_and_terminate(self, turn_angle_step=20, final_threshold=0.15, min_red_detections_to_terminate=4, high_red_threshold=0.40):
         """
-        BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
+        ローバーを20度ずつ360度回転させ、設定された閾値以上の赤色を検知した方向を記録します。
+        - 40%以上の赤色を検知した場合、即座に180度回転して前進し、Trueを返します（最終確認スキャンを再開）。
+        - スキャン終了後、15%以上の赤色をmin_red_detections_to_terminate個以上検知した場合、Falseを返します（プログラム終了指示）。
+        - どちらの条件も満たさない場合はNoneを返します（次の走行サイクルへ）。
         """
         print(f"\n=== 最終確認スキャンを開始します ({final_threshold:.0%}閾値、{min_red_detections_to_terminate}ヶ所検知、{high_red_threshold:.0%}高閾値で即座に180度回転前進) ===")
         initial_heading = self._get_bno_heading()
@@ -219,7 +243,7 @@ class GDA:
         print(f"  初回回転: {turn_angle_step}度...")
         self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
         
-        for i in range(360 // turn_angle_step): # 360度をステップごとにスキャン
+        for i in range(360 // turn_angle_step): 
             if i > 0: # 2回目以降の回転
                 print(f"  --> スキャン中: さらに{turn_angle_step}度回転...")
                 self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
@@ -282,14 +306,16 @@ class GDA:
                     print("警告: 最終スキャン後の中心回頭時に方位が取得できませんでした。")
             
             print("  --> 4ヶ所検知の条件（ただし40%未満）を満たしたため、ミッションを終了します。")
-            return False # 終了条件達成を示す
+            return False # プログラム終了を指示するFalse
         else:
             print(f"\n=== 最終確認スキャンが完了しました。条件を満たしませんでした (検出箇所: {len(final_scan_detected_angles)}ヶ所)。 ===")
-            return None # 条件未達を示す
+            return None # 次の走行サイクルに進むことを指示するNone
 
     def _perform_initial_alignment_scan(self, turn_angle_step=20, alignment_threshold=0.10):
         """
-        BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
+        ローバーを20度ずつ270度回転させ、20%以上の赤色を検知したらその方向で回転を停止し、向きを合わせます。
+        20%以上の赤色が検知されなかった場合は、最も多くの赤が検知された方向に向きを合わせてからTrueを返します。
+        戻り値: (aligned_successfully:bool, aligned_heading:float, detected_red_angles:list)
         """
         print("\n=== 初期赤色アライメントスキャンを開始します (20%閾値) ===")
         initial_heading_at_start = self._get_bno_heading()
@@ -509,7 +535,7 @@ class GDA:
                                 for det in sorted_detections:
                                     # 元のアライメント方向と大きく異なる方向を選ぶための閾値
                                     angle_diff = (det['heading'] - initial_aligned_heading + 180 + 360) % 360 - 180
-                                    if abs(angle_diff) > 20: # 20度以上離れている方向を探す
+                                    if abs(angle_diff) > 20: # 20度以上離れていれば異なる方向とみなす
                                         best_red_after_initial_alignment = det
                                         break
 
@@ -695,28 +721,27 @@ class GDA:
             print("Picamera2 closed.")
         
         # GPIO.cleanup()はメインのfinallyブロックで一括して行うように変更
-        # GDAインスタンスの初期化が完了していればMotorDriverがcleanupでGPIO.cleanup()を呼ぶはず
-        # もしMotorDriverがGPIO.cleanup()を呼ばない設計であれば、ここでGPIO.cleanup()を呼ぶ必要がある
-        # ただし、二重呼び出しは避ける
+        # MotorDriverが内部でGPIO.cleanup()を呼んでいる場合、ここで二重に呼ばないようにコメントアウト
+        # そうでない場合は、ここにGPIO.cleanup()を追加してください
         # print("GPIO cleanup skipped within GDA class to avoid double cleanup.")
-        # GPIO.cleanup() # MotorDriverが内部でGPIO.cleanup()を呼んでいる場合、ここで呼ばない
 
         print("=== 処理を終了しました。 ===")
 
 
-# --- メインシーケンス ---
+---
+# メインシーケンス
 if __name__ == "__main__":
-    # GPIO設定は、プログラム全体で一度だけ行うべき
-    # MotorDriverクラスの__init__内でGPIO.setmode(GPIO.BCM)とGPIO.setwarnings(False)が呼ばれていることを推奨
-    # もし呼ばれていないなら、ここで明示的に呼ぶ
-    # GPIO.setmode(GPIO.BCM)
-    # GPIO.setwarnings(False)
+    # プログラム全体で一度だけGPIO設定を行う
+    # MotorDriverが内部でGPIO.setmode(GPIO.BCM)とGPIO.setwarnings(False)を呼ばない場合、ここで呼ぶ
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
     bno_sensor_address = 0x28 # BNO055のアドレス
-    bno_sensor = None 
-    rover = None # roverのスコープをtry/except/finallyの外で宣言
+    bno_sensor = None  # BNOセンサーのインスタンス
+    rover = None       # GDAクラスのインスタンス
 
     try:
+        # BNO055センサーの初期化
         bno_sensor = BNO055(address=bno_sensor_address)
         if not bno_sensor.begin():
             raise RuntimeError("BNO055センサーの初期化に失敗しました。終了します。")
@@ -725,29 +750,30 @@ if __name__ == "__main__":
         time.sleep(1)
         print("BNO055 sensor initialized outside GDA class.")
         
-        # GDAクラスのインスタンスを作成
+        # GDAクラスのインスタンスを作成し、初期化したBNO055センサーを渡す
         rover = GDA(
             motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
             motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
             motor_stby_pin=21, 
-            bno_sensor_instance=bno_sensor, 
+            bno_sensor_instance=bno_sensor,  # ここでBNO055インスタンスを渡します
             rx_pin=17
         )
+        # メインの自律走行ループを開始
         rover.HAT_TRICK()
 
     except Exception as e:
         print(f"プログラム全体の初期化または実行中に予期せぬエラーが発生しました: {e}")
     finally:
         # roverインスタンスが存在する場合のみcleanupを呼ぶ
-        if rover: # 'rover' in locals() よりも直接オブジェクトがNoneでないか確認する方が確実
+        if rover: 
             rover.cleanup()
         else:
             # GDAインスタンスが作成される前にエラーが発生した場合の最低限のクリーンアップ
-            # BNO055は特別なクリーンアップ不要
             # pigpioのbb_serial_read_openが呼ばれていない限り、bb_serial_read_closeは不要
             # しかし、念のためpigpioのインスタンスがあるか確認し、あればstopを試みる
             try:
                 # pigpioのインスタンスがGDAの初期化途中で作られた場合を想定
+                # pigpio.pi()が接続を試みるため、エラーがなければpi_instanceは有効です。
                 _pi_instance_for_cleanup = pigpio.pi()
                 if _pi_instance_for_cleanup.connected:
                     _pi_instance_for_cleanup.stop()
@@ -755,10 +781,8 @@ if __name__ == "__main__":
             except Exception:
                 pass # pigpioに接続できない場合は何もしない
             
-            # MotorDriverがGPIO.cleanup()を呼ぶことを想定
-            # もしそうでないなら、ここでGPIO.cleanup()を呼ぶ
-            # 現状はMotorDriver.cleanup()がこれを呼ぶ前提なのでコメントアウト
-            # GPIO.cleanup() 
+            # MotorDriverがGPIO.cleanup()を呼ぶことを想定しているため、ここでは重複を避けていません。
+            # もしMotorDriverが呼ばない場合は、ここでGPIO.cleanup()を呼び出す必要があります。
             print("GPIO cleanup handled by MotorDriver or main's final block.")
 
         # プログラム終了時にGPIOを確実に解放
