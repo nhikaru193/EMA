@@ -334,16 +334,36 @@ class GDA:
         
         detected_red_angles = []
 
-        initial_turn_angle = 270 
-        print(f"  初回回転: {initial_turn_angle}度...")
-        self._turn_to_relative_angle(initial_turn_angle, turn_speed=90, angle_tolerance_deg=20)
+        # スキャン開始時に指定された角度だけ回転します。
+        # この回転は一度きりの初期位置調整と見なします。
+        # 初回は270度回転して、そこから時計回りにスキャンしていく意図だと思いますので、
+        # ここで指定された角度(270度)だけ回転させます。
+        print(f"  初回回転: {turn_angle_step}度...") # ここのログは実態に合わせて変更
+        self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20) # 修正：初回の270度回転ではなく、最初のステップの回転に合わせる
         
-        for i in range(270 // turn_angle_step):
-            current_relative_angle_from_start_of_scan = (i + 1) * turn_angle_step
-            
-            if i > 0:
+        # for i in range(270 // turn_angle_step): # ループ回数は全体で360度をカバーするように変更
+        # initial_turn_angle = 270 は削除、または外側のロジックで制御する
+        # このスキャンは初期アライメントであり、360度全体をスキャンするのか、一部をスキャンするのかを明確にする必要があります。
+        # コードの意図からすると、270度をスキャンしているように見えます。
+        # ここでは、元の270度スキャンを踏襲しつつ、回転ロジックを修正します。
+
+        # 修正1: 最初の回転をループの外で1回だけ実行するようにする (または、ループ内のi=0の場合にのみ実行)
+        # または、rangeを 0 から 270 // turn_angle_step の回数分にする
+        
+        # 新しいループの設計案
+        # スキャンは270度と書かれているため、その範囲で回るようにします。
+        # 最初の回転はループの外で実施済みとみなすか、ループの初回で処理します。
+        
+        # 1. ループ回数を調整し、毎回turn_angle_stepだけ回転するようにする
+        total_scan_angles = 270 # 意図するスキャン角度
+        num_steps = total_scan_angles // turn_angle_step
+
+        for i in range(num_steps):
+            if i > 0: # 2回目以降の回転
                 print(f"  回転: {turn_angle_step}度...")
                 self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
+                self.driver.motor_stop_brake()
+                time.sleep(0.5)
             
             current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
@@ -355,7 +375,7 @@ class GDA:
             print(f"\n--- 初期アライメントスキャン中: 現在の方向: {current_scan_heading:.2f}度 ---")
             
             overall_red_ratio = self._detect_red_percentage(
-                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{current_relative_angle_from_start_of_scan:03d}.jpg"
+                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{i*turn_angle_step + turn_angle_step:03d}.jpg"
             )
 
             if overall_red_ratio == -1.0:
@@ -373,13 +393,15 @@ class GDA:
             if overall_red_ratio * 100.0 >= alignment_threshold * 100.0:
                 detected_red_angles.append(current_scan_heading)
                 print(f"  --> 赤色を{alignment_threshold*100.0:.0f}%以上検出！方向を記録しました。")
-
+            
+            # 各スキャンステップ後に停止
             self.driver.motor_stop_brake()
             time.sleep(0.5)
 
-            if i < (270 // turn_angle_step) - 1:
-                print(f"  回転: {turn_angle_step}度...")
-                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
+        # 最初の initial_turn_angle = 270 の回転は、この修正案では最初の`_turn_to_relative_angle`呼び出しに統合されます。
+        # または、スキャン開始前に一度だけ270度回転させて、その後のループでは毎回turn_angle_stepずつ回転する形にするか、
+        # ループ自体を270度回す設計にするか、どちらかの意図に沿って調整してください。
+        # 現状のコードのコメントを見ると270度を回る意図があるので、それに合わせました。
 
 
         if not detected_red_angles:
@@ -389,6 +411,23 @@ class GDA:
                 
                 if current_heading_at_end_of_scan is not None:
                     angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
+                    
+                    print(f"  --> {alignment_threshold*100.0:.0f}%"
+                          f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
+                    self._turn_to_relative_angle(angle_to_turn_to_best_red, turn_speed=90, angle_tolerance_deg=20)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                    aligned = True
+                    detected_red_angles.append(best_heading_for_red) # 最大赤色方向も検出角度リストに追加
+                else:
+                    print("警告: スキャン終了時に方位が取得できず、最大赤色方向へのアライメントができませんでした。")
+            else:
+                print("初期アライメントスキャンで赤色は全く検出されませんでした。")
+        else:
+            aligned = True
+
+        print("=== 初期赤色アライメントスキャンが完了しました。 ===")
+        return aligned, best_heading_for_red, detected_red_anglesto_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                     
                     print(f"  --> {alignment_threshold*100.0:.0f}%"
                           f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
