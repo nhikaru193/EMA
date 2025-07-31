@@ -331,15 +331,16 @@ class GDA:
         self.driver.motor_stop_brake()
         time.sleep(0.5)
 
-        # 270度の範囲でスキャンするために、ループ回数を調整
-        num_steps = 270 // turn_angle_step
+        num_steps = 270 // turn_angle_step # 270度のスキャンを行うステップ数
 
+        # スキャンループ
         for i in range(num_steps):
-            # 各ステップの開始時に回転
-            print(f"  回転: {turn_angle_step}度...")
-            self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
-            self.driver.motor_stop_brake()
-            time.sleep(0.5)
+            # 最初のステップ以外で、次のスキャン位置へ回転
+            if i > 0:
+                print(f"  回転: {turn_angle_step}度...")
+                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
+                self.driver.motor_stop_brake()
+                time.sleep(0.5)
             
             current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
@@ -360,6 +361,19 @@ class GDA:
                 time.sleep(0.5)
                 continue
 
+            print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2f}%")
+
+            if overall_red_ratio > max_red_ratio:
+                max_red_ratio = overall_red_ratio
+                best_heading_for_red = current_scan_heading 
+            
+            if overall_red_ratio * 100.0 >= alignment_threshold * 100.0:
+                detected_red_angles.append(current_scan_heading)
+                print(f"  --> 赤色を{alignment_threshold*100.0:.0f}%以上検出！方向を記録しました。")
+            
+            # 各スキャンステップ後に停止
+            self.driver.motor_stop_brake()
+            time.sleep(0.5)
             print(f"検出結果: 画像全体の赤色割合: {overall_red_ratio:.2f}%")
 
             if overall_red_ratio > max_red_ratio:
