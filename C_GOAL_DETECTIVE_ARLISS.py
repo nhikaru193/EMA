@@ -13,7 +13,7 @@ import math
 
 # カスタムモジュールのインポート
 from motor import MotorDriver
-from BNO055 import BNO055
+from BNO055 import BNO055 # GDAクラス内で使用するため必要
 
 # --- 定数設定 (変更なし) ---
 RX_PIN = 17
@@ -96,9 +96,20 @@ def calculate_angle_average(angles_deg):
 
     return (average_angle_deg + 360) % 360
 
+---
+## GDA クラスの変更点
+
+**変更の要点:**
+
+* `GDA.__init__` メソッドの引数に `bno_sensor_instance` を追加します。
+* `self.bno_sensor` を、この引数で渡されたインスタンスに設定します。
+* `GDA` クラス内で行っていた BNO055 センサーの初期化処理（`bno_sensor = BNO055(...)` から `setExternalCrystalUse(True)` まで）は**削除します**。これらの処理は `main.py` 側で行われているためです。
+
+```python
 # --- ロボット制御クラス ---
 class GDA:
-    def __init__(self):
+    # __init__ メソッドの引数に bno_sensor_instance を追加
+    def __init__(self, bno_sensor_instance):
         # GPIO設定
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -115,13 +126,16 @@ class GDA:
             print("pigpioデーモンに接続できません。終了します。")
             sys.exit(1) # エラーコードで終了
 
-        self.bno_sensor = BNO055(address=0x28)
-        if not self.bno_sensor.begin():
-            print("BNO055センサーの初期化に失敗しました。終了します。")
-            sys.exit(1) # エラーコードで終了
-        self.bno_sensor.setMode(BNO055.OPERATION_MODE_NDOF)
-        self.bno_sensor.setExternalCrystalUse(True)
-        time.sleep(1)
+        # main.py から渡された BNO055 インスタンスを使用
+        self.bno_sensor = bno_sensor_instance 
+        
+        # BNO055 の初期化は main.py で行われるため、GDA.__init__ からは削除
+        # if not self.bno_sensor.begin():
+        #     print("BNO055センサーの初期化に失敗しました。終了します。")
+        #     sys.exit(1)
+        # self.bno_sensor.setMode(BNO055.OPERATION_MODE_NDOF)
+        # self.bno_sensor.setExternalCrystalUse(True)
+        # time.sleep(1)
         
         self.picam2 = Picamera2()
         self.picam2.configure(self.picam2.create_preview_configuration(
@@ -131,7 +145,7 @@ class GDA:
         ))
         self.picam2.start()
         time.sleep(2)
-        print("RobotController: すべてのデバイスが初期化されました。")
+        print("GDA: すべてのデバイスが初期化されました。")
 
     def get_bno_heading(self):
         """
@@ -150,7 +164,7 @@ class GDA:
         現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
         """
         initial_heading = self.get_bno_heading()
-        if initial_heading is None: # get_bno_headingが0.0を返すようにしたので、このNoneチェックは冗長だが残しておく
+        if initial_heading is None: 
             print("警告: turn_to_relative_angle: 初期方位が取得できませんでした。")
             return False
         
@@ -161,7 +175,7 @@ class GDA:
         
         while loop_count < max_turn_attempts:
             current_heading = self.get_bno_heading()
-            if current_heading is None: # get_bno_headingが0.0を返すようにしたので、このNoneチェックは冗長だが残しておく
+            if current_heading is None: 
                 print("警告: turn_to_relative_angle: 旋回中に方位が取得できませんでした。スキップします。")
                 self.driver.motor_stop_brake()
                 time.sleep(0.1)
@@ -375,10 +389,11 @@ class GDA:
         print("=== 初期赤色アライメントスキャンが完了しました。 ===")
         return aligned, best_heading_for_red, detected_red_angles
 
-    def run_autonomous_mode(self):
+    def HAT_TRICK(self): # run_autonomous_mode を HAT_TRICK に名称変更
         """
         ロボットのメインの自律走行ループを実行します。
         """
+        # BNO055のキャリブレーション待機は main.py で行われているため、ここではスキップ
         print("BNO055のキャリブレーション待機はスキップされました。自動操縦を開始します。")
 
         while True:
@@ -445,7 +460,7 @@ class GDA:
                     print("警告: 検出された角度からの中心角度計算に失敗しました。")
                     skip_forward_scan_phase = False
             elif len(initial_scan_detected_angles) == 1:
-                print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]:.2f}度) しました。その方向へ向きを調整済みです。")
+                print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]::.2f}度) しました。その方向へ向きを調整済みです。")
                 skip_forward_scan_phase = False
             else:
                 print("\n=== 赤色検知がなかったため、次の行動に移ります。 ===")
@@ -689,17 +704,3 @@ class GDA:
         GPIO.cleanup()
         print("GPIOがクリーンアップされました。")
         print("=== 処理を終了しました。 ===")
-
-# --- メイン実行ブロック ---
-if __name__ == "__main__":
-    robot_controller = None # 初期化前に変数を定義
-    try:
-        robot_controller = RobotController()
-        robot_controller.run_autonomous_mode()
-    except KeyboardInterrupt:
-        print("\nプログラムがユーザーによって中断されました。")
-    except Exception as e:
-        print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
-    finally:
-        if robot_controller is not None:
-            robot_controller.cleanup()
