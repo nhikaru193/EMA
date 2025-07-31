@@ -15,7 +15,7 @@ import BME280
 import following
 from BNO055 import BNO055
 from motor import MotorDriver
-from Flag_B import Flag_B
+from Flag_Detector3 import FlagDetector
 
 #ミッション部分
 from C_RELEASE import RD
@@ -24,11 +24,21 @@ from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 from C_Servo import SM
 from C_excellent_GPS import GPS
-from C_GOAL_DETECTIVE_NOSHIRO import GDN
+from C_GOAL_DETECTIVE_ARLISS import GDA
 
+#おそらく未使用のモジュール
+"""
+import numpy
+import busio
+from C_Parachute_Avoidance import Parakai
+"""
 
-Flag_location = [35.9242090, 139.9113949]
-Goal_location = [35.9243095, 139.9113758]
+Flag_location = [35.9242012, 139.9114341]
+Goal_location = [35.9241572, 139.9112561]
+
+def set_servo_duty(duty):
+    pwm.ChangeDutyCycle(duty)
+    time.sleep(0.5)
 
 #BNO055の初期設定
 bno = BNO055()
@@ -44,32 +54,40 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
+"""
+#関数のインスタンス作成
+RELEASE = RD(bno) #ok
+RELEASE.run()
 
-def degree_rotation(degree, threshold_deg = 5, sleeping = 0.01):
-    before_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-    target_heading = (before_heading + degree) % 360
-    while True:
-        current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-        delta_heading = ((target_heading - current_heading + 180) % 360) - 180
-        if abs(delta_heading) <= threshold_deg:
-            break
-        elif delta_heading < -1 * threshold_deg:
-            driver.petit_left(0, 90)
-            time.sleep(sleeping)
-            time.sleep(0.05)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-        elif delta_heading > threshold_deg:
-            driver.petit_right(0, 99)
-            time.sleep(sleeping)
-            time.sleep(0.05)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
+LAND = LD(bno) 
+LAND.run()
+
+AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
+AVOIDANCE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location)
 GPS_StoF.run()
 
+FLAG = FN(bno, flag_location = Flag_location) 
+FLAG.run()
+
+SERVO_PIN = 13  # GPIO13を使用
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+pwm = GPIO.PWM(SERVO_PIN, 50)
+pwm.start(0)
+print("逆回転（速い）")
+set_servo_duty(4.0)
+time.sleep(7)
+set_servo_duty(12.5)
+pwm.stop()
+GPIO.cleanup()
+"""
+
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
+
+GOAL = GDA(bno_sensor_instance = bno)
+GOAL.HAT_TRICK()
 
 print("クラス呼び出し完了です")
