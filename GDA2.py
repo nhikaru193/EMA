@@ -149,7 +149,7 @@ class GDA:
                         # --- 追加ロジックここまで ---
 
                         # 常に前進し続ける（速度は調整可能）
-                        following.follow_forward(self.driver, self.bno, 70, 0.5) # 短い時間前進を繰り返す
+                        self.driver.petit_petit(2) # 短い時間前進を繰り返す
                         self.driver.motor_stop_brake()
                         time.sleep(0.2) # 各ステップの間に少し間隔を空ける
                 else:
