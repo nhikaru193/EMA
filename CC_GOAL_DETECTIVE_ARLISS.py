@@ -43,6 +43,27 @@ class GDA:
         print(f"検知割合は{percentage}%です")
         return percentage
 
+    def get_density_on_each_block(self, frame):
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
+        mask = cv2.bitwise_or(mask1, mask2)
+        height, width = mask.shape
+        block_width = width // 5
+        red_ratios = []
+        for i in range(5):
+            x_start = i * block_width
+            x_end = (i + 1) * block_width if i < 4 else width
+            block_mask = mask[:, x_start:x_end]
+            red_count = np.count_nonzero(block_mask)
+            total_count = block_mask.size
+            ratio = red_count / total_count
+            red_ratios.append(ratio)
+       return red_ratios
+
     def get_block_number_by_density(self, frame):
         frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -71,79 +92,83 @@ class GDA:
         else:
             print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
             return red_ratios.index(max_ratio) + 1
-
+            
     def run(self):
         try:
             heading_list = deque(maxlen=4)
             percent_list = deque(maxlen=4)
             turn_counter = 4
-            start_heading = self.bno.get_heading()
-            a_time = time.time()
-            #ゴール内部からのスタートであることに注意
-            #以下のwhile True構文はコーンの情報把握
+
+            #大まかな接近を行う。おおよそ正方形外怪から2 m前後まで接近
             while True:
                 frame = self.picam2.capture_array()
-                percentage = self.get_percentage(frame)
+                per = self.get_percentage(frame)
+                if per < 8:
+                    self.driver.petit_petit(4)
+                    time.sleep(1)
+                else:
+                    print("大まかな接近に成功しました。")
+                    break
+            
+            #ブロックごとの割合を検知して、45%を超えると70 cmと検知する方針。まずはある一個に近づく
+            while True:
+                self.driver.petit_left(0, 90)
+                self.driver.motor_stop_brake()
+                time.sleep(0.5)
+                frame = self.picam2.capture_array()
+                RED = self.get_density_on_each_block(frame)
+                max_RED = max(RED)
+                max_RED_number = RED.index(max_RED)
+                print(f"赤色検知最大は{max_RED_number}です")
+                #一番高い要素の割合が45%でbreak
+                if max_RED > 45:
+                    print("赤色球体1個に接近完了しました")
+                    break
+                if max_RED_number == 2:
+                    print("中央にとらえることができたので、前進します")
+                    if max_RED > 30:
+                        self.driver.petit_petit(2)
+                    else:
+                        self.driver.petit_petit(5)
+                elif max_RED_number == 0:
+                    self.driver.petit_left(0, 90)
+                elif max_RED_number == 1:
+                    self.driver.petit_left(0, 80)
+                elif max_RED_number == 3:
+                    self.driver.petit_right(0, 70)
+                elif max_RED_number == 4:
+                    self.driver.petit_right(0, 80)
+                
+            #中心部に入るコード
+            while True:
+                self.driver.petit_right(0, 90)
+                self.driver.motor_stop_brake()
+                frame = self.picam2.capture_array()
                 number = self.get_block_number_by_density(frame)
-                time.sleep(0.2)
-                if number == 1:
-                    self.driver.petit_left(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.6)
-                elif number == 2:
-                    self.driver.petit_left(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.6)
-                elif number == 4:
-                    self.driver.petit_right(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.6)
-                elif number == 5:
-                    self.driver.petit_right(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.6)
-                #以下は中央にある場合であるので情報を記憶し格納する
-                elif number == 3:
-                    heading = self.bno.get_heading()
-                    #スタート位置との差が小さければループを抜ける
-                    b_time = time.time()
-                    deltaa_time = b_time - a_time
-                    if deltaa_time > 10:
-                        deltaa_heading = abs((heading - start_heading + 180) % 360 - 180)
-                        if deltaa_heading < 10:
-                            break
-                    heading_list.append(heading)
-                    percent_list.append(percentage)
-                    turn_counter = turn_counter - 1
-                    #すべてのコーンを格納済み
-                    if turn_counter == 0:
-                        print("すべてのコーンの割合と方位角の情報を保持しました")
-                    #次のコーンを検知するまで回頭
-                    print("コーンの探索を行います")
-                    start_time = time.time()
-                    while True:
-                        self.driver.petit_left(0, 100)
-                        self.driver.motor_stop_brake()
-                        time.sleep(0.6)
-                        current_time = time.time()
-                        frame = self.picam2.capture_array()
-                        number = self.get_block_number_by_density(frame)
-                        if number == 2:
-                            print("次のコーンを検知しました。")
-                            break
-                        elif number == 1:
-                            print("次のコーンを検知しました。")
-                            break
-                        delta_time = current_time - start_time
-                        if delta_time > 4:
-                            if number == 3:
-                                print("次のコーンを検知しました。")
-                                break
-            #ここから中央への移動を行う
-            if len(heading_list) ==3:
-                #三角形の重心計算
-
-        
+                if number ==
+                """
+                time.sleep(0.5)
+                frame = self.picam2.capture_array()
+                RED = self.get_density_on_each_block(frame)
+                max_RED = max(RED)
+                max_RED_number = RED.index(max_RED)
+                current_heading = self.bno.get_heading()
+                check = 0
+                if heading_list = None:
+                for i in range(len(heading_list)):
+                    d_heading = abs(((heading_list[i] - current_heading + 180) % 360) - 180)
+                    if d_heading < 10:
+                if check == 100:
+                    print("登録済みの赤色球体です。スキップします")
+                    if max_RED > 50:
+                        if max_RED_number == 2:
+                            heading = self.bno.get_heading() 
+                            if check == 100:
+                                print("登録済みの赤色球体です。スキップします")
+                            elif check == 0:
+                                print("登録していない赤色球体です。登録をお願いします")
+                                heading_list.append(heading)
+                """
         finally:
             self.driver.cleanup()
             self.picam2.close()
