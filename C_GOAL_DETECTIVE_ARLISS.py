@@ -17,16 +17,25 @@ class GDA:
     def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
                  motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
                  motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17):
-        self.picam2 = Picamera2()
-        config = self.picam2.create_still_configuration(main={"size": (320, 480)})
-        self.picam2.configure(config)
-        self.picam2.start()
+        self.RX_PIN = rx_pin
+        self.BAUD = 9600
+        self.picam2_instance = Picamera2()
+        config = self.picam2_instance.create_still_configuration(main={"size": (320, 480)})
+        self.picam2_instance.configure(config)
+        self.picam2_instance.start()
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,
             PWMB=19, BIN1=16, BIN2=26,
             STBY=21
         )
         self.bno_sensor = bno_sensor_instance # 渡されたBNO055インスタンスを保持
+        self.pi_instance = pigpio.pi()
+        if not self.pi_instance.connected:
+            raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
+        err = self.pi_instance.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+        if err != 0:
+            self.pi_instance.stop()
+            raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
         """
         self.motor_pwma_pin = motor_pwma_pin
         self.motor_ain1_pin = motor_ain1_pin
