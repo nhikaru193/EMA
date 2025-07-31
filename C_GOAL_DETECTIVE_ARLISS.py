@@ -427,7 +427,8 @@ class GDA:
             aligned = True
 
         print("=== 初期赤色アライメントスキャンが完了しました。 ===")
-        return aligned, best_heading_for_red, detected_red_anglesto_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
+        angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
+        return aligned, best_heading_for_red, detected_red_angles
                     
                     print(f"  --> {alignment_threshold*100.0:.0f}%"
                           f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
