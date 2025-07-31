@@ -462,7 +462,7 @@ class GDA:
                     print("警告: 検出された角度からの中心角度計算に失敗しました。")
                     skip_forward_scan_phase = False
             elif len(initial_scan_detected_angles) == 1:
-                print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]::.2f}度) しました。その方向へ向きを調整済みです。")
+                print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]:.2f}度) しました。その方向へ向きを調整済みです。")
                 skip_forward_scan_phase = False
             else:
                 print("\n=== 赤色検知がなかったため、次の行動に移ります。 ===")
