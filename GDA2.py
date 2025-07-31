@@ -28,7 +28,7 @@ class GDA:
         self.upper_red1 = np.array([10, 255, 255])
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
-        self.pi = pigpio.pi() 
+        self.pi = pigpio.pi()
         if not self.pi.connected:
             raise RuntimeError("pigpioデーモンに接続できません。`sudo pigpiod`を実行して確認してください。")
         
@@ -46,34 +46,7 @@ class GDA:
         print(f"検知割合は{percentage}%です")
         return percentage
 
-    def get_block_number_by_density(self, frame):
-        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        frame = cv2.GaussianBlur(frame, (5, 5), 0)
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
-        mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
-        mask = cv2.bitwise_or(mask1, mask2)
-        height, width = mask.shape
-        block_width = width // 5
-        red_ratios = []
-        for i in range(5):
-            x_start = i * block_width
-            x_end = (i + 1) * block_width if i < 4 else width
-            block_mask = mask[:, x_start:x_end]
-            red_count = np.count_nonzero(block_mask)
-            total_count = block_mask.size
-            ratio = red_count / total_count
-            red_ratios.append(ratio)
-        for i, r in enumerate(red_ratios):
-            print(f"[DEBUG] ブロック{i+1}の赤密度: {r:.2%}")
-        max_ratio = max(red_ratios)
-        if max_ratio < 0.08:
-            print("❌ 赤色が検出されません（全ブロックで密度低）")
-            return None  # 全体的に赤が少なすぎる場合
-        else:
-            print(f"一番密度の高いブロックは{red_ratios.index(max_ratio) + 1}です")
-            return red_ratios.index(max_ratio) + 1
+    # get_block_number_by_density メソッドは削除されました。
     
     def run(self):
         left_a = 90
@@ -118,66 +91,29 @@ class GDA:
                 frame = self.picam2.capture_array()
                 time.sleep(0.2)
                 percentage = self.get_percentage(frame)
-                number = self.get_block_number_by_density(frame)
+                # number = self.get_block_number_by_density(frame) # この行は削除されました
                 time.sleep(0.2)
-                print(f"赤割合: {percentage:2f}%-----画面場所:{number}です ")
+                print(f"赤割合: {percentage:2f}%です ") # 出力からブロック番号を削除
+
                 if percentage >= 90:
                     print("percentageでのゴール判定")
                     break
-                elif number == 3:
+                elif percentage > 15: # 赤コーンが十分に検出された場合
+                    print("赤コーンを検知しました。接近します。")
                     if percentage > 40:
-                        print("petit_petitを2回実行します")
+                        print("非常に近いので、ゆっくり前進します (petit_petit 2回)")
                         self.driver.petit_petit(2)
-                        time.sleep(1.0)
-                        counter = self.counter_max
-
                     elif percentage > 20:
-                        print("petit_petitを3回実行します")
+                        print("近いので、少し前進します (petit_petit 3回)")
                         self.driver.petit_petit(3)
-                        time.sleep(1.0)
-                        
-                    elif percentage > 10:
-                        print("petit_petitを5回実行します")
-                        self.driver.petit_petit(5)
-                        time.sleep(1.0)
-                        
-                    else:
-                        print("距離が遠いため、前身を行います")
-                        following.follow_forward(self.driver, self.bno, 70, 2)
-        
-                elif number == 1:
-                    self.driver.petit_left(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-        
-                elif number == 2:
-                    self.driver.petit_left(0, 90)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                    if percentage < 50:
-                        print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
-                        following.follow_forward(self.driver, self.bno, 70, 1)
-                        counter = self.counter_max
-                    
-                elif number == 4:
-                    self.driver.petit_right(0, 90)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                    if percentage < 50:
-                        print("正面にとらえることができませんでしたが、検知割合が低いため、接近します")
-                        following.follow_forward(self.driver, self.bno, 70, 1)
-                        counter = self.counter_max
-                    
-                elif number == 5:
-                    self.driver.petit_right(0, 100)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-        
-                elif number is None:
-                    self.driver.petit_left(0, 100)
-                    self.driver.petit_left(100, 0)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
+                    else: # percentage > 15 かつ <= 20 の場合
+                        print("遠いので、前進します (follow_forward)")
+                        following.follow_forward(self.driver, self.bno, 70, 1) # 1は短い前進時間
+                    counter = self.counter_max # コーンが見えているのでカウンターをリセット
+                # percentage <= 15 の場合（赤コーンが明確に検出されないか、非常に遠い場合）は、
+                # カウンターが減少し、最終的に上記の探索モードがトリガーされます。
+                # ブロック番号による微調整は行いません。
+                
                 counter = counter - 1
                 c_heading = self.bno.get_heading()
                 heading_list.append(c_heading)
@@ -211,5 +147,3 @@ class GDA:
             print("ゴール判定")
             self.driver.cleanup()
             print("GPIOクリーンアップが終了しました。プログラムを終了します")
-        
-        
