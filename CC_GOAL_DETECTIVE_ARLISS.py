@@ -121,7 +121,7 @@ class GDA:
                 max_RED_number = RED.index(max_RED)
                 print(f"赤色検知最大は{max_RED_number}です")
                 #一番高い要素の割合が45%でbreak
-                if max_RED > 45:
+                if max_RED > 35:
                     print("赤色球体1個に接近完了しました")
                     break
                 if max_RED_number == 2:
@@ -139,13 +139,66 @@ class GDA:
                 elif max_RED_number == 4:
                     self.driver.petit_right(0, 80)
                 
-            #中心部に入るコード
+            #正面に赤色球体をとらえ、方位角を記憶する
+            while True:
+                frame = self.picam2.capture_array()
+                number = self.get_block_number_by_density(frame)
+                print(f"赤色球体を{number}にとらえました")
+                if number == 3:
+                    heading = self.bno.get_heading()
+                    heading_list.append(heading)
+                    print("一つ目の赤色球体の場所を記憶しました")
+                    break
+                elif number == 1:
+                    self.driver.petit_left(0, 90)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                elif number == 2:
+                    self.driver.petit_left(0, 80)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                elif number == 4:
+                    self.driver.petit_right(0, 70)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                elif number == 5:
+                    self.driver.petit_right(0, 80)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                else:
+                    self.driver.petit_left(0, 90)
+                    self.driver.motor_stop_brake()
+                    time.sleep(0.5)
+                    
+            #2個目の赤色球体を検知する    
             while True:
                 self.driver.petit_right(0, 90)
                 self.driver.motor_stop_brake()
+                time.sleep(0.5)
+                current_heading = self.bno.get_heading()
                 frame = self.picam2.capture_array()
                 number = self.get_block_number_by_density(frame)
-                if number ==
+                if number == 3:
+                    heading = self.bno.get_heading()
+                    per = self.get_percentage(frame)
+                    for i in range(len(heading_list)):
+                        d_heading = abs(((heading_list[i] - current_heading + 180) % 360) - 180)
+                        if d_heading < 10:
+                            print("登録済みですのでスキップします")
+                            break
+                        else:
+                            heading_list.append(heading)
+                            print("2個目の方位情報の記憶を行いました。前進を行います。")
+                            if per < 20:
+                                self.driver.petit_petit(4)
+                            elif per < 40:
+                                
+          
+                            
+                
+                
+                        
+                    
                 """
                 time.sleep(0.5)
                 frame = self.picam2.capture_array()
