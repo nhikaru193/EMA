@@ -83,8 +83,8 @@ set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
 """
-GPS_FtoG = GPS(bno, goal_location = Goal_location)
-GPS_FtoG.run()
+#GPS_FtoG = GPS(bno, goal_location = Goal_location)
+#GPS_FtoG.run()
 
 GOAL = GDA(bno_sensor_instance = bno)
 GOAL.HAT_TRICK()
