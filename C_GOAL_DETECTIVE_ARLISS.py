@@ -141,13 +141,25 @@ class GDA:
         """
         BNO055から現在の方位を取得します。Noneが返される場合は待機して再試行します。
         """
-        heading = self.bno_sensor.euler[0]
+        heading = None # 初期値をNoneに設定
+
         wait_start_time = time.time()
         max_wait_time = 0.5
+        
         while heading is None and (time.time() - wait_start_time < max_wait_time):
-            time.sleep(0.01)
-            heading = self.bno_sensor.euler[0]
-        return heading if heading is not None else 0.0 # Noneの場合も0.0を返すように修正
+            # bno_sensor.euler[0] の代わりに getVector(BNO055.VECTOR_EULER) を使用
+            # getVectorは(heading, roll, pitch)のタプルを返すので、最初の要素がheadingです
+            euler_angles = self.bno_sensor.getVector(BNO055.VECTOR_EULER)
+            
+            if euler_angles is not None:
+                heading = euler_angles[0] # タプルの最初の要素がHeading
+            else:
+                heading = None # 取得できなかった場合はNoneを維持
+
+            if heading is None: # Noneが返ってきたら少し待って再試行
+                time.sleep(0.01) # 短時間待機
+
+        return heading if heading is not None else 0.0 # 最終的にNoneなら0.0を返す
 
     def turn_to_relative_angle(self, angle_offset_deg, turn_speed=90, angle_tolerance_deg=10.0, max_turn_attempts=100):
         """
