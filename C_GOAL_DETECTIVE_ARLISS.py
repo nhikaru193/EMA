@@ -529,7 +529,7 @@ class GDA:
                             time.sleep(0.5)
                             print("  --> 初期アライメント時の方向への向き調整が完了しました。")
 
-                            self.driver.petit_petit(15) # 前進速度を調整 (例: 60)
+                            self.driver.petit_petit(30) # 前進速度を調整 (例: 60)
                             time.sleep(1) # 10秒間前進
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
