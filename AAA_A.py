@@ -54,7 +54,7 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
-
+"""
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
 RELEASE.run()
@@ -82,6 +82,7 @@ time.sleep(7)
 set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
+"""
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
