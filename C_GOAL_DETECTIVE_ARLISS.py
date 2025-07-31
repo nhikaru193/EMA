@@ -227,7 +227,8 @@ class GDA:
         final_scan_detected_angles = []
         
         print(f"  初回回転: {turn_angle_step}度...")
-        self.turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+        self.driver, petit_right(0, 80)
+        self.driver, petit_right(80, 0)
         
         for i in range(360 // turn_angle_step): 
             if i > 0:
