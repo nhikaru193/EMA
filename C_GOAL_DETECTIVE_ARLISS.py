@@ -96,16 +96,6 @@ def calculate_angle_average(angles_deg):
 
     return (average_angle_deg + 360) % 360
 
----
-## GDA クラスの変更点
-
-**変更の要点:**
-
-* `GDA.__init__` メソッドの引数に `bno_sensor_instance` を追加します。
-* `self.bno_sensor` を、この引数で渡されたインスタンスに設定します。
-* `GDA` クラス内で行っていた BNO055 センサーの初期化処理（`bno_sensor = BNO055(...)` から `setExternalCrystalUse(True)` まで）は**削除します**。これらの処理は `main.py` 側で行われているためです。
-
-```python
 # --- ロボット制御クラス ---
 class GDA:
     # __init__ メソッドの引数に bno_sensor_instance を追加
