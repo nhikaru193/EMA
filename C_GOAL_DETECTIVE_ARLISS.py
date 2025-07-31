@@ -461,7 +461,7 @@ class GDA:
                             print("中心方向への向き調整が完了しました。")
                             
                             print("  --> 中心方向へ向いた後、1秒間前進します。")
-                            self.driver.petit_petit(9)
+                            self.driver.petit_petit(15)
                             time.sleep(1)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
