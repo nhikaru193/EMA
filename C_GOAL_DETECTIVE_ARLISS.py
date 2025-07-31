@@ -318,11 +318,11 @@ class GDA:
         
         detected_red_angles = []
 
-        initial_turn_angle = 100 
+        initial_turn_angle = 180
         print(f"  初回回転: {initial_turn_angle}度...")
         self.turn_to_relative_angle(initial_turn_angle, turn_speed=90, angle_tolerance_deg=15)
         
-        for i in range(100 // turn_angle_step):
+        for i in range(180 // turn_angle_step):
             current_relative_angle_from_start_of_scan = (i + 1) * turn_angle_step
             
             if i > 0:
