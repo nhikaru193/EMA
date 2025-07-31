@@ -36,74 +36,7 @@ class GDA:
         if err != 0:
             self.pi_instance.stop()
             raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
-        """
-        self.motor_pwma_pin = motor_pwma_pin
-        self.motor_ain1_pin = motor_ain1_pin
-        self.motor_ain2_pin = motor_ain2_pin
-        self.motor_pwmb_pin = motor_pwmb_pin
-        self.motor_bin1_pin = motor_bin1_pin
-        self.motor_bin2_pin = motor_bin2_pin
-        self.motor_stby_pin = motor_stby_pin
-        self.rx_pin = rx_pin
-
-        self.driver = None
-        self.pi_instance = None
-        self.bno_sensor = bno_sensor_instance # 渡されたBNO055インスタンスを保持
-        self.picam2_instance = None
-
-        self._initialize_devices()
         
-    def _initialize_devices(self):
-        #デバイスの初期化を行います。
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-
-        try:
-            self.driver = MotorDriver(
-                PWMA=self.motor_pwma_pin, AIN1=self.motor_ain1_pin, AIN2=self.motor_ain2_pin,
-                PWMB=self.motor_pwmb_pin, BIN1=self.motor_bin1_pin, BIN2=self.motor_bin2_pin,
-                STBY=self.motor_stby_pin
-            )
-            print("MotorDriver initialized.")
-        except Exception as e:
-            print(f"MotorDriverの初期化に失敗しました: {e}")
-            self.cleanup()
-            sys.exit(1)
-
-        try:
-            self.pi_instance = pigpio.pi()
-            if not self.pi_instance.connected:
-                raise RuntimeError("pigpioデーモンに接続できません。")
-            print("pigpio connected.")
-        except Exception as e:
-            print(f"pigpioの初期化に失敗しました: {e}")
-            self.cleanup()
-            sys.exit(1)
-        
-        # BNO055インスタンスは引数で受け取るので、ここでは初期化は行いません。
-        # 渡されたインスタンスが有効であることを確認します。
-        if self.bno_sensor is None:
-            print("BNO055センサーインスタンスが渡されませんでした。")
-            self.cleanup()
-            sys.exit(1)
-        # ここでは、センサーが既にbegin()されていることを想定します。
-        print("BNO055 sensor instance received.")
-
-        try:
-            self.picam2_instance = Picamera2()
-            self.picam2_instance.configure(self.picam2_instance.create_preview_configuration(
-                main={"size": (640, 480)},
-                controls={"FrameRate": 30},
-                transform=Transform(rotation=90)
-            ))
-            self.picam2_instance.start()
-            time.sleep(2)
-            print("Picamera2 initialized and started.")
-        except Exception as e:
-            print(f"Picamera2の初期化に失敗しました: {e}")
-            self.cleanup()
-            sys.exit(1)
-            """
     def _get_bno_heading(self):
         """
         BNO055センサーから現在の方位を取得します。
@@ -204,10 +137,10 @@ class GDA:
             turn_duration_on = 0.02 + (abs(angle_error) / 180.0) * 0.2
             if angle_error < 0:
                 self.driver.petit_left(0, turn_speed)
-                self.driver.petit_left(turn_speed, 0)
+                self.driver.petit_left(turn_speed, 0) # 左に旋回
             else:
                 self.driver.petit_right(0, turn_speed)
-                self.driver.petit_right(turn_speed, 0)
+                self.driver.petit_right(turn_speed, 0) # 右に旋回
             
             time.sleep(turn_duration_on)
             self.driver.motor_stop_brake()
@@ -247,11 +180,12 @@ class GDA:
 
         final_scan_detected_angles = []
         
+        # 初回回転 (スキャン開始位置の調整)
         print(f"  初回回転: {turn_angle_step}度...")
         self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
         
-        for i in range(360 // turn_angle_step): 
-            if i > 0:
+        for i in range(360 // turn_angle_step): # 360度をステップごとにスキャン
+            if i > 0: # 2回目以降の回転
                 print(f"  --> スキャン中: さらに{turn_angle_step}度回転...")
                 self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
                 self.driver.motor_stop_brake()
@@ -282,12 +216,12 @@ class GDA:
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
                 
-                self.driver.petit_petit(4)
+                self.driver.petit_petit(4) # 前進
                 time.sleep(2)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
                 print("  --> 180度回転して前進が完了しました。最終確認スキャンを最初から再開します。")
-                return True
+                return True # 即座に再開を示す
 
             if overall_red_ratio >= final_threshold:
                 print(f"  --> 赤色を{final_threshold:.0%}以上検出！方向を記録します。")
@@ -313,10 +247,10 @@ class GDA:
                     print("警告: 最終スキャン後の中心回頭時に方位が取得できませんでした。")
             
             print("  --> 4ヶ所検知の条件（ただし40%未満）を満たしたため、ミッションを終了します。")
-            return False
+            return False # 終了条件達成を示す
         else:
             print(f"\n=== 最終確認スキャンが完了しました。条件を満たしませんでした (検出箇所: {len(final_scan_detected_angles)}ヶ所)。 ===")
-            return None
+            return None # 条件未達を示す
 
     def _perform_initial_alignment_scan(self, turn_angle_step=20, alignment_threshold=0.10):
         """
@@ -335,28 +269,18 @@ class GDA:
         detected_red_angles = []
 
         # スキャン開始時に指定された角度だけ回転します。
-        # この回転は一度きりの初期位置調整と見なします。
-        # 初回は270度回転して、そこから時計回りにスキャンしていく意図だと思いますので、
-        # ここで指定された角度(270度)だけ回転させます。
-        print(f"  初回回転: {turn_angle_step}度...") # ここのログは実態に合わせて変更
-        self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20) # 修正：初回の270度回転ではなく、最初のステップの回転に合わせる
+        # 初回の270度回転は、このループの前に一度だけ行うか、
+        # あるいはループ内で最初のステップとして処理するかの選択が必要です。
+        # 現在のコードの意図が270度回ってからスキャン開始のようなので、それを踏襲します。
         
-        # for i in range(270 // turn_angle_step): # ループ回数は全体で360度をカバーするように変更
-        # initial_turn_angle = 270 は削除、または外側のロジックで制御する
-        # このスキャンは初期アライメントであり、360度全体をスキャンするのか、一部をスキャンするのかを明確にする必要があります。
-        # コードの意図からすると、270度をスキャンしているように見えます。
-        # ここでは、元の270度スキャンを踏襲しつつ、回転ロジックを修正します。
+        # 最初の270度回転
+        print(f"  初回回転: 270度...")
+        self._turn_to_relative_angle(270, turn_speed=90, angle_tolerance_deg=20)
+        self.driver.motor_stop_brake()
+        time.sleep(0.5)
 
-        # 修正1: 最初の回転をループの外で1回だけ実行するようにする (または、ループ内のi=0の場合にのみ実行)
-        # または、rangeを 0 から 270 // turn_angle_step の回数分にする
-        
-        # 新しいループの設計案
-        # スキャンは270度と書かれているため、その範囲で回るようにします。
-        # 最初の回転はループの外で実施済みとみなすか、ループの初回で処理します。
-        
-        # 1. ループ回数を調整し、毎回turn_angle_stepだけ回転するようにする
-        total_scan_angles = 270 # 意図するスキャン角度
-        num_steps = total_scan_angles // turn_angle_step
+        # 270度の範囲でスキャンするために、ループ回数を調整
+        num_steps = 270 // turn_angle_step
 
         for i in range(num_steps):
             if i > 0: # 2回目以降の回転
@@ -375,7 +299,7 @@ class GDA:
             print(f"\n--- 初期アライメントスキャン中: 現在の方向: {current_scan_heading:.2f}度 ---")
             
             overall_red_ratio = self._detect_red_percentage(
-                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{i*turn_angle_step + turn_angle_step:03d}.jpg"
+                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{i*turn_angle_step:03d}.jpg" # ログ名も調整
             )
 
             if overall_red_ratio == -1.0:
@@ -398,22 +322,13 @@ class GDA:
             self.driver.motor_stop_brake()
             time.sleep(0.5)
 
-        # 最初の initial_turn_angle = 270 の回転は、この修正案では最初の`_turn_to_relative_angle`呼び出しに統合されます。
-        # または、スキャン開始前に一度だけ270度回転させて、その後のループでは毎回turn_angle_stepずつ回転する形にするか、
-        # ループ自体を270度回す設計にするか、どちらかの意図に沿って調整してください。
-        # 現状のコードのコメントを見ると270度を回る意図があるので、それに合わせました。
-
-
-        def _perform_initial_alignment_scan(self, turn_angle_step=20, alignment_threshold=0.10):
-        # ... (中略) ...
-
+        # スキャン終了後のアライメントロジック
         if not detected_red_angles:
             print(f"初期アライメントスキャンで{alignment_threshold*100.0:.0f}%以上の赤色は検出されませんでした。")
             if max_red_ratio > -1.0:
                 current_heading_at_end_of_scan = self._get_bno_heading()
                 
                 if current_heading_at_end_of_scan is not None:
-                    # ここで angle_to_turn_to_best_red を計算し、その後の処理を行う
                     angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                     
                     print(f"  --> {alignment_threshold*100.0:.0f}%"
@@ -431,7 +346,6 @@ class GDA:
             aligned = True
 
         print("=== 初期赤色アライメントスキャンが完了しました。 ===")
-        # メソッドの最後で、全ての処理が終わった後にreturnする
         return aligned, best_heading_for_red, detected_red_angles
 
     def HAT_TRICK(self):
@@ -496,10 +410,10 @@ class GDA:
                             skip_forward_scan_phase = True
                         else:
                             print("警告: 複数赤色検知後の回頭時に現在方位が取得できませんでした。")
-                            skip_forward_scan_phase = False
+                            skip_forward_scan_phase = False # エラー時はスキップしない
                     else:
                         print("警告: 検出された角度からの中心角度計算に失敗しました。")
-                        skip_forward_scan_phase = False
+                        skip_forward_scan_phase = False # エラー時はスキップしない
                 elif len(initial_scan_detected_angles) == 1:
                     print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]:.2f}度) しました。その方向へ向きを調整済みです。")
                     skip_forward_scan_phase = False
@@ -509,7 +423,7 @@ class GDA:
 
                 if skip_forward_scan_phase:
                     print("--- 「アライメント後、360度スキャンで赤色を探索し前進判断」フェーズをスキップします。 ---")
-                    pass
+                    pass # スキップする場合は何もしない
                 else:
                     print("\n=== アライメント後、360度スキャンで赤色を探索し前進判断 ===")
                     
@@ -546,9 +460,9 @@ class GDA:
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             any_red_detected_and_moved_this_scan = True
-                            break
+                            break # 赤色を検出して前進したら、このスキャンを中断
 
-                        if i < (360 // 20) - 1: 
+                        if i < (360 // 20) - 1: # 最後のループでは回転しない
                             print(f"  --> スキャン中: さらに20度回転...")
                             self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                             self.driver.motor_stop_brake()
@@ -563,8 +477,9 @@ class GDA:
                             best_red_after_initial_alignment = None
                             if len(sorted_detections) >= 2:
                                 for det in sorted_detections:
+                                    # 元のアライメント方向と大きく異なる方向を選ぶための閾値
                                     angle_diff = (det['heading'] - initial_aligned_heading + 180 + 360) % 360 - 180
-                                    if abs(angle_diff) > 20:
+                                    if abs(angle_diff) > 20: # 20度以上離れている方向を探す
                                         best_red_after_initial_alignment = det
                                         break
 
@@ -618,7 +533,7 @@ class GDA:
                                                 self._turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=20)
                                                 self.driver.motor_stop_brake()
                                                 time.sleep(0.5)
-                                        
+                                            
                                         if len(post_forward_scan_detected_angles) >= 2:
                                             target_center_angle_post_forward = self._calculate_angle_average(post_forward_scan_detected_angles)
                                             if target_center_angle_post_forward is not None:
@@ -725,7 +640,7 @@ class GDA:
                     self.driver.motor_stop_brake()
                     time.sleep(0.5)
                 
-                continue
+                continue # 次の走行サイクルへ
 
         except Exception as e:
             print(f"メイン処理中に予期せぬエラーが発生しました: {e}")
@@ -739,6 +654,7 @@ class GDA:
             self.driver.cleanup()
             print("MotorDriver cleaned up.")
         if self.pi_instance and self.pi_instance.connected:
+            self.pi_instance.bb_serial_read_close(self.RX_PIN) # ソフトUARTのクローズを追加
             self.pi_instance.stop()
             print("pigpio stopped.")
         if self.picam2_instance:
@@ -765,7 +681,6 @@ if __name__ == "__main__":
         print("BNO055 sensor initialized outside GDA class.")
         
         # GDAクラスのインスタンスを作成し、初期化したBNO055センサーを渡す
-        # モーターピンの引数名もより明確にしました
         rover = GDA(
             motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
             motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
@@ -783,9 +698,11 @@ if __name__ == "__main__":
             rover.cleanup()
         else:
             # GDAインスタンスが作成される前にエラーが発生した場合のクリーンアップ
-            if bno_sensor:
-                # BNO055には直接的なクリーンアップメソッドがない場合が多いので、
-                # 必要であればここに追加します。
-                pass 
-            GPIO.cleanup() # GPIOはGDAの初期化前に設定される可能性があるのでここでもクリーンアップ
+            # BNO055には直接的なクリーンアップメソッドがない場合が多いので、
+            # 必要であればここに追加します。
+            # pigpioのbb_serial_read_openがGDA初期化時に呼ばれているため、
+            # エラーでGDAの__init__が最後まで実行されなかった場合、bb_serial_read_closeが呼ばれない可能性があります。
+            # pigpioのpiインスタンスもここで閉じるべきですが、bno_sensorが生成されていないとpi_instanceもないので、少し複雑です。
+            # 安全のため、ここでは最低限のGPIOクリーンアップに留めます。
+            GPIO.cleanup() 
         print("=== プログラムを終了しました。 ===")
