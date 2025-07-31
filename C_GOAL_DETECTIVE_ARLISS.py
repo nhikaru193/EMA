@@ -337,10 +337,7 @@ class GDA:
 
             print(f"\n--- 初期アライメントスキャン中: 現在の方向: {current_scan_heading:.2f}度 ---")
             
-            overall_red_ratio = detect_red_percentage(
-                self.picam2, 
-                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{current_relative_angle_from_start_of_scan:03d}.jpg"
-            )
+            overall_red_ratio = detect_red_percentage(self.picam2)
 
             if overall_red_ratio == -1.0:
                 print("初期アライメントスキャン中にカメラ処理エラー。スキップします。")
@@ -532,7 +529,7 @@ class GDA:
                             time.sleep(0.5)
                             print("  --> 初期アライメント時の方向への向き調整が完了しました。")
 
-                            self.driver.petit_petit(20) # 前進速度を調整 (例: 60)
+                            self.driver.petit_petit(15) # 前進速度を調整 (例: 60)
                             time.sleep(1) # 10秒間前進
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
