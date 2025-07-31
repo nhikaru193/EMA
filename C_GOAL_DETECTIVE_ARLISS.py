@@ -11,7 +11,7 @@ import sys
 import os
 import math
 from motor import MotorDriver
-from BNO055 import BNO055 # あなたのカスタムBNO055クラス
+from BNO055 import BNO055 # あなたのカスタムBNO055クラス (BNO055.pyにget_headingがあることを想定)
 
 class GDA:
     def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
@@ -82,13 +82,14 @@ class GDA:
         BNO055センサーから現在の方位を取得します。
         Noneの場合のリトライロジックを含みます。
         """
-        heading = self.bno_sensor.get_heading()
+        # BNO055Wrapperを削除したため、BNO055クラスのget_headingメソッドを直接呼び出す
+        heading = self.bno_sensor.get_heading() 
         if heading is None:
             wait_start_time = time.time()
             max_wait_time = 0.5
             while heading is None and (time.time() - wait_start_time < max_wait_time):
                 time.sleep(0.01)
-                heading = self.bno_sensor.get_heading()
+                heading = self.bno_sensor.get_heading() # 直接BNO055から取得
         if heading is None:
             return 0.0 # 最終的にNoneなら0.0を返す
         return heading
@@ -111,13 +112,11 @@ class GDA:
                 return -1.0 
 
             frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-            # Picamera2のTransform(rotation=90)に対応するため、ここでは反時計回りに90度回転します。
-            # 通常のカメラ向きで撮る場合はこの回転は不要です。
+            # Picamera2のconfigureでtransform=Transform(rotation=90)を設定している場合、
+            # capture_array()で取得する画像は既に回転済みである可能性が高いです。
+            # もし、これで画像が横向きになる場合は、以下の行を有効にしてください。
             # rotated_frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            # ただし、mainのpicam2.configureでtransform=Transform(rotation=90)を使っているので、
-            # capture_array()が既に回転後の画像を提供している可能性があります。
-            # もし画像が横向きになる場合は、上記コメントアウトを外し、以下の行を有効にしてください。
-            rotated_frame_bgr = frame_bgr # 暫定的に回転しない（Picamera2のTransformに任せる）
+            rotated_frame_bgr = frame_bgr # Picamera2のTransformに任せるため、ここでは追加の回転は行わない
             
             directory = os.path.dirname(save_path)
             if not os.path.exists(directory):
@@ -130,11 +129,9 @@ class GDA:
 
             hsv = cv2.cvtColor(rotated_frame_bgr, cv2.COLOR_BGR2HSV)
 
-            # 赤色のHSV範囲を定義 (より赤色に近い色も検知するように調整済み)
-            lower_red1 = np.array([0, 100, 100])  # SとVの下限を下げて、より広い範囲の赤を検出
-            upper_red1 = np.array([10, 255, 255]) # 色相の上限を少し広げて、オレンジ寄りの赤も含む
-
-            lower_red2 = np.array([170, 100, 100]) # 色相の下限を少し広げ、紫寄りの赤も含む
+            lower_red1 = np.array([0, 100, 100])
+            upper_red1 = np.array([10, 255, 255])
+            lower_red2 = np.array([170, 100, 100])
             upper_red2 = np.array([180, 255, 255])
 
             mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
@@ -144,7 +141,7 @@ class GDA:
             red_pixels = cv2.countNonZero(mask)
             red_percentage = (red_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
             print(f"検出結果: 画像全体の赤色割合: {red_percentage:.2f}%")
-            return red_percentage / 100.0 # 割合は0-1の範囲で返すように調整
+            return red_percentage / 100.0
 
         except Exception as e:
             print(f"カメラ撮影・処理中にエラーが発生しました: {e}")
@@ -153,7 +150,6 @@ class GDA:
     def _turn_to_relative_angle(self, angle_offset_deg, turn_speed=90, angle_tolerance_deg=10.0, max_turn_attempts=100):
         """
         現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
-        BNO055Wrapperのget_heading()の代わりに、直接_get_bno_heading()を呼び出します。
         """
         initial_heading = self._get_bno_heading()
         if initial_heading is None:
@@ -720,14 +716,14 @@ class GDA:
             self.picam2_instance.close()
             print("Picamera2 closed.")
         
-        # GPIO.cleanup()はメインのfinallyブロックで一括して行うように変更
+        # GPIO.cleanup()はメインのfinallyブロックで一括して行うため、ここではコメントアウト
         # MotorDriverが内部でGPIO.cleanup()を呼んでいる場合、ここで二重に呼ばないようにコメントアウト
-        # そうでない場合は、ここにGPIO.cleanup()を追加してください
         # print("GPIO cleanup skipped within GDA class to avoid double cleanup.")
 
         print("=== 処理を終了しました。 ===")
 
 
+---
 # メインシーケンス
 if __name__ == "__main__":
     # プログラム全体で一度だけGPIO設定を行う
