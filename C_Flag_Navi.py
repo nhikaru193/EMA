@@ -59,9 +59,8 @@ class FN:
                 self.driver.petit_left(0, 90)
                 self.driver.motor_stop_brake()
             elif delta_heading > 3:
-                self.driver.petit_right(0, 80)
-                self.driver.motor_stop_brake()
-            
+                self.turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+
     def run(self):
         """
         全てのターゲットフラッグを探索し、接近するメインのタスクを実行
