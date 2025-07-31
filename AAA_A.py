@@ -61,7 +61,7 @@ RELEASE.run()
 
 LAND = LD(bno) 
 LAND.run()
-
+"""
 AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
 
@@ -82,7 +82,7 @@ time.sleep(7)
 set_servo_duty(12.5)
 pwm.stop()
 GPIO.cleanup()
-"""
+
 #GPS_FtoG = GPS(bno, goal_location = Goal_location)
 #GPS_FtoG.run()
 
