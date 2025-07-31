@@ -201,7 +201,7 @@ class GDA:
                 self.driver.petit_right(turn_speed, 0)
             
             self.driver.motor_stop_brake()
-            time.sleep(0.5)
+            time.sleep(0.5) # 短いブレーキ時間で小刻みに動かす
             
             loop_count += 1
         
@@ -461,9 +461,11 @@ class GDA:
                     print("警告: 検出された角度からの中心角度計算に失敗しました。")
                     skip_forward_scan_phase = False
             elif len(initial_scan_detected_angles) == 1:
+                # この部分は、単一の赤色にアライメントされた後で、
+                # その後の360度スキャンでの赤色検知有無によって追加行動を判断するロジックになります
                 print(f"\n=== 赤色を1ヶ所のみ検出 ({initial_scan_detected_angles[0]:.2f}度) しました。その方向へ向きを調整済みです。")
-                skip_forward_scan_phase = False
-            else:
+                skip_forward_scan_phase = False # 後続の360度スキャンを行うためFalseに維持
+            else: # 赤色検知が全くなかった場合
                 print("\n=== 赤色検知がなかったため、次の行動に移ります。 ===")
                 skip_forward_scan_phase = False
 
@@ -513,6 +515,35 @@ class GDA:
                         self.turn_to_relative_angle(20, turn_speed=90, angle_tolerance_deg=15)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
+                
+                # --- 追加するロジックここから ---
+                # アライメント後360度スキャンで5%以上の赤が検知できなかった場合、
+                # かつ初期アライメントで何か赤が見つかっていた場合 (単一の赤にアライメントされた場合など)
+                if not any_red_detected_and_moved_this_scan and aligned_in_initial_scan:
+                    if len(initial_scan_detected_angles) == 1: # 初期アライメントで1ヶ所のみ検知した場合
+                        # 初期アライメントで向いた方向に10秒前進
+                        print(f"\n=== 360度スキャンで赤色を検知しなかったため、初期アライメントで向いた方向 ({initial_aligned_heading:.2f}度) へ10秒間前進します。 ===")
+                        # 現在の向きを再確認し、初期アライメント時の方向へ正確に向き直す
+                        current_heading_before_long_forward = self.get_bno_heading()
+                        if current_heading_before_long_forward is not None:
+                            angle_to_turn_back = (initial_aligned_heading - current_heading_before_long_forward + 180 + 360) % 360 - 180
+                            self.turn_to_relative_angle(angle_to_turn_back, turn_speed=90, angle_tolerance_deg=15)
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.5)
+                            print("  --> 初期アライメント時の方向への向き調整が完了しました。")
+
+                            self.driver.petit_petit(20) # 前進速度を調整 (例: 60)
+                            time.sleep(1) # 10秒間前進
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.5)
+                            print("  --> 10秒前進を完了しました。")
+                        else:
+                            print("警告: 10秒前進前の向き調整時に方位が取得できませんでした。")
+                    else:
+                        print("\n=== アライメント後360度スキャンで赤色を検知しませんでしたが、初期アライメントで複数検知があったため、特殊前進はスキップします。 ===")
+
+                # --- 追加するロジックここまで ---
+
 
                 if not any_red_detected_and_moved_this_scan and len(initial_scan_detected_angles) == 1:
                     print("\n=== 初期アライメントスキャンで赤色を1ヶ所のみ検知。360度スキャンで2番目に赤の割合が大きかった方向へ前進します。 ===")
