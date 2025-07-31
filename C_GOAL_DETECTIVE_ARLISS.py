@@ -192,7 +192,7 @@ class GDA:
                 time.sleep(0.5)
                 return True
 
-            turn_duration_on = 0.02 + (abs(angle_error) / 180.0) * 0.2
+            
             if angle_error < 0:
                 self.driver.petit_left(0, turn_speed)
                 self.driver.petit_left(turn_speed, 0)
@@ -200,9 +200,8 @@ class GDA:
                 self.driver.petit_right(0, turn_speed)
                 self.driver.petit_right(turn_speed, 0)
             
-            time.sleep(turn_duration_on)
             self.driver.motor_stop_brake()
-            time.sleep(0.05)
+            time.sleep(0.5)
             
             loop_count += 1
         
