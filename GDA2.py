@@ -45,8 +45,6 @@ class GDA:
         percentage = (red_area / total_area) * 100
         print(f"検知割合は{percentage}%です")
         return percentage
-
-    # get_block_number_by_density メソッドは削除されました。
     
     def run(self):
         left_a = 90
@@ -61,11 +59,10 @@ class GDA:
                 if counter <= 0:
                     print("赤コーンが近くにありません。探索を行います")
                     counter = self.counter_max
-                    while True:
+                    while True: # 探索モードのループ (ここから直接「その場での回転探索」が始まる)
                         print("探索中")
-                        self.driver.changing_moving_forward(0, left_a, 0, right_a)
-                        time.sleep(2)
-                        self.driver.changing_moving_forward(left_a, 0, right_a, 0)
+                        # 広範囲な移動による探索 (changing_moving_forward) の部分は削除されました
+                        
                         before_heading = self.bno.get_heading()
                         delta_heading = 20
                         while delta_heading > 5:
@@ -91,14 +88,13 @@ class GDA:
                 frame = self.picam2.capture_array()
                 time.sleep(0.2)
                 percentage = self.get_percentage(frame)
-                # number = self.get_block_number_by_density(frame) # この行は削除されました
                 time.sleep(0.2)
-                print(f"赤割合: {percentage:2f}%です ") # 出力からブロック番号を削除
+                print(f"赤割合: {percentage:2f}%です ")
 
                 if percentage >= 90:
                     print("percentageでのゴール判定")
                     break
-                elif percentage > 15: # 赤コーンが十分に検出された場合
+                elif percentage > 15:
                     print("赤コーンを検知しました。接近します。")
                     if percentage > 40:
                         print("非常に近いので、ゆっくり前進します (petit_petit 2回)")
@@ -106,13 +102,10 @@ class GDA:
                     elif percentage > 20:
                         print("近いので、少し前進します (petit_petit 3回)")
                         self.driver.petit_petit(3)
-                    else: # percentage > 15 かつ <= 20 の場合
+                    else:
                         print("遠いので、前進します (follow_forward)")
-                        following.follow_forward(self.driver, self.bno, 70, 1) # 1は短い前進時間
-                    counter = self.counter_max # コーンが見えているのでカウンターをリセット
-                # percentage <= 15 の場合（赤コーンが明確に検出されないか、非常に遠い場合）は、
-                # カウンターが減少し、最終的に上記の探索モードがトリガーされます。
-                # ブロック番号による微調整は行いません。
+                        following.follow_forward(self.driver, self.bno, 70, 1)
+                    counter = self.counter_max
                 
                 counter = counter - 1
                 c_heading = self.bno.get_heading()
