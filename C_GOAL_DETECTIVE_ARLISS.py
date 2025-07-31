@@ -16,8 +16,18 @@ from BNO055 import BNO055 # あなたのカスタムBNO055クラス
 class GDA:
     def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
                  motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
-                 motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17): # bno_sensor_instance を引数として追加
-        
+                 motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17):
+        self.picam2 = Picamera2()
+        config = self.picam2.create_still_configuration(main={"size": (320, 480)})
+        self.picam2.configure(config)
+        self.picam2.start()
+        self.driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,
+            PWMB=19, BIN1=16, BIN2=26,
+            STBY=21
+        )
+        self.bno_sensor = bno_sensor_instance # 渡されたBNO055インスタンスを保持
+        """
         self.motor_pwma_pin = motor_pwma_pin
         self.motor_ain1_pin = motor_ain1_pin
         self.motor_ain2_pin = motor_ain2_pin
@@ -33,9 +43,9 @@ class GDA:
         self.picam2_instance = None
 
         self._initialize_devices()
-
+        
     def _initialize_devices(self):
-        """デバイスの初期化を行います。"""
+        #デバイスの初期化を行います。
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
 
@@ -84,7 +94,7 @@ class GDA:
             print(f"Picamera2の初期化に失敗しました: {e}")
             self.cleanup()
             sys.exit(1)
-
+            """
     def _get_bno_heading(self):
         """
         BNO055センサーから現在の方位を取得します。
