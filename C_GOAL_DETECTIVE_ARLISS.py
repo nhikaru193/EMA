@@ -161,7 +161,7 @@ class GDA:
 
         return heading if heading is not None else 0.0 # 最終的にNoneなら0.0を返す
 
-    def turn_to_relative_angle(self, angle_offset_deg, turn_speed=90, angle_tolerance_deg=10.0, max_turn_attempts=100):
+    def turn_to_relative_angle(self, angle_offset_deg, turn_speed=90, angle_tolerance_deg=15.0, max_turn_attempts=100):
         """
         現在のBNO055の方位から、指定された角度だけ相対的に旋回します。
         """
