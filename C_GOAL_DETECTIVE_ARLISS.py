@@ -335,11 +335,11 @@ class GDA:
         num_steps = 270 // turn_angle_step
 
         for i in range(num_steps):
-            if i > 0: # 2回目以降の回転
-                print(f"  回転: {turn_angle_step}度...")
-                self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
-                self.driver.motor_stop_brake()
-                time.sleep(0.5)
+            # 各ステップの開始時に回転
+            print(f"  回転: {turn_angle_step}度...")
+            self._turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=20)
+            self.driver.motor_stop_brake()
+            time.sleep(0.5)
             
             current_scan_heading = self._get_bno_heading()
             if current_scan_heading is None:
@@ -723,6 +723,7 @@ class GDA:
         print("=== 処理を終了しました。 ===")
 
 
+---
 # メインシーケンス
 if __name__ == "__main__":
     # プログラム全体で一度だけGPIO設定を行う
