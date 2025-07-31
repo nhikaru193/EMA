@@ -97,7 +97,7 @@ def calculate_angle_average(angles_deg):
     return (average_angle_deg + 360) % 360
 
 # --- ロボット制御クラス ---
-class RobotController:
+class GDA:
     def __init__(self):
         # GPIO設定
         GPIO.setmode(GPIO.BCM)
