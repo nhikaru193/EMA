@@ -17,25 +17,60 @@ class GDA:
     def __init__(self, motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
                  motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
                  motor_stby_pin=21, bno_sensor_instance=None, rx_pin=17):
+        # GPIO設定はMotorDriver内で完結させるか、このクラスで一元管理する
+        # ここでは、MotorDriverがGPIO設定を行う前提で進めます。
+        # もしMotorDriverがsetmode/setwarningsを呼ばないなら、ここで呼ぶ
+        # 例:
+        # GPIO.setmode(GPIO.BCM)
+        # GPIO.setwarnings(False)
+
         self.RX_PIN = rx_pin
         self.BAUD = 9600
-        self.picam2_instance = Picamera2()
-        config = self.picam2_instance.create_still_configuration(main={"size": (320, 480)})
-        self.picam2_instance.configure(config)
-        self.picam2_instance.start()
-        self.driver = MotorDriver(
-            PWMA=12, AIN1=23, AIN2=18,
-            PWMB=19, BIN1=16, BIN2=26,
-            STBY=21
-        )
-        self.bno_sensor = bno_sensor_instance # 渡されたBNO055インスタンスを保持
-        self.pi_instance = pigpio.pi()
-        if not self.pi_instance.connected:
-            raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
-        err = self.pi_instance.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
-        if err != 0:
-            self.pi_instance.stop()
-            raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+        
+        # Picamera2の初期化
+        try:
+            self.picam2_instance = Picamera2()
+            config = self.picam2_instance.create_still_configuration(main={"size": (320, 480)})
+            self.picam2_instance.configure(config)
+            self.picam2_instance.start()
+        except Exception as e:
+            print(f"Picamera2の初期化に失敗しました: {e}")
+            raise # 初期化失敗は致命的なので、例外を再発生させる
+
+        # MotorDriverの初期化
+        try:
+            self.driver = MotorDriver(
+                PWMA=motor_pwma_pin, AIN1=motor_ain1_pin, AIN2=motor_ain2_pin,
+                PWMB=motor_pwmb_pin, BIN1=motor_bin1_pin, BIN2=motor_bin2_pin,
+                STBY=motor_stby_pin
+            )
+        except Exception as e:
+            print(f"MotorDriverの初期化に失敗しました: {e}")
+            # MotorDriverの初期化失敗はPicamera2も閉じるべき
+            if self.picam2_instance:
+                self.picam2_instance.close()
+            raise # 初期化失敗は致命的なので、例外を再発生させる
+
+        # BNO055インスタンスの保持（外部で初期化済み）
+        self.bno_sensor = bno_sensor_instance 
+
+        # pigpioの初期化
+        try:
+            self.pi_instance = pigpio.pi()
+            if not self.pi_instance.connected:
+                raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
+            err = self.pi_instance.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+            if err != 0:
+                self.pi_instance.stop() # 接続はできたが、シリアル設定に失敗した場合
+                raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+        except Exception as e:
+            print(f"pigpioの初期化またはソフトUART設定に失敗しました: {e}")
+            # pigpio初期化失敗はMotorDriverとPicamera2も閉じるべき
+            if self.driver:
+                self.driver.cleanup() # MotorDriverはGPIO設定も含む可能性あり
+            if self.picam2_instance:
+                self.picam2_instance.close()
+            raise # 初期化失敗は致命的なので、例外を再発生させる
         
     def _get_bno_heading(self):
         """
@@ -268,11 +303,6 @@ class GDA:
         
         detected_red_angles = []
 
-        # スキャン開始時に指定された角度だけ回転します。
-        # 初回の270度回転は、このループの前に一度だけ行うか、
-        # あるいはループ内で最初のステップとして処理するかの選択が必要です。
-        # 現在のコードの意図が270度回ってからスキャン開始のようなので、それを踏襲します。
-        
         # 最初の270度回転
         print(f"  初回回転: 270度...")
         self._turn_to_relative_angle(270, turn_speed=90, angle_tolerance_deg=20)
@@ -299,7 +329,7 @@ class GDA:
             print(f"\n--- 初期アライメントスキャン中: 現在の方向: {current_scan_heading:.2f}度 ---")
             
             overall_red_ratio = self._detect_red_percentage(
-                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{i*turn_angle_step:03d}.jpg" # ログ名も調整
+                save_path=f"/home/mark1/Pictures/initial_alignment_scan_{i*turn_angle_step:03d}.jpg" 
             )
 
             if overall_red_ratio == -1.0:
@@ -650,26 +680,41 @@ class GDA:
             self.cleanup()
 
     def cleanup(self):
-        if self.driver:
+        # ここで、GDAインスタンスのメンバー変数が存在するか確認してからクリーンアップを試みる
+        # これにより、初期化途中のエラーでインスタンス変数が存在しない場合のAttributeErrorを防ぐ
+        print("GDA cleanup called.")
+        if hasattr(self, 'driver') and self.driver:
             self.driver.cleanup()
             print("MotorDriver cleaned up.")
-        if self.pi_instance and self.pi_instance.connected:
-            self.pi_instance.bb_serial_read_close(self.RX_PIN) # ソフトUARTのクローズを追加
+        if hasattr(self, 'pi_instance') and self.pi_instance and self.pi_instance.connected:
+            self.pi_instance.bb_serial_read_close(self.RX_PIN) # ソフトUARTのクローズ
             self.pi_instance.stop()
             print("pigpio stopped.")
-        if self.picam2_instance:
+        if hasattr(self, 'picam2_instance') and self.picam2_instance:
             self.picam2_instance.close()
             print("Picamera2 closed.")
-        GPIO.cleanup()
-        print("GPIO cleaned up.")
+        
+        # GPIO.cleanup()はメインのfinallyブロックで一括して行うように変更
+        # GDAインスタンスの初期化が完了していればMotorDriverがcleanupでGPIO.cleanup()を呼ぶはず
+        # もしMotorDriverがGPIO.cleanup()を呼ばない設計であれば、ここでGPIO.cleanup()を呼ぶ必要がある
+        # ただし、二重呼び出しは避ける
+        # print("GPIO cleanup skipped within GDA class to avoid double cleanup.")
+        # GPIO.cleanup() # MotorDriverが内部でGPIO.cleanup()を呼んでいる場合、ここで呼ばない
+
         print("=== 処理を終了しました。 ===")
 
 
 # --- メインシーケンス ---
 if __name__ == "__main__":
-    # BNO055センサーの初期化はGDAクラスの外部で行います
+    # GPIO設定は、プログラム全体で一度だけ行うべき
+    # MotorDriverクラスの__init__内でGPIO.setmode(GPIO.BCM)とGPIO.setwarnings(False)が呼ばれていることを推奨
+    # もし呼ばれていないなら、ここで明示的に呼ぶ
+    # GPIO.setmode(GPIO.BCM)
+    # GPIO.setwarnings(False)
+
     bno_sensor_address = 0x28 # BNO055のアドレス
-    bno_sensor = None # 初期化のためNoneで宣言
+    bno_sensor = None 
+    rover = None # roverのスコープをtry/except/finallyの外で宣言
 
     try:
         bno_sensor = BNO055(address=bno_sensor_address)
@@ -680,12 +725,12 @@ if __name__ == "__main__":
         time.sleep(1)
         print("BNO055 sensor initialized outside GDA class.")
         
-        # GDAクラスのインスタンスを作成し、初期化したBNO055センサーを渡す
+        # GDAクラスのインスタンスを作成
         rover = GDA(
             motor_pwma_pin=12, motor_ain1_pin=23, motor_ain2_pin=18,
             motor_pwmb_pin=19, motor_bin1_pin=16, motor_bin2_pin=26,
             motor_stby_pin=21, 
-            bno_sensor_instance=bno_sensor, # ここでBNO055インスタンスを渡します
+            bno_sensor_instance=bno_sensor, 
             rx_pin=17
         )
         rover.HAT_TRICK()
@@ -693,16 +738,36 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"プログラム全体の初期化または実行中に予期せぬエラーが発生しました: {e}")
     finally:
-        # GDAインスタンスが作成されなかった場合でもcleanupを試みる
-        if 'rover' in locals():
+        # roverインスタンスが存在する場合のみcleanupを呼ぶ
+        if rover: # 'rover' in locals() よりも直接オブジェクトがNoneでないか確認する方が確実
             rover.cleanup()
         else:
-            # GDAインスタンスが作成される前にエラーが発生した場合のクリーンアップ
-            # BNO055には直接的なクリーンアップメソッドがない場合が多いので、
-            # 必要であればここに追加します。
-            # pigpioのbb_serial_read_openがGDA初期化時に呼ばれているため、
-            # エラーでGDAの__init__が最後まで実行されなかった場合、bb_serial_read_closeが呼ばれない可能性があります。
-            # pigpioのpiインスタンスもここで閉じるべきですが、bno_sensorが生成されていないとpi_instanceもないので、少し複雑です。
-            # 安全のため、ここでは最低限のGPIOクリーンアップに留めます。
+            # GDAインスタンスが作成される前にエラーが発生した場合の最低限のクリーンアップ
+            # BNO055は特別なクリーンアップ不要
+            # pigpioのbb_serial_read_openが呼ばれていない限り、bb_serial_read_closeは不要
+            # しかし、念のためpigpioのインスタンスがあるか確認し、あればstopを試みる
+            try:
+                # pigpioのインスタンスがGDAの初期化途中で作られた場合を想定
+                _pi_instance_for_cleanup = pigpio.pi()
+                if _pi_instance_for_cleanup.connected:
+                    _pi_instance_for_cleanup.stop()
+                    print("pigpio stopped in main cleanup (GDA not fully initialized).")
+            except Exception:
+                pass # pigpioに接続できない場合は何もしない
+            
+            # MotorDriverがGPIO.cleanup()を呼ぶことを想定
+            # もしそうでないなら、ここでGPIO.cleanup()を呼ぶ
+            # 現状はMotorDriver.cleanup()がこれを呼ぶ前提なのでコメントアウト
+            # GPIO.cleanup() 
+            print("GPIO cleanup handled by MotorDriver or main's final block.")
+
+        # プログラム終了時にGPIOを確実に解放
+        # これが「GPIO already in use」エラーの根本原因であることが多いため、
+        # プログラムのどのパスでも最後に確実に実行されるようにする
+        try:
             GPIO.cleanup() 
+            print("Final GPIO cleanup executed.")
+        except Exception as e:
+            print(f"Final GPIO cleanup failed: {e}")
+
         print("=== プログラムを終了しました。 ===")
