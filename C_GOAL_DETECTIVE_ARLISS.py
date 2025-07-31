@@ -404,12 +404,16 @@ class GDA:
         # 現状のコードのコメントを見ると270度を回る意図があるので、それに合わせました。
 
 
+        def _perform_initial_alignment_scan(self, turn_angle_step=20, alignment_threshold=0.10):
+        # ... (中略) ...
+
         if not detected_red_angles:
             print(f"初期アライメントスキャンで{alignment_threshold*100.0:.0f}%以上の赤色は検出されませんでした。")
             if max_red_ratio > -1.0:
                 current_heading_at_end_of_scan = self._get_bno_heading()
                 
                 if current_heading_at_end_of_scan is not None:
+                    # ここで angle_to_turn_to_best_red を計算し、その後の処理を行う
                     angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
                     
                     print(f"  --> {alignment_threshold*100.0:.0f}%"
@@ -427,24 +431,7 @@ class GDA:
             aligned = True
 
         print("=== 初期赤色アライメントスキャンが完了しました。 ===")
-        angle_to_turn_to_best_red = (best_heading_for_red - current_heading_at_end_of_scan + 180 + 360) % 360 - 180
-        return aligned, best_heading_for_red, detected_red_angles
-                    
-                    print(f"  --> {alignment_threshold*100.0:.0f}%"
-                          f"以上は検出されませんでしたが、最も多くの赤 ({max_red_ratio:.2f}%) が検出された方向 ({best_heading_for_red:.2f}度) へアライメントします (相対回転: {angle_to_turn_to_best_red:.2f}度)。")
-                    self._turn_to_relative_angle(angle_to_turn_to_best_red, turn_speed=90, angle_tolerance_deg=20)
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.5)
-                    aligned = True
-                    detected_red_angles.append(best_heading_for_red)
-                else:
-                    print("警告: スキャン終了時に方位が取得できず、最大赤色方向へのアライメントができませんでした。")
-            else:
-                print("初期アライメントスキャンで赤色は全く検出されませんでした。")
-        else:
-            aligned = True
-
-        print("=== 初期赤色アライメントスキャンが完了しました。 ===")
+        # メソッドの最後で、全ての処理が終わった後にreturnする
         return aligned, best_heading_for_red, detected_red_angles
 
     def HAT_TRICK(self):
