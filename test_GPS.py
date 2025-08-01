@@ -5,6 +5,7 @@ import pigpio
 from BNO055 import BNO055
 import smbus
 import struct
+import os
 
 RX_PIN = 17
 BAUD = 9600
@@ -16,7 +17,7 @@ pi = pigpio.pi()
             pi.stop()
             raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={RX_PIN}, {BAUD}bps")
 current_time_str = time.strftime("%m%d-%H%M%S")
-filename = f"GPS_and_heading_data_{current_time_str}.csv"
+filename = os.path.join("/home/EM/_csv", f"GPS_and_heading_data_{current_time_str}.csv")
 current_location = [0, 0]
 with open(filename, "w", newline='') as f:
     writer = csv.writer(f)
