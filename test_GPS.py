@@ -16,12 +16,14 @@ pi = pigpio.pi()
         if err != 0:
             pi.stop()
             raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={RX_PIN}, {BAUD}bps")
+current_location = [0, 0]
+#------------------ここから先csvファイル作成の汎用------------------------#
 current_time_str = time.strftime("%m%d-%H%M%S")
 filename = os.path.join("/home/EM/_csv", f"GPS_and_heading_data_{current_time_str}.csv")
-current_location = [0, 0]
 with open(filename, "w", newline='') as f:
     writer = csv.writer(f)
     writer.writerow(["latitude", "longitude"])
+    #------ここから次まではgps固有------#
     while True:
         if count and data:
             try:
@@ -36,6 +38,10 @@ with open(filename, "w", newline='') as f:
                                 lon = self.convert_to_decimal(parts[5], parts[6])
                                 current_location = [lat, lon]
                                 break
+    #------ここまではgps固有------#
+                writer.writerow([lat, lon])
+                f.flush()
+#------------------ここまでcsvファイル作成の汎用------------------------#
             except Exception as e:
                 print(f"GPSデコードエラー: {e}")
             except KeyboardInterrupt:
