@@ -1,4 +1,3 @@
-"""
 mark1@cricket:~ $ sudo su
 root@cricket:/home/mark1# cd ..
 root@cricket:/home# cd EM
@@ -36,4 +35,3 @@ root@cricket:/home/EM# python3 test_test.py | tee /home/EM/_txt/output.txt #こ�
 これは二番目の行です。
 現在時刻: 2025-08-01 13:04:53.221662
 root@cricket:/home/EM# 
-"""
