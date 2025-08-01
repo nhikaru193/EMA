@@ -35,3 +35,14 @@ root@cricket:/home/EM# python3 test_test.py | tee /home/EM/_txt/output.txt #こ�
 これは二番目の行です。
 現在時刻: 2025-08-01 13:04:53.221662
 root@cricket:/home/EM# 
+
+
+==============csvファイル書き込み================
+current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+filename = f"bme280_data_{current_time_str}.csv"
+with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く＋この実行文を抜けるときに自動でf.close()
+    writer = csv.writer(f)
+    writer.writerow(["Time", "Pressure(hPa)", "Acceleration_X(m/s^2)", "Acceleration_Y(m/s^2)", "Acceleration_Z(m/s^2)"])
+    writer.writerow([e_time, pressure, ax, ay, az])
+    f.flush()
+    
