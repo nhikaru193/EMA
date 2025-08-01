@@ -1,4 +1,4 @@
-mark1@cricket:~ $ sudo su
+mark1@cricket:~ $ sudo su　#管理者権限に入る。これをしないと制御ログを作成できず、csvファイルの作成も困難になる。
 root@cricket:/home/mark1# cd ..
 root@cricket:/home# cd EM
 root@cricket:/home/EM# sudo git pull
