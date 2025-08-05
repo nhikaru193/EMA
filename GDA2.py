@@ -134,7 +134,7 @@ class GDA:
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
                     
-                    if cps >= 5 and cps < 15:
+                    if current_percentage_scan >= 5 and current_percentage_scan < 15:
                         self.bno.turn_to_heading(self.driver, best_heading, 70) 
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
