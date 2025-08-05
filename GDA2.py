@@ -118,7 +118,7 @@ class GDA:
                     return False
 
             while True:
-                print(赤色15%まで近づけたので4つのボールの中に入るぜベイベー)
+                print("赤色15%まで近づけたので4つのボールの中に入るぜベイベー")
                 high_percentage_detections = [] 
                 
                 start_scan_heading = self.bno.get_heading()
