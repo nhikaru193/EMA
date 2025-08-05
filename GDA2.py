@@ -194,7 +194,7 @@ class GDA:
                             if len(low_detections_with_headings) >= 2:
                                 heading1 = low_detections_with_headings[0]['heading']
                                 heading2 = low_detections_with_headings[1]['heading']
-                                    angle_diff = (heading2 - heading1 + 360) % 360
+                                angle_diff = (heading2 - heading1 + 360) % 360
                                 if angle_diff > 180:
                                     target_heading = (heading1 + (angle_diff - 360) / 2) % 360 #逆方向計算
                                 else:
