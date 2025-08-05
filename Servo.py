@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 
 #------------------------#
-def install(duty=12.5, duration=6):
+def install(duty=12.5, duration=2.5):
     try:
         print("物資を格納するため、サーボモータの起動を行います")
         SERVO_PIN = 13
