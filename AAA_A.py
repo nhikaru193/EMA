@@ -24,7 +24,7 @@ from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 from C_Servo import SM
 from C_excellent_GPS import GPS
-from C_GOAL_DETECTIVE_ARLISS import GDA
+from GDA2 import GDA
 
 #おそらく未使用のモジュール
 """
@@ -54,7 +54,7 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
-
+"""
 #関数のインスタンス作成
 RELEASE = RD(bno) #ok
 RELEASE.run()
@@ -86,8 +86,8 @@ GPIO.cleanup()
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
-
-GOAL = GDA(bno_sensor_instance = bno)
-GOAL.HAT_TRICK()
+"""
+GOAL = GDA(bno, 30)
+GOAL.run()
 
 print("クラス呼び出し完了です")
