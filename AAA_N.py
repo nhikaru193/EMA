@@ -22,6 +22,7 @@ from C_RELEASE import RD
 from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
+import Servo
 from C_Servo import SM
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
@@ -65,7 +66,7 @@ LAND.run()
 time.sleep(3)
 
 print("パラシュート回避を始めます")
-time.sleep(3)
+time.sleep(1)
 
 AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
 AVOIDANCE.run()
@@ -77,18 +78,7 @@ GPS_StoF.run()
 FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
 
-#------サーボモーターの起動------#
-SERVO_PIN = 13  # GPIO13を使用
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(SERVO_PIN, GPIO.OUT)
-pwm = GPIO.PWM(SERVO_PIN, 50)
-pwm.start(0)
-print("逆回転（速い）")
-set_servo_duty(4.0)
-time.sleep(7)
-pwm.stop()
-GPIO.cleanup()
-#------------------------------#
+Servo.release()
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
@@ -96,4 +86,4 @@ GPS_FtoG.run()
 GOAL = GDN(bno, 30)
 GOAL.run()
 
-print("クラス呼び出し完了です")
+print("Mission Complete")
