@@ -32,6 +32,7 @@ import numpy
 import busio
 from C_Parachute_Avoidance import Parakai
 """
+
 def set_servo_duty(duty):
     pwm.ChangeDutyCycle(duty)
     time.sleep(0.5)
@@ -55,29 +56,7 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
 
-def degree_rotation(degree, threshold_deg = 5, sleeping = 0.01):
-    before_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-    target_heading = (before_heading + degree) % 360
-    while True:
-        current_heading = bno.getVector(BNO055.VECTOR_EULER)[0]
-        delta_heading = ((target_heading - current_heading + 180) % 360) - 180
-        if abs(delta_heading) <= threshold_deg:
-            break
-        elif delta_heading < -1 * threshold_deg:
-            driver.petit_left(0, 90)
-            time.sleep(sleeping)
-            time.sleep(0.05)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-        elif delta_heading > threshold_deg:
-            driver.petit_right(0, 99)
-            time.sleep(sleeping)
-            time.sleep(0.05)
-            driver.motor_stop_brake()
-            time.sleep(0.5)
-#関数のインスタンス作成
-"""
-RELEASE = RD(bno) #ok
+RELEASE = RD(bno)
 RELEASE.run()
 
 LAND = LD(bno) 
@@ -85,27 +64,6 @@ LAND.run()
 
 time.sleep(3)
 
-driver = MotorDriver(
-        PWMA=12, AIN1=23, AIN2=18,
-        PWMB=19, BIN1=16, BIN2=26,
-        STBY=21
-    )
-degree_rotation(-90, threshold_deg = 10)
-time.sleep(0.3)
-driver.motor_stop_brake()
-time.sleep(1)
-following.follow_forward(driver, bno, 80, 2)
-driver.motor_stop_free()
-time.sleep(2)
-degree_rotation(90, threshold_deg = 10)
-driver.motor_stop_brake()
-time.sleep(1)
-following.follow_forward(driver, bno, 80, 4)
-driver.motor_stop_free()
-time.sleep(2)
-
-driver.cleanup()
-"""
 print("パラシュート回避を始めます")
 time.sleep(3)
 
@@ -118,10 +76,8 @@ GPS_StoF.run()
 
 FLAG = FN(bno, flag_location = Flag_location) 
 FLAG.run()
-"""
-SERVO = SM(6)
-SERVO.run()
-"""
+
+#------サーボモーターの起動------#
 SERVO_PIN = 13  # GPIO13を使用
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SERVO_PIN, GPIO.OUT)
@@ -132,6 +88,7 @@ set_servo_duty(4.0)
 time.sleep(7)
 pwm.stop()
 GPIO.cleanup()
+#------------------------------#
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
