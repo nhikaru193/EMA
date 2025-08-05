@@ -203,7 +203,7 @@ class GDA:
                                 if target_heading < 0:
                                     target_heading += 360
                                     
-                                print(f"最も高い2つの赤色検知方位は {heading1:.2f}° と {heading2:.2f}° です。")
+                                print(f"最も低い2つの赤色検知方位は {heading1:.2f}° と {heading2:.2f}° です。")
                                 print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                             # 中間方位にロボットの向きを調整
@@ -231,16 +231,16 @@ class GDA:
                         angle_diff = (heading4 - heading3 + 360) % 360
                         if angle_diff > 180:
                             # 逆方向に計算
-                            target_heading = (heading1 + (angle_diff - 360) / 2) % 360
+                            target_heading = (heading3 + (angle_diff - 360) / 2) % 360
                         else:
                             # 順方向に計算
-                            target_heading = (heading1 + angle_diff / 2) % 360
+                            target_heading = (heading3 + angle_diff / 2) % 360
 
                         # マイナス値になった場合の調整
                         if target_heading < 0:
                             target_heading += 360
                             
-                        print(f"最も高い2つの赤色検知方位は {heading1:.2f}° と {heading2:.2f}° です。")
+                        print(f"最も高い2つの赤色検知方位は {heading3:.2f}° と {heading4:.2f}° です。")
                         print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                         # 中間方位にロボットの向きを調整
