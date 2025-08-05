@@ -138,7 +138,7 @@ class GPS:
             
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
                         print(f"[TURN] 左に回頭します ")
-                        self.driver.petit_left(0, 80) 
+                        self.driver.petit_left(0, 75) 
                         self.driver.petit_left(75, 0) 
                         self.driver.motor_stop_brake()
                         time.sleep(0.3)
@@ -178,8 +178,8 @@ class GPS:
                         
                     else: # 時計回り（右）に回る方が近い
                         print(f"[TURN] 右に回頭します")
-                        self.driver.petit_right(0, 80) 
-                        self.driver.petit_right(75, 0)
+                        self.driver.petit_right(0, 95) 
+                        self.driver.petit_right(90, 0)
                         self.driver.motor_stop_brake()
                         time.sleep(0.3)
                         #------簡単なスタック判定の追加-------#
