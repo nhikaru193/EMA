@@ -1,10 +1,6 @@
 import RPi.GPIO as GPIO
 import time
 
-def set_servo_duty(duty):
-    pwm.ChangeDutyCycle(duty)
-    time.sleep(0.5)
-
 #------------------------#
 def install(duty=12.5, duration=6):
     try:
@@ -15,7 +11,8 @@ def install(duty=12.5, duration=6):
         pwm = GPIO.PWM(SERVO_PIN, 50)
         pwm.start(0)
         print(f"物資をデューティ比{duty}、格納時間{duration}で設置します")
-        set_servo_duty(duty)
+        pwm.ChangeDutyCycle(duty)
+        time.sleep(0.5)
         time.sleep(duration)
 
     except keyboardInterupt:
@@ -37,10 +34,11 @@ def release(duty=2.5, duration=6):
         pwm = GPIO.PWM(SERVO_PIN, 50)
         pwm.start(0)
         print(f"物資をデューティ比{duty}、設置時間{duration}で設置します")
-        set_servo_duty(duty)
+        pwm.ChangeDutyCycle(duty)
+        time.sleep(0.5)
         time.sleep(duration)
 
-    except keyboardInterupt:
+    except KeyboardInterupt:
         print("プログラムの中断が行われました")
 
     finally:
