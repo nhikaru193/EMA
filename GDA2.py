@@ -110,7 +110,7 @@ class GDA:
                             time.sleep(0.5)
                             return False 
 
-                        driver.motor.petit_petit(5) 
+                        self.driver.petit_petit(5) 
                         self.driver.motor_stop_brake()
                         time.sleep(0.2) 
                 else:
@@ -143,7 +143,7 @@ class GDA:
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             return True
-                        driver.motor.petit_petit(5) 
+                        self.driver.petit_petit(5) 
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
                         
@@ -190,7 +190,7 @@ class GDA:
                             low_detections_with_headings = [d for d in scan_data if d['percentage'] > 15]
 
                     # 割合が最も低い2つの方位を見つける
-                            low_detections_with_headings.sort(key=lambda x: x['percentage'], reverse=True)
+                            low_detections_with_headings.sort(key=lambda x: x['percentage'])
                             if len(low_detections_with_headings) >= 2:
                                 heading1 = low_detections_with_headings[0]['heading']
                                 heading2 = low_detections_with_headings[1]['heading']
@@ -212,7 +212,7 @@ class GDA:
                                 time.sleep(1.0)
                             
                             # 短く前進する
-                                driver.motor.petit_petit(2)
+                                self.driver.petit_petit(2)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
                 elif high_red_count >= 2 and high_red_count < 4:
@@ -249,7 +249,7 @@ class GDA:
                         time.sleep(1.0)
                         
                         # 短く前進する
-                        driver.motor.petit_petit(2)
+                        self.driver.petit_petit(2)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         
