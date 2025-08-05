@@ -160,8 +160,7 @@ class FN:
                                     
                                     GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
                                     GPS_StoF.run()
-                                    
-
+                                    importlib.reload(Flag_Navi)
                             # ===== スタック判定処理ここまで =====
                             
                             time.sleep(0.5) #7/16追加
