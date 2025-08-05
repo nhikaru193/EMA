@@ -77,170 +77,171 @@ class GPS:
 
     def run(self):
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
-        filename = f"GPS_NAVIGATE_{current_time_str}.csv"
-        with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く＋この実行文を抜けるときに自動でf.close()
+        filename = f"home/EM/_csv/GPS_NAVIGATE_{current_time_str}.csv"
+        try:
+            f = open(filename, "w", newline='')
             writer = csv.writer(f)
             writer.writerow(["latitude", "longitude", "heading"])
-            try:
-                heading_list = deque(maxlen=5)
-                while True:
-                    # 1. 状態把握
-                    (count, data) = self.pi.bb_serial_read(self.RX_PIN)
-                    current_location = None
-                    
-                    if count and data:
-                        try:
-                            text = data.decode("ascii", errors="ignore")
-                            if "$GNRMC" in text:
-                                lines = text.split("\n")
-                                for line in lines:
-                                    if line.startswith("$GNRMC"):
-                                        parts = line.strip().split(",")
-                                        if len(parts) > 6 and parts[2] == "A":
-                                            lat = self.convert_to_decimal(parts[3], parts[4])
-                                            lon = self.convert_to_decimal(parts[5], parts[6])
-                                            current_location = [lat, lon]
-                                            break
-                        except Exception as e:
-                            print(f"GPSデコードエラー: {e}")
-                    
-                    if not current_location:
-                        print("[WARN] GPS位置情報を取得できません。リトライします...")
-                        self.driver.motor_stop_brake()
-                        time.sleep(1)
-                        continue
-        
-                    heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                    if heading is None:
-                        print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                        self.driver.motor_stop_brake()
-                        time.sleep(1)
-                        continue
-        
-                    # 2. 計算
-                    dist_to_goal = self.get_distance_to_goal(current_location, self.GOAL_LOCATION)
-                    bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
-                    angle_error = (bearing_to_goal - heading + 360) % 360
-        
-                    print(f"[INFO] 距離:{dist_to_goal: >6.1f}m | 目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
-        
-                    # 3. ゴール判定
-                    if dist_to_goal <= self.GOAL_THRESHOLD_M:
-                        print(f"[GOAL] 目標地点に到達しました！ (距離: {dist_to_goal:.2f}m)")
-                        self.driver.motor_stop_free()
-                        break
-        
-                    # 4. 方向調整フェーズ
-                    if angle_error > self.ANGLE_THRESHOLD_DEG and angle_error < (360 - self.ANGLE_THRESHOLD_DEG):
+            heading_list = deque(maxlen=5)
+            while True:
+                # 1. 状態把握
+                (count, data) = self.pi.bb_serial_read(self.RX_PIN)
+                current_location = None
                 
-                        if angle_error > 180: # 反時計回り（左）に回る方が近い
-                            print(f"[TURN] 左に回頭します ")
-                            self.driver.petit_left(0, 80) 
-                            self.driver.petit_left(75, 0) 
-                            self.driver.motor_stop_brake()
-                            time.sleep(0.3)
-                            #------簡単なスタック判定の追加-------#
-                            heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                            heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
-                            if heading is None:
-                                print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                                self.driver.motor_stop_brake()
-                                time.sleep(1)
-                                continue
-                            if len(heading_list) == 5:
-                                print("スタック判定を行います")
-                                a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
-                                b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                                c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                                if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
-                                    print("スタック判定です")
-                                    print("スタック離脱を行います")
-                                    self.driver.changing_right(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_right(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_left(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_left(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_forward(0, 90)
-                                    time.sleep(1)
-                                    self.driver.changing_forward(90, 0)
-                                    time.sleep(0.5)
-                                    print("スタック離脱を終了します")
-                                    heading_list.clear()
-                                else:
-                                    print("長時間のスタックはしていないため、GPS誘導を継続します")
-                            #----------------------------#
-                            
-                        else: # 時計回り（右）に回る方が近い
-                            print(f"[TURN] 右に回頭します")
-                            self.driver.petit_right(0, 80) 
-                            self.driver.petit_right(75, 0)
-                            self.driver.motor_stop_brake()
-                            time.sleep(0.3)
-                            #------簡単なスタック判定の追加-------#
-                            heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                            heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
-                            if heading is None:
-                                print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                                self.driver.motor_stop_brake()
-                                time.sleep(1)
-                                continue
-                            if len(heading_list) == 5:
-                                print("スタック判定を行います")
-                                a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
-                                b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                                c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                                if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
-                                    print("スタック判定です")
-                                    print("スタック離脱を行います")
-                                    self.driver.changing_right(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_right(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_left(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_left(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_forward(0, 90)
-                                    time.sleep(1)
-                                    self.driver.changing_forward(90, 0)
-                                    time.sleep(0.5)
-                                    print("スタック離脱を終了します")
-                                    heading_list.clear()
-                                else:
-                                    print("長時間のスタックはしていないため、GPS誘導を継続します")
-                            #----------------------------#
-                        
-                        self.driver.motor_stop_free() # 確実な停止
-                        time.sleep(0.5) # 回転後の安定待ち
-                        continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
-        
-                    if dist_to_goal > 13:
-                        # 5. 前進フェーズ (PD制御による直進維持)
-                        print(f"[MOVE] 方向OK。PD制御で前進します。")
-                        following.follow_forward(self.driver, self.bno, 70, 9)
-                        heading_list.clear()
+                if count and data:
+                    try:
+                        text = data.decode("ascii", errors="ignore")
+                        if "$GNRMC" in text:
+                            lines = text.split("\n")
+                            for line in lines:
+                                if line.startswith("$GNRMC"):
+                                    parts = line.strip().split(",")
+                                    if len(parts) > 6 and parts[2] == "A":
+                                        lat = self.convert_to_decimal(parts[3], parts[4])
+                                        lon = self.convert_to_decimal(parts[5], parts[6])
+                                        current_location = [lat, lon]
+                                        break
+                    except Exception as e:
+                        print(f"GPSデコードエラー: {e}")
+                
+                if not current_location:
+                    print("[WARN] GPS位置情報を取得できません。リトライします...")
+                    self.driver.motor_stop_brake()
+                    time.sleep(1)
+                    continue
     
-                    else:
-                         # 5. 前進フェーズ (PD制御による直進維持)
-                        print(f"[MOVE] 方向OK。PD制御で前進します。")
-                        following.follow_forward(self.driver, self.bno, 70, 3)
-                        heading_list.clear()
+                heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                if heading is None:
+                    print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                    self.driver.motor_stop_brake()
+                    time.sleep(1)
+                    continue
     
-                    #------csvファイルの書き込み------#
-                    writer.writerow([lat, lon, heading])
-                    f.flush()
+                # 2. 計算
+                dist_to_goal = self.get_distance_to_goal(current_location, self.GOAL_LOCATION)
+                bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
+                angle_error = (bearing_to_goal - heading + 360) % 360
+    
+                print(f"[INFO] 距離:{dist_to_goal: >6.1f}m | 目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
+    
+                # 3. ゴール判定
+                if dist_to_goal <= self.GOAL_THRESHOLD_M:
+                    print(f"[GOAL] 目標地点に到達しました！ (距離: {dist_to_goal:.2f}m)")
+                    self.driver.motor_stop_free()
+                    break
+    
+                # 4. 方向調整フェーズ
+                if angle_error > self.ANGLE_THRESHOLD_DEG and angle_error < (360 - self.ANGLE_THRESHOLD_DEG):
             
-            except KeyboardInterrupt:
-                print("\n[STOP] 手動で停止されました。")
-            except Exception as e:
-                print(f"\n[FATAL] 予期せぬエラーが発生しました: {e}")
-            finally:
-                print("クリーンアップ処理を実行します。")
-                self.driver.cleanup()
-                self.pi.bb_serial_read_close(self.RX_PIN)
-                self.pi.stop()
-                print("プログラムを終了しました。")
+                    if angle_error > 180: # 反時計回り（左）に回る方が近い
+                        print(f"[TURN] 左に回頭します ")
+                        self.driver.petit_left(0, 80) 
+                        self.driver.petit_left(75, 0) 
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.3)
+                        #------簡単なスタック判定の追加-------#
+                        heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                        heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
+                        if heading is None:
+                            print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                            self.driver.motor_stop_brake()
+                            time.sleep(1)
+                            continue
+                        if len(heading_list) == 5:
+                            print("スタック判定を行います")
+                            a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
+                            b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
+                            c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                            if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
+                                print("スタック判定です")
+                                print("スタック離脱を行います")
+                                self.driver.changing_right(0, 90)
+                                time.sleep(3)
+                                self.driver.changing_right(90, 0)
+                                time.sleep(0.5)
+                                self.driver.changing_left(0, 90)
+                                time.sleep(3)
+                                self.driver.changing_left(90, 0)
+                                time.sleep(0.5)
+                                self.driver.changing_forward(0, 90)
+                                time.sleep(1)
+                                self.driver.changing_forward(90, 0)
+                                time.sleep(0.5)
+                                print("スタック離脱を終了します")
+                                heading_list.clear()
+                            else:
+                                print("長時間のスタックはしていないため、GPS誘導を継続します")
+                        #----------------------------#
+                        
+                    else: # 時計回り（右）に回る方が近い
+                        print(f"[TURN] 右に回頭します")
+                        self.driver.petit_right(0, 80) 
+                        self.driver.petit_right(75, 0)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.3)
+                        #------簡単なスタック判定の追加-------#
+                        heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                        heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
+                        if heading is None:
+                            print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                            self.driver.motor_stop_brake()
+                            time.sleep(1)
+                            continue
+                        if len(heading_list) == 5:
+                            print("スタック判定を行います")
+                            a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
+                            b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
+                            c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                            if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
+                                print("スタック判定です")
+                                print("スタック離脱を行います")
+                                self.driver.changing_right(0, 90)
+                                time.sleep(3)
+                                self.driver.changing_right(90, 0)
+                                time.sleep(0.5)
+                                self.driver.changing_left(0, 90)
+                                time.sleep(3)
+                                self.driver.changing_left(90, 0)
+                                time.sleep(0.5)
+                                self.driver.changing_forward(0, 90)
+                                time.sleep(1)
+                                self.driver.changing_forward(90, 0)
+                                time.sleep(0.5)
+                                print("スタック離脱を終了します")
+                                heading_list.clear()
+                            else:
+                                print("長時間のスタックはしていないため、GPS誘導を継続します")
+                        #----------------------------#
+                    
+                    self.driver.motor_stop_free() # 確実な停止
+                    time.sleep(0.5) # 回転後の安定待ち
+                    continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
+    
+                if dist_to_goal > 13:
+                    # 5. 前進フェーズ (PD制御による直進維持)
+                    print(f"[MOVE] 方向OK。PD制御で前進します。")
+                    following.follow_forward(self.driver, self.bno, 70, 9)
+                    heading_list.clear()
+
+                else:
+                     # 5. 前進フェーズ (PD制御による直進維持)
+                    print(f"[MOVE] 方向OK。PD制御で前進します。")
+                    following.follow_forward(self.driver, self.bno, 70, 3)
+                    heading_list.clear()
+
+                #------csvファイルの書き込み------#
+                writer.writerow([lat, lon, heading])
+                f.flush()
+        
+        except KeyboardInterrupt:
+            print("\n[STOP] 手動で停止されました。")
+        except Exception as e:
+            print(f"\n[FATAL] 予期せぬエラーが発生しました: {e}")
+        finally:
+            print("クリーンアップ処理を実行します。")
+            self.driver.cleanup()
+            self.pi.bb_serial_read_close(self.RX_PIN)
+            self.pi.stop()
+            f.close()
+            print("プログラムを終了しました。")
         
