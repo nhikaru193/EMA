@@ -160,7 +160,6 @@ class FN:
                                     
                                     GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
                                     GPS_StoF.run()
-                                    importlib.reload(Flag_Navi)
                             # ===== スタック判定処理ここまで =====
                             
                             time.sleep(0.5) #7/16追加
@@ -258,15 +257,11 @@ class FN:
         self.pi.stop()
         #cv2.destroyAllWindows()
 
+"""
 # メインの実行ブロック
 if __name__ == '__main__':
     # --- 各クラスのインスタンスを作成 ---
     # 1. モータードライバの初期化
-    """
-    driver = MotorDriver(PWMA=12, AIN1=23, AIN2=18,    # 左モーター用（モータA）
-    PWMB=19, BIN1=16, BIN2=26,    # 右モーター用（モータB）
-    STBY=21   )
-    """
     
     # 2. BNO055（9軸センサー）の初期化
     try:
@@ -278,11 +273,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"BNO055の初期化中にエラーが発生しました: {e}")
         # BNO055が使えない場合はプログラムを終了
-        """
-        driver.cleanup()
-        GPIO.cleanup()
-        exit()
-        """
+    
 
     # --- メインクラスのインスタンスを作成し、実行 ---
     # 3. FlagNavigatorにbnoを渡してインスタンス化
@@ -298,3 +289,4 @@ if __name__ == '__main__':
     finally:
         # 5. 終了処理（クリーンアップ）を呼び出す
         robot.cleanup()
+"""
