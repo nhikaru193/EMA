@@ -130,20 +130,24 @@ class GDN:
                         self.driver.petit_petit(2)
                         time.sleep(1.0)
                         counter = self.counter_max
+                        heading_list.clear()
 
                     elif percentage > 20:
                         print("petit_petitを3回実行します")
                         self.driver.petit_petit(3)
                         time.sleep(1.0)
+                        heading_list.clear()
                         
                     elif percentage > 10:
                         print("petit_petitを5回実行します")
                         self.driver.petit_petit(5)
                         time.sleep(1.0)
+                        heading_list.clear()
                         
                     else:
                         print("距離が遠いため、前身を行います")
                         following.follow_forward(self.driver, self.bno, 70, 2)
+                        heading_list.clear()
         
                 elif number == 1:
                     self.driver.petit_left(0, 100)
