@@ -19,7 +19,7 @@ def install(duty=12.5, duration=6):
         print("プログラムの中断が行われました")
 
     finally:
-        self.pwm.stop()
+        pwm.stop()
         GPIO.cleanup()
         print("物資の格納が正常に終了しました")
 #------------------------#
@@ -42,7 +42,7 @@ def release(duty=2.5, duration=6):
         print("プログラムの中断が行われました")
 
     finally:
-        self.pwm.stop()
+        pwm.stop()
         GPIO.cleanup()
         print("物資の設置が正常に終了しました")
 #------------------------#
