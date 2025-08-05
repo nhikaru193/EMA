@@ -47,8 +47,6 @@ class GDA:
         return percentage
     
     def run(self):
-        left_a = 90
-        right_a = 80
         counter = self.counter_max
         percentage = 0
         try:
@@ -87,7 +85,7 @@ class GDA:
                     
                 print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
 
-                if best_heading is not None and best_percentage > 5: 
+                if best_heading is not None and best_percentage > 1: 
                     print(f"最適な方向 ({best_heading:.2f}°)に調整します。")
                     self.bno.turn_to_heading(self.driver, best_heading, 70) 
                     self.driver.motor_stop_brake()
@@ -117,7 +115,39 @@ class GDA:
                         time.sleep(0.2) 
                 else:
                     print("360度探索でもコーンを明確に検知できませんでした。")
-                    return False 
+                    return False
+
+            while True:
+                print(赤色15%まで近づけたので4つのボールの中に入るぜベイベー)
+                high_percentage_detections = [] 
+                
+                start_scan_heading = self.bno.get_heading()
+                
+                scan_steps = 36 
+                high_red_count = 0 
+
+                for _ in range(scan_steps + 4): 
+                    self.driver.petit_right(0, 70) 
+                    time.sleep(0.2)
+                    self.driver.motor_stop_brake()
+
+                    frame = self.picam2.capture_array()
+                    current_percentage_scan = self.get_percentage(frame)
+                    
+                    if cps >= 5 and cps < 15:
+                        self.bno.turn_to_heading(self.driver, best_heading, 70) 
+                        self.driver.motor_stop_brake()
+                        time.sleep(1.0)
+                        if current_percentage >= 10:
+                            print("赤割合が10%に達しました。前進を停止するよ。")
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.5)
+                            return True
+                        driver.motor.petit_petit(5) 
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.2)
+                        
+                    
             # --- 探索モードの関数化ここまで ---
 
 
@@ -132,14 +162,14 @@ class GDA:
                 high_red_count = 0 
 
                 for _ in range(scan_steps + 4): 
-                    self.driver.petit_right(0, 50) 
+                    self.driver.petit_right(0, 70) 
                     time.sleep(0.2)
                     self.driver.motor_stop_brake()
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
                     
-                    if current_percentage_scan > 30: 
+                    if current_percentage_scan > 15: 
                         high_percentage_detections.append(current_percentage_scan)
                         high_red_count += 1
                     
@@ -150,22 +180,88 @@ class GDA:
                         max_val = max(high_percentage_detections)
                         min_val = min(high_percentage_detections)
                         
-                        if (max_val - min_val) <= 20: 
+                        if (max_val - min_val) <= 10: 
                             print("🎉 360度ゴール判定に成功しました！複数の方向で均等な高い赤色を検知。")
                             self.driver.motor_stop_brake()
                             time.sleep(2)
                             break 
                         else:
                             print(f"高い赤色検出は複数ありますが、割合のばらつきが大きすぎます (Max:{max_val:.2f}%, Min:{min_val:.2f}%).")
-                    elif len(high_percentage_detections) == 1 and high_percentage_detections[0] >= 90:
-                        print("🎉 360度スキャンで1つの非常に高い赤色検出をしました（単一コーンゴール）。")
+                            low_detections_with_headings = [d for d in scan_data if d['percentage'] > 15]
+
+                    # 割合が最も低い2つの方位を見つける
+                            low_detections_with_headings.sort(key=lambda x: x['percentage'], reverse=True)
+                            if len(low_detections_with_headings) >= 2:
+                                heading1 = low_detections_with_headings[0]['heading']
+                                heading2 = low_detections_with_headings[1]['heading']
+                                    angle_diff = (heading2 - heading1 + 360) % 360
+                                if angle_diff > 180:
+                                    target_heading = (heading1 + (angle_diff - 360) / 2) % 360 #逆方向計算
+                                else:
+                                    target_heading = (heading1 + angle_diff / 2) % 360 #順方向計算
+                                    
+                                if target_heading < 0:
+                                    target_heading += 360
+                                    
+                                print(f"最も高い2つの赤色検知方位は {heading1:.2f}° と {heading2:.2f}° です。")
+                                print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
+                        
+                            # 中間方位にロボットの向きを調整
+                            　　self.bno.turn_to_heading(self.driver, target_heading, 70)
+                                self.driver.motor_stop_brake()
+                                time.sleep(1.0)
+                            
+                            # 短く前進する
+                                driver.motor.petit_petit(2)
+                                self.driver.motor_stop_brake()
+                                time.sleep(0.5)
+                elif high_red_count >= 2 and high_red_count < 4:
+                    print("⚠️ 赤色検知が2個以上4個未満です。ボールの間に向かって前進します。")
+                    
+                    # 検出された高い割合のデータだけを抽出
+                    high_detections_with_headings = [d for d in scan_data if d['percentage'] > 15]
+
+                    # 割合が最も高い2つの方位を見つける
+                    high_detections_with_headings.sort(key=lambda x: x['percentage'], reverse=True)
+                    if len(high_detections_with_headings) >= 2:
+                        heading3 = high_detections_with_headings[0]['heading']
+                        heading4 = high_detections_with_headings[1]['heading']
+                        
+                        # 2つの方位の中間点を計算する
+                        angle_diff = (heading4 - heading3 + 360) % 360
+                        if angle_diff > 180:
+                            # 逆方向に計算
+                            target_heading = (heading1 + (angle_diff - 360) / 2) % 360
+                        else:
+                            # 順方向に計算
+                            target_heading = (heading1 + angle_diff / 2) % 360
+
+                        # マイナス値になった場合の調整
+                        if target_heading < 0:
+                            target_heading += 360
+                            
+                        print(f"最も高い2つの赤色検知方位は {heading1:.2f}° と {heading2:.2f}° です。")
+                        print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
+                        
+                        # 中間方位にロボットの向きを調整
+                        self.bno.turn_to_heading(self.driver, target_heading, 70)
                         self.driver.motor_stop_brake()
-                        time.sleep(2)
-                        break
+                        time.sleep(1.0)
+                        
+                        # 短く前進する
+                        driver.motor.petit_petit(2)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.5)
+                        
+                        # カウンターをリセットし、次のループへ
+                        print("ボールの間を前進後、再度360度ゴール判定スキャンを開始します。")
+                        counter = self.counter_max
+                        continue
                     else:
-                        print("高い赤色検出は複数ありますが、検出数が不十分か、まだ十分な範囲ではありません。")
+                        print("検知した赤色が2個未満のため、通常追従モードに戻ります。")
+
                 else:
-                    print("360度スキャンでは、ゴールと判断できるほどの赤色検知がありませんでした。")
+                    print("360度スキャンでは、ゴールと判断できるほどの赤色検知がありませんでした。")    
                 # --- 新しいゴール判定ロジックここまで ---
 
 
@@ -176,55 +272,6 @@ class GDA:
                         continue 
                     else:
                         counter = self.counter_max
-
-
-                # --- 通常の追従ロジック (従来の90%ゴール判定は削除されました) ---
-                frame = self.picam2.capture_array()
-                time.sleep(0.2)
-                percentage = self.get_percentage(frame)
-                time.sleep(0.2)
-                print(f"赤割合: {percentage:2f}%です ")
-
-                # 従来の if percentage >= 90: ゴール判定は削除されました
-                
-                elif percentage > 15:
-                    print("赤コーンを検知しました。接近します。")
-                    if percentage > 40:
-                        print("非常に近いので、ゆっくり前進します (petit_petit 2回)")
-                        self.driver.petit_petit(2)
-                    elif percentage > 20:
-                        print("近いので、少し前進します (petit_petit 3回)")
-                        self.driver.petit_petit(3)
-                    else: 
-                        print("遠いので、前進します (follow_forward)")
-                        following.follow_forward(self.driver, self.bno, 70, 1)
-                    counter = self.counter_max
-                
-                counter = counter - 1
-                c_heading = self.bno.get_heading()
-                heading_list.append(c_heading)
-                if len(heading_list) == 5:
-                    print("スタック判定を行います")
-                    a = abs((heading_list[4] - heading_list[3] + 180) % 360 - 180)
-                    b = abs((heading_list[3] - heading_list[2] + 180) % 360 - 180)
-                    c = abs((heading_list[2] - heading_list[1] + 180) % 360 - 180)
-                    if a < 1.5 and b < 1.5 and c < 1.5:
-                        print("スタック判定です")
-                        print("スタック離脱を行います")
-                        self.driver.changing_right(0, 90)
-                        time.sleep(3)
-                        self.driver.changing_right(90, 0)
-                        time.sleep(0.5)
-                        self.driver.changing_left(0, 90)
-                        time.sleep(3)
-                        self.driver.changing_left(90, 0)
-                        time.sleep(0.5)
-                        self.driver.changing_forward(0, 90)
-                        time.sleep(0.5)
-                        self.driver.changing_forward(90, 0)
-                        time.sleep(0.5)
-                        print("スタック離脱を終了します")
-                        heading_list.clear()
         finally:
             self.picam2.close()
             print("カメラを閉じました。")
