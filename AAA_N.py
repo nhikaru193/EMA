@@ -23,20 +23,8 @@ from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 import Servo
-from C_Servo import SM
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
-
-#おそらく未使用のモジュール
-"""
-import numpy
-import busio
-from C_Parachute_Avoidance import Parakai
-"""
-
-def set_servo_duty(duty):
-    pwm.ChangeDutyCycle(duty)
-    time.sleep(0.5)
 
 #初期設定
 Flag_location = [35.9242090, 139.9113949]
