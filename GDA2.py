@@ -117,6 +117,14 @@ class GDA:
                     print("360度探索でもコーンを明確に検知できませんでした。")
                     return False
 
+            if counter <= 0:
+                    search_successful = perform_360_degree_search()
+                    if not search_successful:
+                        counter = self.counter_max
+                        continue 
+                    else:
+                        counter = self.counter_max
+
             while True:
                 print("赤色15%まで近づけたので4つのボールの中に入るぜベイベー")
                 high_percentage_detections = [] 
