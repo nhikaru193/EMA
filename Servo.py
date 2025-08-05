@@ -15,7 +15,7 @@ def install(duty=12.5, duration=6):
         time.sleep(0.5)
         time.sleep(duration)
 
-    except keyboardInterupt:
+    except KeyboardInterupt:
         print("プログラムの中断が行われました")
 
     finally:
