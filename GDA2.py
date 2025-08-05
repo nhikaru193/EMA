@@ -207,7 +207,7 @@ class GDA:
                                 print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                             # 中間方位にロボットの向きを調整
-                            　　self.bno.turn_to_heading(self.driver, target_heading, 70)
+                                self.bno.turn_to_heading(self.driver, target_heading, 70)
                                 self.driver.motor_stop_brake()
                                 time.sleep(1.0)
                             
