@@ -1,4 +1,4 @@
 import Servo
 
-#Servo.release()
+Servo.release()
 Servo.install()
