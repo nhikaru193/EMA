@@ -260,17 +260,7 @@ class GDA:
                         print("検知した赤色が2個未満のため、通常追従モードに戻ります。")
 
                 else:
-                    print("360度スキャンでは、ゴールと判断できるほどの赤色検知がありませんでした。")    
-                # --- 新しいゴール判定ロジックここまで ---
-
-
-                if counter <= 0:
-                    search_successful = perform_360_degree_search()
-                    if not search_successful:
-                        counter = self.counter_max
-                        continue 
-                    else:
-                        counter = self.counter_max
+                    print("360度スキャンでは、ゴールと判断できるほどの赤色検知がありませんでした。")
         finally:
             self.picam2.close()
             print("カメラを閉じました。")
