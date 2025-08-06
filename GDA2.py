@@ -60,7 +60,8 @@ class GDA:
                 num_steps = 36 # 10度ずつ回ると仮定して36ステップ
                 
                 for i in range(num_steps + 4):
-                    self.driver.petit_right(0, 60)
+                    self.driver.petit_right(0, 70)
+                    self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
                     time.sleep(0.2)
 
@@ -130,6 +131,7 @@ class GDA:
 
                 for _ in range(scan_steps + 4): 
                     self.driver.petit_right(0, 70)
+                    self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
                     time.sleep(0.2)
 
@@ -162,6 +164,7 @@ class GDA:
 
                 for _ in range(scan_steps + 4): 
                     self.driver.petit_right(0, 70)
+                    self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
                     time.sleep(0.2)
 
