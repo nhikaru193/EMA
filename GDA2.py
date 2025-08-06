@@ -45,16 +45,8 @@ class GDA:
         percentage = (red_area / total_area) * 100
         print(f"検知割合は{percentage}%です")
         return percentage
-    
-    def run(self):
-        counter = self.counter_max
-        percentage = 0
-        try:
-            heading_list = deque(maxlen=5)
-            print("ゴール誘導を開始します")
-            
-            # --- 探索モードの関数化 ---
-            def perform_360_degree_search():
+
+    def perform_360_degree_search():
                 nonlocal percentage 
                 print("赤コーンが近くにありません。360度回転して最も良い方向を探索します。")
                 
@@ -67,10 +59,10 @@ class GDA:
 
                 num_steps = 36 # 10度ずつ回ると仮定して36ステップ
                 
-                for i in range(num_steps + 4): 
-                    self.driver.petit_right(0, 50) 
-                    time.sleep(0.2) 
+                for i in range(num_steps + 4):
+                    self.driver.petit_right(0, 60)
                     self.driver.motor_stop_brake()
+                    time.sleep(0.2)
 
                     frame = self.picam2.capture_array()
                     current_percentage = self.get_percentage(frame)
@@ -116,17 +108,19 @@ class GDA:
                 else:
                     print("360度探索でもコーンを明確に検知できませんでした。")
                     return False
-
-            if counter <= 0:
-                    search_successful = perform_360_degree_search()
-                    if not search_successful:
-                        counter = self.counter_max
-                        continue 
-                    else:
-                        counter = self.counter_max
+    
+    def run(self):
+        search_successful = self.perform_360_degree_search()
+        
+        if not search_successful:
+            print("初期探索でコーンが見つかりませんでした。プログラムを終了します。")
+            self.driver.cleanup()
+            return
+        try:
+            print("ゴール誘導を開始します")
 
             while True:
-                print("赤色15%まで近づけたので4つのボールの中に入るぜベイベー")
+                print("赤色15%まで近づけたので2つのボールの間に行くぜベイベー")
                 high_percentage_detections = [] 
                 
                 start_scan_heading = self.bno.get_heading()
@@ -135,9 +129,9 @@ class GDA:
                 high_red_count = 0 
 
                 for _ in range(scan_steps + 4): 
-                    self.driver.petit_right(0, 70) 
-                    time.sleep(0.2)
+                    self.driver.petit_right(0, 70)
                     self.driver.motor_stop_brake()
+                    time.sleep(0.2)
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
@@ -154,14 +148,11 @@ class GDA:
                         self.driver.petit_petit(5) 
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
-                        
-                    
-            # --- 探索モードの関数化ここまで ---
 
 
             while True:
                 # --- 新しいゴール判定ロジック (唯一のゴール判定) ---
-                print("現在の位置で最終ゴール判定のための360度スキャンを開始します。")
+                print("現在の位置で最終ゴール判定のための360度スキャン兼4つのボールの中に入ります。")
                 high_percentage_detections = [] 
                 
                 start_scan_heading = self.bno.get_heading()
@@ -170,9 +161,9 @@ class GDA:
                 high_red_count = 0 
 
                 for _ in range(scan_steps + 4): 
-                    self.driver.petit_right(0, 70) 
-                    time.sleep(0.2)
+                    self.driver.petit_right(0, 70)
                     self.driver.motor_stop_brake()
+                    time.sleep(0.2)
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
@@ -220,7 +211,7 @@ class GDA:
                                 time.sleep(1.0)
                             
                             # 短く前進する
-                                self.driver.petit_petit(2)
+                                self.driver.petit_petit(4)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
                 elif high_red_count >= 2 and high_red_count < 4:
