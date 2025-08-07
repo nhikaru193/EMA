@@ -47,6 +47,33 @@ class GDA:
         print(f"検知割合は{percentage}%です")
         return percentage
 
+    def turn_to_heading(self, target_heading, speed): #get_headingで現在の向きを取得してから目標方位に回転させるやつ
+        print(f"目標方位: {target_heading:.2f}° に向かって調整開始")
+        while True:
+            current_heading = self.bno.get_heading()
+            
+            # 角度差
+            delta_heading = target_heading - current_heading
+            if delta_heading > 180:
+                delta_heading -= 360
+            elif delta_heading < -180:
+                delta_heading += 360
+            
+            # 許容範囲内であれば停止
+            if abs(delta_heading) < 10: # 誤差10度以内
+                print("目標方位に到達しました。")
+                self.driver.motor_stop_brake()
+                time.sleep(0.5)
+                break
+            
+            # 向きに応じて左右に回転
+            if delta_heading > 0:
+                self.driver.petit_right(0, speed) # 目標が現在より右なら右へ
+            else:
+                self.driver.petit_left(speed, 0) # 目標が現在より左なら左へ
+            
+            time.sleep(0.05) # 制御を安定させるために少し待機
+
     def perform_360_degree_search(self):
                 print("赤コーンが近くにありません。360度回転して最も良い方向を探索します。")
                 
@@ -63,7 +90,7 @@ class GDA:
                     self.driver.petit_right(0, 70)
                     self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
-                    time.sleep(0.2)
+                    time.sleep(1.0)
 
                     frame = self.picam2.capture_array()
                     current_percentage = self.get_percentage(frame)
@@ -80,9 +107,7 @@ class GDA:
 
                 if best_heading is not None and best_percentage > 1: 
                     print(f"最適な方向 ({best_heading:.2f}°)に調整します。")
-                    self.bno.turn_to_heading(self.driver, best_heading, 70) 
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
+                    self.turn_to_heading(best_heading, 70)
                     
                     print("赤コーンの割合が15%になるまで前進します。")
                     
@@ -133,15 +158,13 @@ class GDA:
                     self.driver.petit_right(0, 70)
                     self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
-                    time.sleep(0.2)
+                    time.sleep(1.0)
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
                     
                     if current_percentage_scan >= 5 and current_percentage_scan < 15:
-                        self.bno.turn_to_heading(self.driver, best_heading, 70) 
-                        self.driver.motor_stop_brake()
-                        time.sleep(1.0)
+                        self.turn_to_heading(best_heading, 70)
                         if current_percentage >= 10:
                             print("赤割合が10%に達しました。前進を停止するよ。")
                             self.driver.motor_stop_brake()
@@ -166,7 +189,7 @@ class GDA:
                     self.driver.petit_right(0, 70)
                     self.driver.petit_right(70, 0)
                     self.driver.motor_stop_brake()
-                    time.sleep(0.2)
+                    time.sleep(1.0)
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
@@ -209,9 +232,7 @@ class GDA:
                                 print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                             # 中間方位にロボットの向きを調整
-                                self.bno.turn_to_heading(self.driver, target_heading, 70)
-                                self.driver.motor_stop_brake()
-                                time.sleep(1.0)
+                                self.turn_to_heading(best_heading, 70)
                             
                             # 短く前進する
                                 self.driver.petit_petit(4)
@@ -246,9 +267,7 @@ class GDA:
                         print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                         # 中間方位にロボットの向きを調整
-                        self.bno.turn_to_heading(self.driver, target_heading, 70)
-                        self.driver.motor_stop_brake()
-                        time.sleep(1.0)
+                        self.turn_to_heading(best_heading, 70)
                         
                         # 短く前進する
                         self.driver.petit_petit(2)
