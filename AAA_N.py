@@ -44,6 +44,7 @@ while True:
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
+    time.sleep(0.3)
 
 RELEASE = RD(bno)
 RELEASE.run()
