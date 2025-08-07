@@ -68,9 +68,11 @@ class GDA:
             
             # 向きに応じて左右に回転
             if delta_heading > 0:
-                self.driver.petit_right(0, speed) # 目標が現在より右なら右へ
+                self.driver.petit_right(0, 60)
+                self.driver.petit_right(60, 0)
+                
             else:
-                self.driver.petit_left(speed, 0) # 目標が現在より左なら左へ
+                self.driver.petit_left(0, 60) # 目標が現在より左なら左へ
             
             time.sleep(0.05) # 制御を安定させるために少し待機
 
