@@ -107,7 +107,7 @@ class GDA:
 
                 if best_heading is not None and best_percentage > 1: 
                     print(f"最適な方向 ({best_heading:.2f}°)に調整します。")
-                    self.turn_to_heading(best_heading, 70)
+                    self.turn_to_heading(target_heading, 70)
                     
                     print("赤コーンの割合が15%になるまで前進します。")
                     
@@ -164,7 +164,7 @@ class GDA:
                     current_percentage_scan = self.get_percentage(frame)
                     
                     if current_percentage_scan >= 5 and current_percentage_scan < 15:
-                        self.turn_to_heading(best_heading, 70)
+                        self.turn_to_heading(target_heading, 70)
                         if current_percentage >= 10:
                             print("赤割合が10%に達しました。前進を停止するよ。")
                             self.driver.motor_stop_brake()
@@ -232,7 +232,7 @@ class GDA:
                                 print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                             # 中間方位にロボットの向きを調整
-                                self.turn_to_heading(best_heading, 70)
+                                self.turn_to_heading(target_heading, 70)
                             
                             # 短く前進する
                                 self.driver.petit_petit(4)
@@ -267,7 +267,7 @@ class GDA:
                         print(f"その中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         
                         # 中間方位にロボットの向きを調整
-                        self.turn_to_heading(best_heading, 70)
+                        self.turn_to_heading(target_heading, 70)
                         
                         # 短く前進する
                         self.driver.petit_petit(2)
