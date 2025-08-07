@@ -30,7 +30,7 @@ Fast-forward
  delete mode 100644 C_GOAL_DETECTIVE_ARLISS_rm.py
  create mode 100644 GDA2.py
 root@cricket:/home/EM# sudo systemctl start pigpiod
-root@cricket:/home/EM# python3 test_test.py | tee /home/EM/_txt/output.txt #この文章で/home/EM/_txt階層に、test_test.pyの制御ログであるoutput.txtファイルを作成する。
+root@cricket:/home/EM# python3 -u test_test.py | tee /home/EM/_txt/output.txt #この文章で/home/EM/_txt階層に、test_test.pyの制御ログであるoutput.txtファイルを作成する。
 これは最初の行です。
 これは二番目の行です。
 現在時刻: 2025-08-01 13:04:53.221662
