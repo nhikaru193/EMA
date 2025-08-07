@@ -29,6 +29,7 @@ class GDA:
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
         self.pi = pigpio.pi()
+        self.percentage = 0
         if not self.pi.connected:
             raise RuntimeError("pigpioデーモンに接続できません。`sudo pigpiod`を実行して確認してください。")
         
@@ -46,8 +47,7 @@ class GDA:
         print(f"検知割合は{percentage}%です")
         return percentage
 
-    def perform_360_degree_search():
-                nonlocal percentage 
+    def perform_360_degree_search(self):
                 print("赤コーンが近くにありません。360度回転して最も良い方向を探索します。")
                 
                 best_percentage = 0.0
