@@ -183,7 +183,7 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
     
-               elif current_state == "2ndBall":
+                elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
                    scan_data = self.scan_for_goal_criteria()
                    # 赤色の割合が5%から10%の間にあるコーンを探す
@@ -223,7 +223,7 @@ class GDA:
                        current_state = "SEARCH"
                         
     
-               elif current_state == "GOAL_CHECK":
+                elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
                     
                     scan_data = self.scan_for_goal_criteria() # ゴール判定用のスキャンを実行する新メソッド
