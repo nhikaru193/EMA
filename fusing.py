@@ -1,7 +1,6 @@
 import RPi.GPIO as GPIO
 import time
 import struct
-import time
 import pigpio
 
 def circuit(t_melt = 5):
