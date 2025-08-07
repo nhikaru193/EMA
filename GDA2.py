@@ -152,7 +152,8 @@ class GDA:
                 start_scan_heading = self.bno.get_heading()
                 
                 scan_steps = 36 
-                high_red_count = 0 
+                high_red_count = 0
+                scan_data = []
 
                 for _ in range(scan_steps + 4): 
                     self.driver.petit_right(0, 70)
@@ -162,6 +163,8 @@ class GDA:
 
                     frame = self.picam2.capture_array()
                     current_percentage_scan = self.get_percentage(frame)
+                    current_heading_scan = self.bno.get_heading() # 忘れていた方位も取得
+                    scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
                     
                     if current_percentage_scan >= 5 and current_percentage_scan < 15:
                         self.turn_to_heading(target_heading, 70)
