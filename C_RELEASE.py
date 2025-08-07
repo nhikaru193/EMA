@@ -18,12 +18,12 @@ class RD:
         try:
             with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
                 writer = csv.writer(f)
-                
                 # CSVヘッダーを書き込む
                 writer.writerow(["Time", "Pressure(hPa)", "Acceleration_X(m/s^2)", "Acceleration_Y(m/s^2)", "Acceleration_Z(m/s^2)"])
                 print(f"データロギングを開始します。ファイル名: {filename}")
                 BME280.init_bme280()
                 BME280.read_compensate()
+                time.sleep(0.5)
                 start_time = time.time()
                 base_pressure = BME280.get_pressure()
                 max_counter = self.p_counter
@@ -48,22 +48,15 @@ class RD:
                     if e_time > self.timeout:
                         print("タイムアウトによる放出判定に成功しました")
                         break
-                    
-                    time.sleep(0.4)
+            
+                    time.sleep(1.0)
 
         except PermissionError:
             print(f"\nエラー: ファイル '{filename}' への書き込み権限がありません。")
-            print("以下のいずれかを確認してください:")
-            print("1. そのファイルが他のプログラム（Excelなど）で開かれていないか。")
-            print("2. ファイルまたは保存先のフォルダに書き込み権限があるか。")
-            print("3. プログラムを管理者権限（sudo）で実行する必要があるか。")
-            return # エラー時はここで処理を終了
 
         except Exception as e:
             # その他の予期せぬエラーをキャッチ
             print(f"\n予期せぬエラーが発生しました: {e}")
-            return # エラー時はここで処理を終了
 
         finally:
             print("放出判定を終了します")
-       
