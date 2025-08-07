@@ -80,7 +80,7 @@ class GDA:
             
             time.sleep(0.05) # 制御を安定させるために少し待機
 
-    def perform_360_degree_search(self):
+    def perform_360_degree_search(self): #360度回転するやつ
         print("赤コーンを探索するため、360度回転を開始します。")
     
         best_percentage = 0.0
@@ -123,10 +123,13 @@ class GDA:
         else:
             return None # コーンが見つからなかった場合はNoneを返す
 
-    def scan_for_goal_criteria(self):
+    def scan_for_goal_criteria(self): #360度回転しながら赤色検知するやつ
         scan_data = []
         # 旋回しながらスキャン
+        self.driver.petit_right(0, 60)
         self.driver.petit_right(60, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
         start_heading = self.bno.get_heading()
         while True:
             current_heading = self.bno.get_heading()
