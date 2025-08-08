@@ -27,8 +27,8 @@ from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 
 #初期設定
-Flag_location = [35.9241083, 139.9112913]
-Goal_location = [35.9241933, 139.9115140]
+Flag_location = [35.9241412, 139.9113661]
+Goal_location = [35.9241781, 139.9115354]
 
 #BNO055の初期設定
 bno = BNO055()
