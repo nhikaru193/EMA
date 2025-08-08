@@ -28,7 +28,7 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 
 #初期設定
 Flag_location = [35.9192175, 139.9092465]
-Goal_location = [35.9191983, 139.9094255]
+Goal_location = [35.9191961, 139.9093330]
 
 #BNO055の初期設定
 bno = BNO055()
