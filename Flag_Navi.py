@@ -121,7 +121,7 @@ class FN:
                         
                         rotation_count = 0
                         while target_flag is None and rotation_count < 45:
-                            self.driver.petit_right(0, 60)
+                            self.driver.petit_right(0, 70)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
 
@@ -137,6 +137,7 @@ class FN:
                                 c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
 
                                 # 2回連続で角度の変化が5度未満ならスタックと判断
+                                """
                                 if a < 3 and b < 3 and c < 3:
                                     print("スタックを検知しました！回避行動を開始します。")
                                     # 前後左右に動いてスタックからの脱出を試みる
@@ -161,7 +162,7 @@ class FN:
                                     GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
                                     GPS_StoF.run()
                             # ===== スタック判定処理ここまで =====
-                            
+                            """
                             time.sleep(0.5) #7/16追加
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
