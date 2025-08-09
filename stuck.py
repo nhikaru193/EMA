@@ -233,11 +233,14 @@ def GPS_navigate(goal_location, bno, driver=None, pi=None):
 
     except KeyboardInterrupt:
         print("キーボード割り込みによって作業が中断されました")
+        
+        """
         if pi_checker = 0:
             pi.stop()
         if driver_checker = 0:
             driver.cleanup()
-            
+        """
+        
     finally:
         print("スタック判定のgps誘導を終了しました")
         if pi_checker = 0:
