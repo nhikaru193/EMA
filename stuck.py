@@ -248,3 +248,28 @@ def GPS_navigate(goal_location, bno, driver=None, pi=None):
         if driver_checker = 0:
             driver.cleanup()
         f.close()
+
+if __name__ == "__main__":
+    goal_location = [39.977, 139,92221]
+    
+    driver = MotorDriver(
+        PWMA=12, AIN1=23, AIN2=18,
+        PWMB=19, BIN1=16, BIN2=26,
+        STBY=21
+    )
+    bno = BNO055()
+    bno.begin()
+    time.sleep(0.3)
+    bno.setMode(BNO055.OPERATION_MODE_NDOF)
+    time.sleep(0.3)
+    bno.setExternalCrystalUse(True)
+
+    while True:
+        sys, gyro, accel, mag = bno.getCalibration()
+        print(f"gyro:{gyro}, mag:{mag}")
+        if gyro == 3 and mag == 3:
+            print("BNO055のキャリブレーション終了")
+            break
+        time.sleep(0.3)
+
+    GPS_navigate(goal_location, bno, driver)
