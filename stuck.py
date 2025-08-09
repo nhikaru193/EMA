@@ -47,7 +47,7 @@ def get_distance_to_goal(current, goal):
     dist = radius * c
     return dist
 
-def GPS_navigate(driver=None, bno, pi=None, goal_location):
+def GPS_navigate(goal_location, bno, driver=None, pi=None):
     try:
         #---ここでdriverの引き渡しがあるかどうかの確認。なければ、driverを設定し直す---#
         if driver is None:
@@ -244,3 +244,4 @@ def GPS_navigate(driver=None, bno, pi=None, goal_location):
             pi.stop()
         if driver_checker = 0:
             driver.cleanup()
+        f.close()
