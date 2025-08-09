@@ -12,7 +12,7 @@ import following
 # === 制御パラメータ (チューニング用) ===
 GOAL_LOCATION = [35.9200992, 139.9110305]  # 12号館前
 GOAL_THRESHOLD_M = 5.0      # ゴールとみなす距離 (メートル)
-ANGLE_THRESHOLD_DEG = 15.0  # これ以上の角度誤差があれば回頭する (度)
+ANGLE_THRESHOLD_DEG = 40.0  # これ以上の角度誤差があれば回頭する (度)
 TURN_SPEED = 45             # 回頭時のモーター速度 (0-100)
 MOVE_SPEED = 80             # 前進時の基本速度 (0-100)
 MOVE_DURATION_S = 1.5       # 一回の前進時間 (秒)
