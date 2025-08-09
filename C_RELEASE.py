@@ -3,6 +3,7 @@ import time
 from BNO055 import BNO055
 import BME280
 import csv
+import os
 
 class RD:
     def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 20):
@@ -14,7 +15,9 @@ class RD:
     def run(self):
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
         filename = f"bme280_data_{current_time_str}.csv"
-        
+        path_to = "/home/EM/_csv"
+        filename = os.path.join(path_to, filename)
+
         try:
             with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
                 writer = csv.writer(f)
