@@ -67,6 +67,13 @@ def GPS_navigate(driver=None, bno, pi=None, goal_location):
         else:
             pi_checker = 1
         #----------------------------------------------------------------#
+        #初期設定#
+        GOAL_THRESHOLD_M: float = 3.0
+        ANGLE_THRESHOLD_DEG: float = 9.0
+        RX_PIN = 17
+        BAUD = 9600
+        turn_speed = 95
+        #-------#
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
         path_to = "/home/EM/_csv"
         filename = os.path.join(path_to, f"stuck_GPS_NAVIGATE_{current_time_str}.csv")
@@ -223,16 +230,16 @@ def GPS_navigate(driver=None, bno, pi=None, goal_location):
             #------csvファイルの書き込み------#
             writer.writerow([lat, lon, heading])
             f.flush()
-            
-    finally:
-        print("スタック判定のgps誘導を終了しました")
+
+    except KeyboardInterrupt:
+        print("キーボード割り込みによって作業が中断されました")
         if pi_checker = 0:
             pi.stop()
         if driver_checker = 0:
             driver.cleanup()
-
-    except KeyboardInterrupt:
-        print("キーボード割り込みによって作業が中断されました")
+            
+    finally:
+        print("スタック判定のgps誘導を終了しました")
         if pi_checker = 0:
             pi.stop()
         if driver_checker = 0:
