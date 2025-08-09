@@ -12,7 +12,7 @@ import following
 # === 制御パラメータ (チューニング用) ===
 GOAL_LOCATION = [35.9200992, 139.9110305]  # 12号館前
 GOAL_THRESHOLD_M = 5.0      # ゴールとみなす距離 (メートル)
-ANGLE_THRESHOLD_DEG = 40.0  # これ以上の角度誤差があれば回頭する (度)
+ANGLE_THRESHOLD_DEG = 20.0  # これ以上の角度誤差があれば回頭する (度)
 TURN_SPEED = 45             # 回頭時のモーター速度 (0-100)
 MOVE_SPEED = 80             # 前進時の基本速度 (0-100)
 MOVE_DURATION_S = 1.5       # 一回の前進時間 (秒)
@@ -179,7 +179,14 @@ def navigate_to_goal():
 
             # 5. 前進フェーズ (PD制御による直進維持)
             print(f"[MOVE] 方向OK。PD制御で前進します。")
-            following.follow_forward(driver, bno, 70, 8)
+            if dist_to_goal > 50:
+                # 50mより遠い場合、60秒間前進
+                print(f"目標まで50m以上あります。60秒間前進します。")
+                following.follow_forward(driver, bno, 70, 60)
+            else:
+                # 50m以内の場合、8秒間前進
+                print(f"目標まで50m以内です。8秒間前進します。")
+                following.follow_forward(driver, bno, 70, 8)
 
     except KeyboardInterrupt:
         print("\n[STOP] 手動で停止されました。")
