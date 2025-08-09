@@ -220,16 +220,21 @@ class GPS:
                     time.sleep(0.5) # 回転後の安定待ち
                     continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
     
-                if dist_to_goal > 13:
+                if dist_to_goal > 100:
                     # 5. 前進フェーズ (PD制御による直進維持)
                     print(f"[MOVE] 方向OK。PD制御で前進します。")
-                    following.follow_forward(self.driver, self.bno, 70, 9)
+                    following.follow_forward(self.driver, self.bno, 85, 60)
                     heading_list.clear()
 
+                elif dist_to_goal > 50:
+                    print(f"[MOVE] 方向OK。PD制御で前進します。")
+                    following.follow_forward(self.driver, self.bno, 85, 15)
+                    heading_list.clear()
+                    
                 else:
                     # 5. 前進フェーズ (PD制御による直進維持)
                     print(f"[MOVE] 方向OK。PD制御で前進します。")
-                    following.follow_forward(self.driver, self.bno, 70, 3)
+                    following.follow_forward(self.driver, self.bno, 70, 5)
                     heading_list.clear()
 
                 #------csvファイルの書き込み------#
