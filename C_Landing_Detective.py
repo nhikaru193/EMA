@@ -28,31 +28,41 @@ class LD:
             self.start_time = time.time()
             max_counter =self.h_counter
             #heading着地判定
-            while True:
-                current_time = time.time()
-                delta_time = current_time - self.start_time
-                before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                if before_heading is None:
-                    print("BNO055の値が取得できませんでした")
+            current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+            filename = f"land_heading_data_{current_time_str}.csv"
+            path_to = "/home/EM/_csv"
+            filename = os.path.join(path_to, filename)
+
+            with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
+                writer = csv.writer(f)
+                writer.writerow(["heading", "delta_heading"])
+                while True:
+                    current_time = time.time()
+                    delta_time = current_time - self.start_time
+                    before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                    if before_heading is None:
+                        print("BNO055の値が取得できませんでした")
+                        time.sleep(1)
+                        continue
+                    print(f"t = {delta_time}||heading = {before_heading}")
                     time.sleep(1)
-                    continue
-                print(f"t = {delta_time}||heading = {before_heading}")
-                time.sleep(1)
-                after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                # after_headingがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
-                delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
-                if delta_heading < self.h_threshold:
-                    self.h_counter = self.h_counter - 1
-                    print(f"方位角着地判定{self.h_counter}回成功！")
-                    if self.h_counter == 0:
-                        print("方位角:変化量による着地判定")
+                    after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                    # after_headingがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
+                    delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
+                    writer.writerow([after_heading, delta_heading])
+                    f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
+                    if delta_heading < self.h_threshold:
+                        self.h_counter = self.h_counter - 1
+                        print(f"方位角着地判定{self.h_counter}回成功！")
+                        if self.h_counter == 0:
+                            print("方位角:変化量による着地判定")
+                            break
+                    else:
+                        self.h_counter = max_counter
+                        print("着地判定失敗。再度判定を行います")
+                    if delta_time > self.timeout:
+                        print("方位角:timeoutによる着地判定")
                         break
-                else:
-                    self.h_counter = max_counter
-                    print("着地判定失敗。再度判定を行います")
-                if delta_time > self.timeout:
-                    print("方位角:timeoutによる着地判定")
-                    break
         
             #環境センサの初期設定
             BME280.init_bme280()
@@ -60,29 +70,38 @@ class LD:
             print("気圧変化量:第2シーケンス")
             self.start_time = time.time()
             max_counter =self.p_counter
+
+            current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+            filename = f"land_pressure_data_{current_time_str}.csv"
+            path_to = "/home/EM/_csv"
+            filename = os.path.join(path_to, filename)
             
             #気圧着地判定
-            while True:
-                current_time = time.time()
-                delta_time = current_time - self.start_time
-                before_pressure = BME280.get_pressure()
-                print(f"t = {delta_time}||pressure = {before_pressure}")
-                time.sleep(5)
-                after_pressure = BME280.get_pressure()
-                # after_pressureがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
-                delta_pressure = after_pressure - before_pressure
-                if delta_pressure < self.p_threshold:
-                    self.p_counter = self.p_counter - 1
-                    print(f"気圧着地判定{self.p_counter}回成功！")
-                    if self.p_counter == 0:
-                        print("気圧:変化量による着地判定")
+            with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
+                writer = csv.writer(f)
+                writer.writerow(["pressure", "delta_pressure"])
+                while True:
+                    current_time = time.time()
+                    delta_time = current_time - self.start_time
+                    before_pressure = BME280.get_pressure()
+                    print(f"t = {delta_time}||pressure = {before_pressure}")
+                    time.sleep(5)
+                    after_pressure = BME280.get_pressure()
+                    # after_pressureがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
+                    delta_pressure = after_pressure - before_pressure
+                    writer.writerow([after_pressure, delta_pressure])
+                    if delta_pressure < self.p_threshold:
+                        self.p_counter = self.p_counter - 1
+                        print(f"気圧着地判定{self.p_counter}回成功！")
+                        if self.p_counter == 0:
+                            print("気圧:変化量による着地判定")
+                            break
+                    else:
+                        self.p_counter = max_counter
+                        print("着地判定失敗。再度判定を行います")
+                    if delta_time > self.timeout:
+                        print("気圧:timeoutによる着地判定")
                         break
-                else:
-                    self.p_counter = max_counter
-                    print("着地判定失敗。再度判定を行います")
-                if delta_time > self.timeout:
-                    print("気圧:timeoutによる着地判定")
-                    break
         
             #溶断回路作動
             print("着地判定正常終了。テグス溶断シーケンスに入ります")
