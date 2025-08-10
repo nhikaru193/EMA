@@ -201,7 +201,7 @@ class PA:
                         self.driver.changing_left(90, 0)
                         time.sleep(0.5)
                         self.driver.changing_forward(0, 90)
-                        time.sleep(1)
+                        time.sleep(0.3)
                         self.driver.changing_forward(90, 0)
                         time.sleep(0.5)
                         print("スタック離脱を終了します")
