@@ -80,7 +80,7 @@ class PA:
     def detective_red(self):
         frame = self.picam2.capture_array()
         percentage = self.get_percentage(frame)
-        if percentage > 10:
+        if percentage > 5:
             return True
             print("この方向にパラシュートを検知しました")
         else:
