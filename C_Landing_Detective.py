@@ -90,8 +90,8 @@ class LD:
             fusing.circuit()
             print("テグス溶断を完了しました。テグス溶断の確認を行います")
             before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            self.driver.petit_left(0, 80)
-            self.driver.petit_left(80, 0)
+            self.driver.petit_left(0, 90)
+            self.driver.petit_left(90, 0)
             after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
             delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
             if delta_heading < 5:
