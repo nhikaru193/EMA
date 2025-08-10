@@ -29,6 +29,7 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 #初期設定
 Flag_location = [35.9192175, 139.9092465]
 Goal_location = [35.9191961, 139.9093330]
+t = 10
 
 #BNO055の初期設定
 bno = BNO055()
@@ -45,6 +46,9 @@ while True:
         print("BNO055のキャリブレーション終了")
         break
     time.sleep(0.3)
+
+#ここのタイムスリープは収納待ちのタイムスリープ
+time.sleep(t)
 
 RELEASE = RD(bno)
 RELEASE.run()
