@@ -88,7 +88,7 @@ class LD:
                     time.sleep(5)
                     after_pressure = BME280.get_pressure()
                     # after_pressureがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
-                    delta_pressure = after_pressure - before_pressure
+                    delta_pressure = abs(after_pressure - before_pressure)
                     writer.writerow([after_pressure, delta_pressure])
                     if delta_pressure < self.p_threshold:
                         self.p_counter = self.p_counter - 1
