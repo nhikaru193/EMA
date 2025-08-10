@@ -47,7 +47,6 @@ class LD:
                     print(f"t = {delta_time}||heading = {before_heading}")
                     time.sleep(1)
                     after_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                    # after_headingがNoneの場合の考慮も必要ですが、元のコードの意図を尊重しここでは修正しません
                     delta_heading = min((after_heading -  before_heading) % 360, (before_heading -  after_heading) % 360)
                     writer.writerow([after_heading, delta_heading])
                     f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
