@@ -7,7 +7,7 @@ import struct
 from motor import MotorDriver
 
 class LD:
-    def __init__(self, bno: BNO055, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.20, h_threshold = 0.10):
+    def __init__(self, bno: BNO055, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.50, h_threshold = 0.10):
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,    
             PWMB=19, BIN1=16, BIN2=26,    
