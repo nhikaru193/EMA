@@ -22,7 +22,6 @@ from C_RELEASE import RD
 from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
-from Servo import SM
 from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_ARLISS import GDA
 
