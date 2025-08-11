@@ -23,7 +23,7 @@ from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 from C_excellent_GPS import GPS
-from C_GOAL_DETECTIVE_ARLISS import GDA
+#from C_GOAL_DETECTIVE_ARLISS import GDA
 
 #おそらく未使用のモジュール
 """
@@ -86,7 +86,8 @@ GPIO.cleanup()
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
 
+"""
 GOAL = GDA(bno_sensor_instance = bno)
 GOAL.HAT_TRICK()
-
+"""
 print("クラス呼び出し完了です")
