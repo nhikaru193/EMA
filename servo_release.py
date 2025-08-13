@@ -15,7 +15,7 @@ def set_servo_duty(duty):
     time.sleep(0.5)
 
 try:
-    t = 1.0
+    t = 1.25
     print(f"放出デューティ比{t}")
     set_servo_duty(t)
     time.sleep(6)
