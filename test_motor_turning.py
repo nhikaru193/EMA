@@ -16,6 +16,7 @@ try:
     )
     while True:
         driver.petit_left(0, 90)
+        time.sleep(2.0)
         driver.petit_left(90, 0)
         driver.motor_stop_brake()
         time.sleep(0.5)
