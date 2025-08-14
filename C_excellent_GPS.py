@@ -18,7 +18,7 @@ class GPS:
         bno: BNO055,
         goal_location: list,
         GOAL_THRESHOLD_M: float = 3.0,
-        ANGLE_THRESHOLD_DEG: float = 9.0,
+        ANGLE_THRESHOLD_DEG: float = 15.0,
     ):
         self.GOAL_LOCATION     = goal_location
         self.GOAL_THRESHOLD_M  = GOAL_THRESHOLD_M
