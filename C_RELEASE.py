@@ -32,14 +32,14 @@ class RD:
                 print(f"!!!!!!圧力閾値:{self.p_threshold} | タイムアウト:{self.timeout} で放出判定を行います!!!!!!")
                 while True:
                     base_pressure = BME280.get_pressure()
+                    time.sleep(1)
+                    pressure = BME280.get_pressure()
                     ax, ay, az = self.bno.getVector(BNO055.VECTOR_ACCELEROMETER)
                     current_time = time.time()
                     e_time = current_time - start_time
                     print(f"t:{e_time:.2f} | p:{base_pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
                     writer.writerow([e_time, base_pressure, ax, ay, az])
                     f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
-                    time.sleep(1)
-                    pressure = BME280.get_pressure()
                     delta_pressure = pressure - base_pressure
                     if delta_pressure > self.p_threshold:
                         self.p_counter -= 1 # デクリメント演算子を使う
@@ -52,8 +52,6 @@ class RD:
                     if e_time > self.timeout:
                         print("タイムアウトによる放出判定に成功しました")
                         break
-            
-                    time.sleep(1.0)
 
         except PermissionError:
             print(f"\nエラー: ファイル '{filename}' への書き込み権限がありません。")
