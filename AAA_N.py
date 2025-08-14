@@ -27,7 +27,8 @@ from C_excellent_GPS import GPS
 from C_GOAL_DETECTIVE_NOSHIRO import GDN
 
 #初期設定
-Flag_location = [35.9192175, 139.9092465]
+Flag_location_a = []
+Flag_location_b = []
 Goal_location = [40.1426175, 139.9876533]
 t = 10
 
@@ -61,14 +62,16 @@ time.sleep(3)
 print("パラシュート回避を始めます")
 time.sleep(1)
 
-AVOIDANCE = PA(bno, goal_location = Flag_location) #ok
+AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
 
-GPS_StoF = GPS(bno, goal_location = Flag_location)
+GPS_StoE = GPS(bno, goal_location = Flag_location_a)
+GPS_StoE.run()
+
+GPS_StoF = GPS(bno, goal_location = Flag_location_b)
 GPS_StoF.run()
 
-
-FLAG = FN(bno, flag_location = Flag_location) 
+FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
 
 Servo.release()
