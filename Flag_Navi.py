@@ -121,11 +121,17 @@ class FN:
                         
                         rotation_count = 0
                         while target_flag is None and rotation_count < 45:
+                            
+                            """
                             self.driver.petit_right(0, 95)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
-                                # 2回連続で角度の変化が5度未満ならスタックと判断
-                            time.sleep(0.5) #7/16追加
+                            """
+                            
+                            self.driver.changing_right(0, 90)
+                            time.sleep(3)
+                            self.driver.changing_right(90, 0)
+                            time.sleep(0.5)
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
@@ -143,16 +149,32 @@ class FN:
                     if target_flag['location'] != '中央':
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
+                            
+                            """
                             self.driver.petit_left(0, self.turn_speed)
                             self.driver.petit_left(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
+                            """
+                            self.driver.changing_left(0, 90)
+                            time.sleep(3)
+                            self.driver.changing_left(90, 0)
+                            time.sleep(0.5)
+
                         elif target_flag['location'] == '右':
+                            
+                            """
                             self.driver.petit_right(0, self.turn_speed)
                             self.driver.petit_right(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
-                        
+                            """
+                            
+                            self.driver.changing_right(0, 90)
+                            time.sleep(3)
+                            self.driver.changing_right(90, 0)
+                            time.sleep(0.5)
+                            
                         # 動かした直後に再検出
                         print("  再検出中...")
                         detected_data = self.detector.detect()
@@ -186,7 +208,7 @@ class FN:
                                 break # 追跡ループを抜ける
                             else:
                                 # しきい値未満なら、前進
-                                self.driver.petit_petit(2)
+                                self.driver.petit_petit(5)
                         
                         else:
                             # 'contour' がないという予期せぬ事態に対応
