@@ -243,9 +243,9 @@ def GPS_navigate(goal_location, bno, driver=None, pi=None):
         
     finally:
         print("スタック判定のgps誘導を終了しました")
-        if pi_checker = 0:
+        if pi_checker == 0:
             pi.stop()
-        if driver_checker = 0:
+        if driver_checker == 0:
             driver.cleanup()
         f.close()
 
