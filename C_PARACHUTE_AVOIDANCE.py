@@ -97,15 +97,15 @@ class PA:
             if abs(delta_heading) <= threshold_deg:
                 break
             elif delta_heading < -1 * threshold_deg:
-                self.driver.petit_left(0, 80)
+                self.driver.petit_left(0, 90)
                 time.sleep(sleeping)
                 time.sleep(0.03)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
             elif delta_heading > threshold_deg:
-                self.driver.petit_right(0, 70)
+                self.driver.petit_right(0, 95)
                 time.sleep(sleeping)
-                time.sleep(0.03)
+                time.sleep(0.04)
                 self.driver.motor_stop_brake()
                 time.sleep(0.5)
                 
@@ -217,14 +217,14 @@ class PA:
             
                     if angle_error > 180: # 反時計回り（左）に回る方が近い
                         print(f"[TURN] 左に回頭します ")
-                        self.driver.petit_left(0, 80) 
+                        self.driver.petit_left(0, 90) 
                         time.sleep(0.025)
                         self.driver.motor_stop_brake()
                         
                     else: # 時計回り（右）に回る方が近い
                         print(f"[TURN] 右に回頭します")
-                        self.driver.petit_right(0, 80) 
-                        time.sleep(0.025)
+                        self.driver.petit_right(0, 95) 
+                        time.sleep(0.05)
                         self.driver.motor_stop_brake()
                 
                     time.sleep(0.5) # 回転後の安定待ち
