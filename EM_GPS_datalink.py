@@ -50,9 +50,9 @@ def send_unicast(node_id, payload):
     送信前にワイヤレスグラウンドをONにし、送信後にOFFにします。
     """
     # ワイヤレスグラウンドON
-    pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
-    print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
-    time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
+    #pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+    #print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+    #time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
     # メッセージの準備と送信
     # 'TXDA <Node ID>,<Payload>\r'形式でデータ送信
@@ -75,6 +75,10 @@ def send_unicast(node_id, payload):
 
 # --- メインループ ---
 try:
+    pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+    print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+    time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
+
     while True:
         (count, data) = pi.bb_serial_read(RX_PIN)
         if count and data:
