@@ -30,7 +30,7 @@ from C_GOAL_DETECTIVE_NOSHIRO import GDN
 Flag_location_a = [40.1425710, 139.9874577]
 Flag_location_b = [40.1426574, 139.9875167]
 Goal_location = [40.1426175, 139.9876533]
-t = 1
+t = 0.2
 
 #BNO055の初期設定
 bno = BNO055()
@@ -51,10 +51,10 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
-"""
+
 RELEASE = RD(bno)
 RELEASE.run()
-
+"""
 LAND = LD(bno) 
 LAND.run()
 
@@ -77,7 +77,7 @@ FLAG = FN(bno, flag_location = Flag_location_b)
 FLAG.run()
 
 Servo.release()
-"""
+
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
@@ -86,3 +86,4 @@ GOAL = GDN(bno, 30)
 GOAL.run()
 
 print("Mission Complete")
+"""
