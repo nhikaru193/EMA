@@ -35,7 +35,7 @@ class RD:
                     ax, ay, az = self.bno.getVector(BNO055.VECTOR_ACCELEROMETER)
                     current_time = time.time()
                     e_time = current_time - start_time
-                    print(f"t:{e_time:.2f} | p:{pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
+                    print(f"t:{e_time:.2f} | p:{base_pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
                     writer.writerow([e_time, base_pressure, ax, ay, az])
                     f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
                     time.sleep(1)
