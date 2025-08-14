@@ -6,7 +6,7 @@ import csv
 import os
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 20):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 180):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
@@ -40,6 +40,7 @@ class RD:
                     print(f"t:{e_time:.2f} | p:{pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
                     writer.writerow([e_time, pressure, ax, ay, az])
                     f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
+                    time.sleep(10)
                     if delta_pressure > self.p_threshold:
                         self.p_counter -= 1 # デクリメント演算子を使う
                         if self.p_counter == 0:
