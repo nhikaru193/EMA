@@ -6,7 +6,7 @@ import csv
 import os
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 0.2, timeout = 180):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 0.12, timeout = 180):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
@@ -43,6 +43,7 @@ class RD:
                     delta_pressure = pressure - base_pressure
                     if delta_pressure > self.p_threshold:
                         self.p_counter -= 1 # デクリメント演算子を使う
+                        print(f"気圧による着地判定成功！残り{self.p_counter}回")
                         if self.p_counter == 0:
                             print("気圧変化による放出判定に成功しました")
                             break
