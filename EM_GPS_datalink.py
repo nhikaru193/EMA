@@ -69,9 +69,9 @@ def send_unicast(node_id, payload):
     time.sleep(0.1)  # 送信後の短い遅延
 
     # ワイヤレスグラウンドOFF
-    pi.write(WIRELESS_PIN, 0)  # GPIOをLOWに設定
-    print(f"GPIO{WIRELESS_PIN} をLOWに設定（ワイヤレスグラウンドOFF）")
-    time.sleep(0.1)  # OFF後の短い遅延
+    #pi.write(WIRELESS_PIN, 0)  # GPIOをLOWに設定
+    #print(f"GPIO{WIRELESS_PIN} をLOWに設定（ワイヤレスグラウンドOFF）")
+    #time.sleep(0.1)  # OFF後の短い遅延
 
 # --- メインループ ---
 try:
