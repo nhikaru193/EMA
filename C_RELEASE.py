@@ -6,7 +6,7 @@ import csv
 import os
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 2, timeout = 180):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 0.2, timeout = 180):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
@@ -28,19 +28,19 @@ class RD:
                 BME280.read_compensate()
                 time.sleep(0.5)
                 start_time = time.time()
-                base_pressure = BME280.get_pressure()
                 max_counter = self.p_counter
                 print(f"!!!!!!圧力閾値:{self.p_threshold} | タイムアウト:{self.timeout} で放出判定を行います!!!!!!")
                 while True:
-                    pressure = BME280.get_pressure()
-                    delta_pressure = pressure - base_pressure
+                    base_pressure = BME280.get_pressure()
                     ax, ay, az = self.bno.getVector(BNO055.VECTOR_ACCELEROMETER)
                     current_time = time.time()
                     e_time = current_time - start_time
                     print(f"t:{e_time:.2f} | p:{pressure:.2f} | ax:{ax:.2f} | ay:{ay:.2f} | az:{az:.2f} |")
-                    writer.writerow([e_time, pressure, ax, ay, az])
+                    writer.writerow([e_time, base_pressure, ax, ay, az])
                     f.flush() # データをすぐにファイルに書き出す (バッファリングさせない)
-                    time.sleep(10)
+                    time.sleep(1)
+                    pressure = BME280.get_pressure()
+                    delta_pressure = pressure - base_pressure
                     if delta_pressure > self.p_threshold:
                         self.p_counter -= 1 # デクリメント演算子を使う
                         if self.p_counter == 0:
