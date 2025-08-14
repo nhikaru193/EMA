@@ -126,15 +126,15 @@ class FN:
                             time.sleep(0.5)
 
                             # ===== ここからスタック判定処理 =====
-                            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                            heading_history.append(current_heading)
+                            #current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                            #heading_history.append(current_heading)
 
                             # 履歴が3つ溜まったらスタック判定を行う
-                            if len(heading_history) == 4:
+                            #if len(heading_history) == 4:
                                 # 2回前と1回前、1回前と現在の角度差を計算
-                                a = abs((heading_history[0] - heading_history[1] + 180) % 360 - 180)
-                                b = abs((heading_history[1] - heading_history[2] + 180) % 360 - 180)
-                                c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
+                                #a = abs((heading_history[0] - heading_history[1] + 180) % 360 - 180)
+                                #b = abs((heading_history[1] - heading_history[2] + 180) % 360 - 180)
+                                #c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
 
                                 # 2回連続で角度の変化が5度未満ならスタックと判断
                                 """
