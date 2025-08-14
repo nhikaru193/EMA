@@ -124,45 +124,7 @@ class FN:
                             self.driver.petit_right(0, 95)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
-
-                            # ===== ここからスタック判定処理 =====
-                            #current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                            #heading_history.append(current_heading)
-
-                            # 履歴が3つ溜まったらスタック判定を行う
-                            #if len(heading_history) == 4:
-                                # 2回前と1回前、1回前と現在の角度差を計算
-                                #a = abs((heading_history[0] - heading_history[1] + 180) % 360 - 180)
-                                #b = abs((heading_history[1] - heading_history[2] + 180) % 360 - 180)
-                                #c = abs((heading_history[2] - heading_history[3] + 180) % 360 - 180)
-
                                 # 2回連続で角度の変化が5度未満ならスタックと判断
-                                """
-                                if a < 3 and b < 3 and c < 3:
-                                    print("スタックを検知しました！回避行動を開始します。")
-                                    # 前後左右に動いてスタックからの脱出を試みる
-                                    self.driver.changing_right(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_right(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_left(0, 90)
-                                    time.sleep(3)
-                                    self.driver.changing_left(90, 0)
-                                    time.sleep(0.5)
-                                    self.driver.changing_forward(0, 90)
-                                    time.sleep(1)
-                                    self.driver.changing_forward(90, 0)
-                                    time.sleep(0.5)
-                                    print(" 回避行動を終了しました。探索を再開します。")
-                                    heading_history.clear()
-                                    self.driver.cleanup()
-                                    self.detector.close()
-                                    GPIO.cleanup()
-                                    
-                                    GPS_StoF = GPS(bno, goal_location = [self.F_lat, self.F_lon])
-                                    GPS_StoF.run()
-                            # ===== スタック判定処理ここまで =====
-                            """
                             time.sleep(0.5) #7/16追加
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
