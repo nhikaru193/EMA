@@ -224,18 +224,15 @@ class GPS:
                     # 5. 前進フェーズ (PD制御による直進維持)
                     print(f"[MOVE] 方向OK。PD制御で前進します。")
                     following.follow_forward(self.driver, self.bno, 85, 60)
-                    heading_list.clear()
 
                 elif dist_to_goal > 50:
                     print(f"[MOVE] 方向OK。PD制御で前進します。")
                     following.follow_forward(self.driver, self.bno, 85, 15)
-                    heading_list.clear()
                     
                 else:
                     # 5. 前進フェーズ (PD制御による直進維持)
                     print(f"[MOVE] 方向OK。PD制御で前進します。")
                     following.follow_forward(self.driver, self.bno, 70, 5)
-                    heading_list.clear()
 
                 #------csvファイルの書き込み------#
                 writer.writerow([lat, lon, heading])
