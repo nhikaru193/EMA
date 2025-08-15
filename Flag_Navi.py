@@ -112,7 +112,7 @@ class FN:
                         search_count += 1
                     """ 
                         
-                    while target_flag is None and search_count < 70:
+                    while target_flag is None and search_count < 10:
                         self.driver.petit_petit(4)
                         detected_data = self.detector.detect()
                         target_flag = self.find_target_flag(detected_data, target_name)
@@ -120,18 +120,21 @@ class FN:
                         search_count += 1
                         
                         rotation_count = 0
-                        while target_flag is None and rotation_count < 45:
+                        while target_flag is None and rotation_count < 23:
                             
-                            """
+                            
                             self.driver.petit_right(0, 95)
+                            self.driver.petit_right(95, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
-                            """
                             
+                            """
                             self.driver.changing_right(0, 90)
                             time.sleep(3)
                             self.driver.changing_right(90, 0)
                             time.sleep(0.5)
+                            """
+                            
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
                             time.sleep(0.5)
@@ -150,30 +153,31 @@ class FN:
                         print(f"位置を調整中... (現在位置: {target_flag['location']})")
                         if target_flag['location'] == '左':
                             
-                            """
                             self.driver.petit_left(0, self.turn_speed)
                             self.driver.petit_left(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
-                            time.sleep(1.0)
+                            time.sleep(0.5)
+                            
                             """
                             self.driver.changing_left(0, 90)
                             time.sleep(3)
                             self.driver.changing_left(90, 0)
                             time.sleep(0.5)
+                            """
 
                         elif target_flag['location'] == '右':
                             
-                            """
                             self.driver.petit_right(0, self.turn_speed)
                             self.driver.petit_right(self.turn_speed, 0)
                             self.driver.motor_stop_brake()
-                            time.sleep(1.0)
+                            time.sleep(0.5)
+
                             """
-                            
                             self.driver.changing_right(0, 90)
                             time.sleep(3)
                             self.driver.changing_right(90, 0)
                             time.sleep(0.5)
+                            """
                             
                         # 動かした直後に再検出
                         print("  再検出中...")
