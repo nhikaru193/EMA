@@ -51,10 +51,10 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
-
+"""
 RELEASE = RD(bno)
 RELEASE.run()
-"""
+
 LAND = LD(bno) 
 LAND.run()
 
@@ -72,10 +72,10 @@ GPS_StoE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location_b)
 GPS_StoF.run()
-
+"""
 FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
-
+"""
 Servo.release()
 
 
