@@ -65,7 +65,7 @@ time.sleep(1)
 
 AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
-"""
+
 
 GPS_StoE = GPS(bno, goal_location = Flag_location_a)
 GPS_StoE.run()
@@ -86,5 +86,5 @@ GPS_FtoG.run()
 
 GOAL = GDN(bno, 30)
 GOAL.run()
-"""
+
 print("Mission Complete")
