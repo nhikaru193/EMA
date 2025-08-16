@@ -112,15 +112,19 @@ class FN:
                         search_count += 1
                     """ 
                         
-                    while target_flag is None and search_count < 3:
+                    while target_flag is None and search_count < 4:
                         self.driver.petit_petit(4)
+                        self.driver.changing_left(0, 90)
+                        time.sleep(1.0)
+                        self.driver.changing_left(90, 0)
+                        time.sleep(0.5)
                         detected_data = self.detector.detect()
                         target_flag = self.find_target_flag(detected_data, target_name)
                         time.sleep(0.5)
                         search_count += 1
                         
                         rotation_count = 0
-                        while target_flag is None and rotation_count < 10:
+                        while target_flag is None and rotation_count < 13:
                             
                             
                             self.driver.petit_right(0, 95)
