@@ -19,8 +19,8 @@ class Flag_B:
     CROSS_SHAPE_VERTEX_RANGE = (11, 13)
     CROSS_SHAPE_MAX_SOLIDITY = 0.75
 
-    LOWER_OUTER_AREA_HSV = np.array([0, 0, 5]) # 120より大きくすれば、より白くなる
-    UPPER_OUTER_AREA_HSV = np.array([255, 50, 255])
+    LOWER_OUTER_AREA_HSV = np.array([0, 0, 200]) # 120より大きくすれば、より白くなる
+    UPPER_OUTER_AREA_HSV = np.array([179, 40, 255])
     
     # 領域内の「黒い図形」を抽出するための二値化しきい値
     INNER_SHAPE_BINARY_THRESHOLD = 35 # 80より小さくすると、より黒くなる
