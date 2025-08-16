@@ -115,7 +115,7 @@ class FN:
                     while target_flag is None and search_count < 4:
                         self.driver.petit_petit(4)
                         self.driver.changing_left(0, 90)
-                        time.sleep(1.0)
+                        time.sleep(0.5)
                         self.driver.changing_left(90, 0)
                         time.sleep(0.5)
                         detected_data = self.detector.detect()
