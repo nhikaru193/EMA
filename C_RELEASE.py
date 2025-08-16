@@ -6,7 +6,7 @@ import csv
 import os
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 0.15, timeout = 900):
+    def __init__(self, bno: BNO055, p_counter = 3, p_threshold = 0.12, timeout = 900):
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
