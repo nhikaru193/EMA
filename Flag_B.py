@@ -19,11 +19,11 @@ class Flag_B:
     CROSS_SHAPE_VERTEX_RANGE = (11, 13)
     CROSS_SHAPE_MAX_SOLIDITY = 0.75
 
-    LOWER_OUTER_AREA_HSV = np.array([0, 0, 10]) # 120より大きくすれば、より白くなる
+    LOWER_OUTER_AREA_HSV = np.array([0, 0, 5]) # 120より大きくすれば、より白くなる
     UPPER_OUTER_AREA_HSV = np.array([255, 50, 255])
     
     # 領域内の「黒い図形」を抽出するための二値化しきい値
-    INNER_SHAPE_BINARY_THRESHOLD = 45 # 80より小さくすると、より黒くなる
+    INNER_SHAPE_BINARY_THRESHOLD = 30 # 80より小さくすると、より黒くなる
     MORPHOLOGY_KERNEL_SIZE = (5, 5)
 
     def __init__(self, width: int = 640, height: int = 480, min_outer_area: int = 1000, triangle_tolerance: float = 5.0):
