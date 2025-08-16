@@ -112,7 +112,7 @@ class FN:
                         search_count += 1
                     """ 
                         
-                    while target_flag is None and search_count < 4:
+                    while target_flag is None and search_count < 3:
                         self.driver.petit_petit(4)
                         self.driver.petit_left(0, self.turn_speed)
                         self.driver.petit_left(self.turn_speed, 0)
@@ -124,7 +124,7 @@ class FN:
                         search_count += 1
                         
                         rotation_count = 0
-                        while target_flag is None and rotation_count < 13:
+                        while target_flag is None and rotation_count < 12:
                             
                             
                             self.driver.petit_right(0, 95)
