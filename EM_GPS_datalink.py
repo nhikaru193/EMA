@@ -15,9 +15,9 @@ if not pi.connected:
     exit(1)
 
 # WIRELESS_PINを出力に設定し、初期状態をLOW（ワイヤレスグラウンドOFF）にする
-#pi.set_mode(WIRELESS_PIN, pigpio.OUTPUT)
-#pi.write(WIRELESS_PIN, 0)
-#print(f"GPIO{WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
+pi.set_mode(WIRELESS_PIN, pigpio.OUTPUT)
+pi.write(WIRELESS_PIN, 0)
+print(f"GPIO{WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
 
 # --- ソフトUART RXの設定 ---
 err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
