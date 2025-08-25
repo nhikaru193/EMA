@@ -69,6 +69,8 @@ try:
 
     while True:
         (count, data) = pi.bb_serial_read(RX_PIN)
+        current_location = None
+        
         if count and data:
             try:
                 text = data.decode("ascii", errors="ignore")
