@@ -52,16 +52,6 @@ driver = MotorDriver(
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"gyro:{gyro}, mag:{mag}")
-"""
-    driver.changing_right(0, 80)
-    time.sleep(2)
-    driver.changing_right(80, 0)
-    time.sleep(0.5)
-    driver.changing_left(0, 80)
-    time.sleep(2)
-    driver.changing_left(80, 0)
-    time.sleep(0.5)
-"""
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
