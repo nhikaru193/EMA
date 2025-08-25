@@ -81,46 +81,48 @@ class GDA:
                 
                 time.sleep(0.05) # 制御を安定させるために少し待機
                 
-    def perform_360_degree_search(self):#360度回転するやつ
+    def perform_360_degree_search(self): #360度回転するやつ
         print("赤コーンを探索するため、360度回転を開始します。")
-        best_percentage = 0.0
-        best_heading = None
-        scan_data = []
-    
-        # 一定の速度で360度回転する
-        # 右側のモーターだけを動かすことでその場旋回をシミュレート
-        self.driver.petit_right(0, 60)
-        self.driver.petit_right(60, 0)
-        self.driver.motor_stop_brake()
-        time.sleep(1.0)
+        try:
+            best_percentage = 0.0
+            best_heading = None
+            scan_data = []
         
-        # BNO055の計測値に基づき、360度回転したかを判断するロジック
-        start_heading = self.bno.get_heading()
-        while True:
-            current_heading = self.bno.get_heading()
-            # 0度をまたぐ回転に対応
-            angle_diff = (current_heading - start_heading + 360) % 360
+            # 一定の速度で360度回転する
+            # 右側のモーターだけを動かすことでその場旋回をシミュレート
+            search_speed = 60
+            self.driver.petit_right(0, search_speed)
+            self.driver.petit_right(search_speed, 0)
+            self.driver.motor_stop_brake()
+            time.sleep(1.0)
             
-            # 360度（350度以上）回転したらループを抜ける
-            if angle_diff >= 350:
-                break
+            # BNO055の計測値に基づき、360度回転したかを判断するロジック
+            start_heading = self.bno.get_heading()
+            while True:
+                current_heading = self.bno.get_heading()
+                # 0度をまたぐ回転に対応
+                angle_diff = (current_heading - start_heading + 360) % 360
                 
-            frame = self.picam2.capture_array()
-            current_percentage = self.get_percentage(frame)
+                # 360度（350度以上）回転したらループを抜ける
+                if angle_diff >= 350:
+                    break
+                    
+                frame = self.picam2.capture_array()
+                current_percentage = self.get_percentage(frame)
+                
+                if current_percentage > best_percentage:
+                    best_percentage = current_percentage
+                    best_heading = current_heading
+                    print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+                
+            self.driver.motor_stop_brake()
             
-            if current_percentage > best_percentage:
-                best_percentage = current_percentage
-                best_heading = current_heading
-                print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+            print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
             
-        self.driver.motor_stop_brake()
-        
-        print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-        
-        if best_percentage > 1: # わずかでも検出できていれば方位を返す
-            return best_heading
-        else:
-            return None # コーンが見つからなかった場合はNoneを返す
+            if best_percentage > 1: # わずかでも検出できていれば方位を返す
+                return best_heading
+            else:
+                return None # コーンが見つからなかった場合はNoneを返す
 
     def scan_for_goal_criteria(self): #360度回転しながら赤色検知するやつ
         scan_data = []
@@ -188,43 +190,43 @@ class GDA:
                         time.sleep(0.2)
     
                 elif current_state == "2ndBall":
-                    print("360度回転して2個目のボールを探して前進します。")
-                    scan_data = self.scan_for_goal_criteria()
-                    # 赤色の割合が5%から10%の間にあるコーンを探す
-                    found_2nd_ball = None
-                    for data in scan_data:
-                        if 5 <= data['percentage'] < 10:
-                            found_2nd_ball = data
-                            break # 最初のコーンを見つけたらループを抜ける
-                            
-                    if found_2nd_ball:
-                        target_heading = found_2nd_ball['heading']
-                        print(f"2つ目のボールを方位 {target_heading:.2f}° で検知しました。")
-                        self.turn_to_heading(target_heading, 70)
-                        print("赤割合が10%になるまで前進します。")
-                        while True:
-                            frame = self.picam2.capture_array()
-                            current_percentage = self.get_percentage(frame)
-                            if current_percentage >= 10:
-                                print("赤割合が10%に達しました。前進を停止し、最終ゴール判定に移行します。")
-                                self.driver.motor_stop_brake()
-                                time.sleep(0.5)
-                                current_state = "GOAL_CHECK"
-                                break # 前進ループを抜ける
-                            elif current_percentage < 2:
-                                print("2つ目のボールを見失いました。再度探索します。")
-                                self.driver.motor_stop_brake()
-                                time.sleep(0.5)
-                                current_state = "SEARCH"
-                                break # 前進ループを抜けて、外側のwhileループに戻る
-                            else:
-                                # 前進を続ける
-                                self.driver.petit_petit(5)
-                                self.driver.motor_stop_brake()
-                                time.sleep(0.2)
-                    else:
-                        print("2つ目のボールが見つかりませんでした。探索モードに戻ります。")
-                        current_state = "SEARCH"
+                   print("360度回転して2個目のボールを探して前進します。")
+                   scan_data = self.scan_for_goal_criteria()
+                   # 赤色の割合が5%から10%の間にあるコーンを探す
+                   found_2nd_ball = None
+                   for data in scan_data:
+                       if 5 <= data['percentage'] < 10:
+                           found_2nd_ball = data
+                           break # 最初のコーンを見つけたらループを抜ける
+                           
+                   if found_2nd_ball:
+                       target_heading = found_2nd_ball['heading']
+                       print(f"2つ目のボールを方位 {target_heading:.2f}° で検知しました。")
+                       self.turn_to_heading(target_heading, 70)
+                       print("赤割合が10%になるまで前進します。")
+                       while True:
+                           frame = self.picam2.capture_array()
+                           current_percentage = self.get_percentage(frame)
+                           if current_percentage >= 10:
+                               print("赤割合が10%に達しました。前進を停止し、最終ゴール判定に移行します。")
+                               self.driver.motor_stop_brake()
+                               time.sleep(0.5)
+                               current_state = "GOAL_CHECK"
+                               break # 前進ループを抜ける
+                           elif current_percentage < 2:
+                               print("2つ目のボールを見失いました。再度探索します。")
+                               self.driver.motor_stop_brake()
+                               time.sleep(0.5)
+                               current_state = "SEARCH"
+                               break # 前進ループを抜けて、外側のwhileループに戻る
+                           else:
+                               # 前進を続ける
+                               self.driver.petit_petit(5)
+                               self.driver.motor_stop_brake()
+                               time.sleep(0.2)
+                   else:
+                       print("2つ目のボールが見つかりませんでした。探索モードに戻ります。")
+                       current_state = "SEARCH"
                         
     
                 elif current_state == "GOAL_CHECK":
