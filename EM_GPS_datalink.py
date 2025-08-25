@@ -89,7 +89,7 @@ try:
                             if len(parts) > 6 and parts[2] == "A":
                                 lat = self.convert_to_decimal(parts[3], parts[4])
                                 lon = self.convert_to_decimal(parts[5], parts[6])
-                                
+                                current_location = [lat, lon]
                                 # GPSデータをユニキャストメッセージとして送信
                                 gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
                                 send_unicast("0003", gps_payload)
@@ -97,6 +97,11 @@ try:
                                 time.sleep(2)  # GPSデータ送信後の遅延
             except Exception as e:
                 print(f"デコードエラー: {e}")
+                
+        if not current_location:
+            print("[WARN] GPS位置情報を取得できません。リトライします...")
+            time.sleep(1)
+            continue
         
 
 except KeyboardInterrupt:
