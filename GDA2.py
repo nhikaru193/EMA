@@ -188,43 +188,43 @@ class GDA:
                         time.sleep(0.2)
     
                 elif current_state == "2ndBall":
-                   print("360度回転して2個目のボールを探して前進します。")
-                   scan_data = self.scan_for_goal_criteria()
-                   # 赤色の割合が5%から10%の間にあるコーンを探す
-                   found_2nd_ball = None
-                   for data in scan_data:
-                       if 5 <= data['percentage'] < 10:
-                           found_2nd_ball = data
-                           break # 最初のコーンを見つけたらループを抜ける
-                           
-                   if found_2nd_ball:
-                       target_heading = found_2nd_ball['heading']
-                       print(f"2つ目のボールを方位 {target_heading:.2f}° で検知しました。")
-                       self.turn_to_heading(target_heading, 70)
-                       print("赤割合が10%になるまで前進します。")
-                       while True:
-                           frame = self.picam2.capture_array()
-                           current_percentage = self.get_percentage(frame)
-                           if current_percentage >= 10:
-                               print("赤割合が10%に達しました。前進を停止し、最終ゴール判定に移行します。")
-                               self.driver.motor_stop_brake()
-                               time.sleep(0.5)
-                               current_state = "GOAL_CHECK"
-                               break # 前進ループを抜ける
-                           elif current_percentage < 2:
-                               print("2つ目のボールを見失いました。再度探索します。")
-                               self.driver.motor_stop_brake()
-                               time.sleep(0.5)
-                               current_state = "SEARCH"
-                               break # 前進ループを抜けて、外側のwhileループに戻る
-                           else:
-                               # 前進を続ける
-                               self.driver.petit_petit(5)
-                               self.driver.motor_stop_brake()
-                               time.sleep(0.2)
-                   else:
-                       print("2つ目のボールが見つかりませんでした。探索モードに戻ります。")
-                       current_state = "SEARCH"
+                    print("360度回転して2個目のボールを探して前進します。")
+                    scan_data = self.scan_for_goal_criteria()
+                    # 赤色の割合が5%から10%の間にあるコーンを探す
+                    found_2nd_ball = None
+                    for data in scan_data:
+                        if 5 <= data['percentage'] < 10:
+                            found_2nd_ball = data
+                            break # 最初のコーンを見つけたらループを抜ける
+                            
+                    if found_2nd_ball:
+                        target_heading = found_2nd_ball['heading']
+                        print(f"2つ目のボールを方位 {target_heading:.2f}° で検知しました。")
+                        self.turn_to_heading(target_heading, 70)
+                        print("赤割合が10%になるまで前進します。")
+                        while True:
+                            frame = self.picam2.capture_array()
+                            current_percentage = self.get_percentage(frame)
+                            if current_percentage >= 10:
+                                print("赤割合が10%に達しました。前進を停止し、最終ゴール判定に移行します。")
+                                self.driver.motor_stop_brake()
+                                time.sleep(0.5)
+                                current_state = "GOAL_CHECK"
+                                break # 前進ループを抜ける
+                            elif current_percentage < 2:
+                                print("2つ目のボールを見失いました。再度探索します。")
+                                self.driver.motor_stop_brake()
+                                time.sleep(0.5)
+                                current_state = "SEARCH"
+                                break # 前進ループを抜けて、外側のwhileループに戻る
+                            else:
+                                # 前進を続ける
+                                self.driver.petit_petit(5)
+                                self.driver.motor_stop_brake()
+                                time.sleep(0.2)
+                    else:
+                        print("2つ目のボールが見つかりませんでした。探索モードに戻ります。")
+                        current_state = "SEARCH"
                         
     
                 elif current_state == "GOAL_CHECK":
