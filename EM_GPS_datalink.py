@@ -102,7 +102,12 @@ try:
                                 time.sleep(2)  # GPSデータ送信後の遅延
             except Exception as e:
                 print(f"デコードエラー: {e}")
-        time.sleep(0.1)
+
+        if not current_location:
+            print("[WARN] GPS位置情報を取得できません。リトライします...")
+            time.sleep(1)
+            continue
+        
 
 except KeyboardInterrupt:
     print("\nユーザー割り込みで終了します。")
