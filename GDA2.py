@@ -89,9 +89,8 @@ class GDA:
     
         # 一定の速度で360度回転する
         # 右側のモーターだけを動かすことでその場旋回をシミュレート
-        search_speed = 60
-        self.driver.petit_right(0, search_speed)
-        self.driver.petit_right(search_speed, 0)
+        self.driver.petit_right(0, 60)
+        self.driver.petit_right(60, 0)
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         
