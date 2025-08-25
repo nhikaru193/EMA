@@ -113,7 +113,7 @@ class FN:
                     """ 
                         
                     while target_flag is None and search_count < 3:
-                        self.driver.petit_petit(5)
+                        self.driver.petit_petit(3)
                         self.driver.petit_left(0, self.turn_speed)
                         self.driver.petit_left(self.turn_speed, 0)
                         self.driver.motor_stop_brake()
