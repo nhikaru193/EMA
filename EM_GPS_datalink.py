@@ -87,11 +87,11 @@ try:
                 if "$GNRMC" in text:
                     lines = text.split("\n")
                     for line in lines:
-                        if "$GNRMC" in line:
+                        if line.startswith("$GNRMC"):
                             parts = line.strip().split(",")
                             if len(parts) > 6 and parts[2] == "A":
-                                lat = convert_to_decimal(parts[3], parts[4])
-                                lon = convert_to_decimal(parts[5], parts[6])
+                                lat = self.convert_to_decimal(parts[3], parts[4])
+                                lon = self.convert_to_decimal(parts[5], parts[6])
                                 
                                 # GPSデータをユニキャストメッセージとして送信
                                 # ターゲットのノードIDを定義してください
