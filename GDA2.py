@@ -85,7 +85,6 @@ class GDA:
         print("赤コーンを探索するため、360度回転を開始します。")
         best_percentage = 0.0
         best_heading = None
-        scan_data = []
     
         # 一定の速度で360度回転する
         # 右側のモーターだけを動かすことでその場旋回をシミュレート
@@ -97,24 +96,21 @@ class GDA:
         
         # BNO055の計測値に基づき、360度回転したかを判断するロジック
         start_heading = self.bno.get_heading()
+        start_heading = self.bno.get_heading()
+        self.driver.petit_right(0, search_speed) # ループの外で一度だけ回転を開始
         while True:
             current_heading = self.bno.get_heading()
-            # 0度をまたぐ回転に対応
             angle_diff = (current_heading - start_heading + 360) % 360
-            
-            # 360度（350度以上）回転したらループを抜ける
             if angle_diff >= 350:
                 break
-                
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
-            
             if current_percentage > best_percentage:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-            
-        self.driver.motor_stop_brake()
+                
+        self.driver.motor_stop_brake() # ループを抜けた後に停止
         
         print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
         
