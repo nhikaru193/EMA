@@ -81,34 +81,26 @@ class GDA:
                 
                 time.sleep(0.05) # 制御を安定させるために少し待
 
-    def perform_360_degree(self, target_heading, speed):
-        best_percentage = 0.0
-        search_speed = 60
-        while True:
-            current_heading = self.bno.get_heading()
-            angle_diff = (current_heading - start_heading + 360) % 360
-            if angle_diff >= 350:
-                break
-            frame = self.picam2.capture_array()
-            current_percentage = self.get_percentage(frame)
-            if current_percentage > best_percentage:
-                best_percentage = current_percentage
-                best_heading = current_heading
-                print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+    def perform_360_degree(self):
+        try:
+            best_percentage = 0.0
+            search_speed = 60
+            while True:
+                current_heading = self.bno.get_heading()
+                angle_diff = (current_heading - start_heading + 360) % 360
+                if angle_diff >= 350:
+                    break
+                frame = self.picam2.capture_array()
+                current_percentage = self.get_percentage(frame)
+                if current_percentage > best_percentage:
+                    best_percentage = current_percentage
+                    best_heading = current_heading
+                    print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
+                self.driver.petit_rigft(0, search_speed)
+                self.driver.petit_rigft(search_speed, 0)
+                self.driver.motor_stop_brake()
+                time.sleep(1.0)
                 
-        self.driver.petit_right(0, search_speed)
-        self.driver.petit_right(search_speed, 0)
-        self.driver.motor_stop_brake()
-        time.sleep(1.0)
-        # BNO055の計測値に基づき、360度回転したかを判断するロジック
-        start_heading = self.bno.get_heading()
-        start_heading = self.bno.get_heading()
-        print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-        
-        if best_percentage > 1: # わずかでも検出できていれば方位を返す
-            return best_heading
-        else:
-            return None # コーンが見つからなかった場合はNoneを返す
 
     
     def rotate_search_red_ball(self):
