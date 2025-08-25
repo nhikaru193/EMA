@@ -81,17 +81,9 @@ class GDA:
                 
                 time.sleep(0.05) # 制御を安定させるために少し待
 
-    def perform_360_degree(self):
+    def perform_360_degree(self, speed, ):
         best_percentage = 0.0
         search_speed = 60
-        self.driver.petit_right(0, search_speed)
-        self.driver.petit_right(search_speed, 0)
-        self.driver.motor_stop_brake()
-        time.sleep(1.0)
-        # BNO055の計測値に基づき、360度回転したかを判断するロジック
-        start_heading = self.bno.get_heading()
-        start_heading = self.bno.get_heading()
-        self.driver.petit_right(0, search_speed) # ループの外で一度だけ回転を開始
         while True:
             current_heading = self.bno.get_heading()
             angle_diff = (current_heading - start_heading + 360) % 360
@@ -104,24 +96,21 @@ class GDA:
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
                 
-        self.driver.motor_stop_brake() # ループを抜けた後に停止
+        self.driver.petit_right(0, search_speed)
+        self.driver.petit_right(search_speed, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        # BNO055の計測値に基づき、360度回転したかを判断するロジック
+        start_heading = self.bno.get_heading()
+        start_heading = self.bno.get_heading()
         print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
         
         if best_percentage > 1: # わずかでも検出できていれば方位を返す
             return best_heading
         else:
             return None # コーンが見つからなかった場合はNoneを返す
-                    best_heading = self.perform_360_degree()
-                    
-                    if best_heading is not None:
-                        print(f"赤コーンが見つかりました。追従モードに移行します。")
-                        self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
-                        current_state = "FOLLOW"
-                    else:
-                        print("コーンが見つかりませんでした。とりあえず前に進みます。")
-                        self.driver.petit_petit(5)
-                        self.driver.motor_stop_brake()
-                        time.sleep(0.2)
+
+    
     def rotate_search_red_ball(self):
         scan_data = []
         self.driver.petit_right(0, 60)
