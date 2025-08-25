@@ -153,7 +153,17 @@ class GDA:
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
                     print("\n[状態: 探索] 赤コーンを探索します。")
-                    best_heading = self.perform_360_degree()
+                    best_heading = self.perform_360_degree_search()
+                    
+                    if best_heading is not None:
+                        print(f"赤コーンが見つかりました。追従モードに移行します。")
+                        self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
+                        current_state = "FOLLOW"
+                    else:
+                        print("コーンが見つかりませんでした。とりあえず前に進みます。")
+                        self.driver.petit_petit(5)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.2)
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
                     print("\n[状態: 追従] 赤コーンに向かって前進します。")
