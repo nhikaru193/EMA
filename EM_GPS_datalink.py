@@ -55,14 +55,11 @@ def send_unicast(node_id, payload):
     #time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
     # メッセージの準備と送信
-    # 'TXDA <Node ID>,<Payload>\r'形式でデータ送信
-    # Node IDは4桁の16進数としてフォーマット
-    node_id_str = f"{node_id:04X}"
-    msg = f'TXDA {node_id_str},{payload}\r'
+    cmd = f'TXDU {node_id},{payload}\r\n'
     
     try:
-        im920.write(msg.encode())
-        print(f"送信: {msg.strip()}")
+        im920.write(cmd.encode())
+        print(f"送信: {cmd.strip()}")
     except serial.SerialException as e:
         print(f"シリアル送信エラー: {e}")
     
@@ -94,10 +91,8 @@ try:
                                 lon = self.convert_to_decimal(parts[5], parts[6])
                                 
                                 # GPSデータをユニキャストメッセージとして送信
-                                # ターゲットのノードIDを定義してください
-                                target_node_id = 0x0003  # 例のノードID。必要に応じて調整してください。
                                 gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                send_unicast(target_node_id, gps_payload)
+                                send_unicast("0003", gps_payload)
                                 
                                 time.sleep(2)  # GPSデータ送信後の遅延
             except Exception as e:
