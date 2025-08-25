@@ -89,7 +89,6 @@ class GDA:
         self.driver.petit_right(search_speed, 0)
         self.driver.motor_stop_brake()
         time.sleep(1.0)
-        
         # BNO055の計測値に基づき、360度回転したかを判断するロジック
         start_heading = self.bno.get_heading()
         start_heading = self.bno.get_heading()
@@ -107,7 +106,6 @@ class GDA:
                 print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
                 
         self.driver.motor_stop_brake() # ループを抜けた後に停止
-        
         print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
         
         if best_percentage > 1: # わずかでも検出できていれば方位を返す
