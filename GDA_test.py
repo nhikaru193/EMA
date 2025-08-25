@@ -80,6 +80,10 @@ class GDA:
                     time.sleep(1.0)
                 
                 time.sleep(0.05) # 制御を安定させるために少し待
+
+
+
+    
     def run(self):
         try:
             current_state = "SEARCH"
