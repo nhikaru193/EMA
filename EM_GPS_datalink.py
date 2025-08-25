@@ -3,7 +3,7 @@ import time
 import pigpio
 
 # --- 設定 ---
-self.TX_PIN = 27
+TX_PIN = 27
 self.RX_PIN = 17
 self.BAUD = 9600
 WIRELESS_PIN = 22  # ワイヤレスグラウンド制御用のGPIOピン番号。適宜変更してください。
