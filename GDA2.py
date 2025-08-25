@@ -80,6 +80,72 @@ class GDA:
                     time.sleep(1.0)
                 
                 time.sleep(0.05) # 制御を安定させるために少し待
+
+    def perform_360_degree(self):
+        print("赤コーンを探索するため、360度回転を開始します。")
+        best_percentage = 0.0
+        search_speed = 60
+        self.driver.petit_right(0, search_speed)
+        self.driver.petit_right(search_speed, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        
+        # BNO055の計測値に基づき、360度回転したかを判断するロジック
+        start_heading = self.bno.get_heading()
+        start_heading = self.bno.get_heading()
+        self.driver.petit_right(0, search_speed) # ループの外で一度だけ回転を開始
+        while True:
+            current_heading = self.bno.get_heading()
+            angle_diff = (current_heading - start_heading + 360) % 360
+            if angle_diff >= 350:
+                break
+            frame = self.picam2.capture_array()
+            current_percentage = self.get_percentage(frame)
+            if current_percentage > best_percentage:
+                best_percentage = current_percentage
+                best_heading = current_heading
+                print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+                
+        self.driver.motor_stop_brake() # ループを抜けた後に停止
+        
+        print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+        
+        if best_percentage > 1: # わずかでも検出できていれば方位を返す
+            return best_heading
+        else:
+            return None # コーンが見つからなかった場合はNoneを返す
+                    best_heading = self.perform_360_degree_search()
+                    
+                    if best_heading is not None:
+                        print(f"赤コーンが見つかりました。追従モードに移行します。")
+                        self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
+                        current_state = "FOLLOW"
+                    else:
+                        print("コーンが見つかりませんでした。とりあえず前に進みます。")
+                        self.driver.petit_petit(5)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.2)
+                         # ループを抜けて終了
+    def rotate_search_red_ball(self):
+        scan_data = []
+        self.driver.petit_right(0, 60)
+        self.driver.petit_right(60, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        start_heading = self.bno.get_heading()
+        while True:
+            current_heading = self.bno.get_heading()
+            angle_diff = (current_heading - start_heading + 360) % 360
+            if angle_diff >= 350:
+                break
+            frame = self.picam2.capture_array()
+            current_percentage_scan = self.get_percentage(frame)
+            current_heading_scan = self.bno.get_heading()
+            scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
+        self.driver.motor_stop_brake()
+        return scan_data
+
+    
     def run(self):
         try:
             current_state = "SEARCH"
@@ -90,51 +156,7 @@ class GDA:
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
                     print("\n[状態: 探索] 赤コーンを探索します。")
-                    print("赤コーンを探索するため、360度回転を開始します。")
-                    best_percentage = 0.0
-                    search_speed = 60
-                    self.driver.petit_right(0, search_speed)
-                    self.driver.petit_right(search_speed, 0)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                    
-                    # BNO055の計測値に基づき、360度回転したかを判断するロジック
-                    start_heading = self.bno.get_heading()
-                    start_heading = self.bno.get_heading()
-                    self.driver.petit_right(0, search_speed) # ループの外で一度だけ回転を開始
-                    while True:
-                        current_heading = self.bno.get_heading()
-                        angle_diff = (current_heading - start_heading + 360) % 360
-                        if angle_diff >= 350:
-                            break
-                        frame = self.picam2.capture_array()
-                        current_percentage = self.get_percentage(frame)
-                        if current_percentage > best_percentage:
-                            best_percentage = current_percentage
-                            best_heading = current_heading
-                            print(f"[探索中] 新しい最高の赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-                            
-                    self.driver.motor_stop_brake() # ループを抜けた後に停止
-                    
-                    print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-                    
-                    if best_percentage > 1: # わずかでも検出できていれば方位を返す
-                        return best_heading
-                    else:
-                        return None # コーンが見つからなかった場合はNoneを返す
-                                best_heading = self.perform_360_degree_search()
-                                
-                                if best_heading is not None:
-                                    print(f"赤コーンが見つかりました。追従モードに移行します。")
-                                    self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
-                                    current_state = "FOLLOW"
-                                else:
-                                    print("コーンが見つかりませんでした。とりあえず前に進みます。")
-                                    self.driver.petit_petit(5)
-                                    self.driver.motor_stop_brake()
-                                    time.sleep(0.2)
-                                     # ループを抜けて終了
-    
+                    best_heading = self.perform_360_degree()
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
                     print("\n[状態: 追従] 赤コーンに向かって前進します。")
@@ -158,24 +180,7 @@ class GDA:
     
                 elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
-                   scan_data = []
-                   self.driver.petit_right(0, 60)
-                   self.driver.petit_right(60, 0)
-                   self.driver.motor_stop_brake()
-                   time.sleep(1.0)
-                   start_heading = self.bno.get_heading()
-                   while True:
-                       current_heading = self.bno.get_heading()
-                       angle_diff = (current_heading - start_heading + 360) % 360
-                       if angle_diff >= 350:
-                           break
-                       frame = self.picam2.capture_array()
-                       current_percentage_scan = self.get_percentage(frame)
-                       current_heading_scan = self.bno.get_heading()
-                       scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
-                
-                   self.driver.motor_stop_brake()
-                   return scan_data
+                   scan_data =self.rotate_search_red_ball()
                    # 赤色の割合が5%から10%の間にあるコーンを探す
                    found_2nd_ball = None
                    for data in scan_data:
@@ -216,23 +221,7 @@ class GDA:
                 elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
                     
-                    scan_data = []
-                    self.driver.petit_right(0, 60)
-                    self.driver.petit_right(60, 0)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                    start_heading = self.bno.get_heading()
-                    while True:
-                        current_heading = self.bno.get_heading()
-                        angle_diff = (current_heading - start_heading + 360) % 360
-                        if angle_diff >= 350:
-                            break
-                        frame = self.picam2.capture_array()
-                        current_percentage_scan = self.get_percentage(frame)
-                        current_heading_scan = self.bno.get_heading()
-                        scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
-                    self.driver.motor_stop_brake()
-                    return scan_data # ゴール判定用のスキャンを実行する新メソッド
+                    scan_data = self.rotate_search_red_ball()
                     
                     high_red_count = len([d for d in scan_data if d['percentage'] > 15])
                     
