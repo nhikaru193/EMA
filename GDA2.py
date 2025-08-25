@@ -100,7 +100,15 @@ class GDA:
                 self.driver.petit_rigft(search_speed, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
+                start_heading = self.bno.get_heading()
+                start_heading = self.bno.get_heading()
+                print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
                 
+                if best_percentage > 1: # わずかでも検出できていれば方位を返す
+                    return best_heading
+                else:
+                    return None # コーンが見つからなかった場合はNoneを返す
+
 
     
     def rotate_search_red_ball(self):
