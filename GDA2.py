@@ -163,8 +163,11 @@ class GDA:
                         self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
                     else:
-                        print("コーンが見つかりませんでした。プログラムを終了します。")
-                        break # ループを抜けて終了
+                        print("コーンが見つかりませんでした。とりあえず前に進みます。")
+                        self.driver.petit_petit(5)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.2)
+                         # ループを抜けて終了
     
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
