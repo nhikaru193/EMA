@@ -80,7 +80,7 @@ class GDA:
                     time.sleep(1.0)
                 
                 time.sleep(0.05) # 制御を安定させるために少し待機
-
+"""
     def scan_for_goal_criteria(self): #360度回転しながら赤色検知するやつ
         scan_data = []
         # 旋回しながらスキャン
@@ -103,7 +103,7 @@ class GDA:
     
         self.driver.motor_stop_brake()
         return scan_data
-    
+"""
     def run(self):
         try:
             current_state = "SEARCH"
