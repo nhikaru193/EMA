@@ -40,15 +40,19 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
+
+"""
 driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,    
             PWMB=19, BIN1=16, BIN2=26,    
             STBY=21                      
         )
+"""
 
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"gyro:{gyro}, mag:{mag}")
+"""
     driver.changing_right(0, 80)
     time.sleep(2)
     driver.changing_right(80, 0)
@@ -57,10 +61,11 @@ while True:
     time.sleep(2)
     driver.changing_left(80, 0)
     time.sleep(0.5)
+"""
     if gyro == 3 and mag == 3:
         print("BNO055のキャリブレーション終了")
         break
-    driver.cleanup()
+    #driver.cleanup()
     time.sleep(0.3)
 
 #ここのタイムスリープは収納待ちのタイムスリープ
