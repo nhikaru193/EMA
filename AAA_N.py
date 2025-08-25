@@ -40,6 +40,11 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
+driver = MotorDriver(
+            PWMA=12, AIN1=23, AIN2=18,    
+            PWMB=19, BIN1=16, BIN2=26,    
+            STBY=21                      
+        )
 
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
