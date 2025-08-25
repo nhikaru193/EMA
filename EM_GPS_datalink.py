@@ -44,16 +44,7 @@ def convert_to_decimal(coord, direction):
 im920 = serial.Serial('/dev/serial0', 19200, timeout=1)
 
 # --- IM920ユニキャスト送信関数（ワイヤレスグラウンド制御付き） ---
-def send_unicast(node_id, payload):
-    """
-    IM920SLを使用して指定されたノードIDにペイロードをユニキャスト送信します。
-    送信前にワイヤレスグラウンドをONにし、送信後にOFFにします。
-    """
-    # ワイヤレスグラウンドON
-    #pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
-    #print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
-    #time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
-
+def send_TXDU(node_id, payload):
     # メッセージの準備と送信
     cmd = f'TXDU {node_id},{payload}\r\n'
     
@@ -92,7 +83,7 @@ try:
                                 current_location = [lat, lon]
                                 # GPSデータをユニキャストメッセージとして送信
                                 gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                send_unicast("0003", gps_payload)
+                                send_TXDU("0003", gps_payload)
                                 
                                 time.sleep(2)  # GPSデータ送信後の遅延
             except Exception as e:
