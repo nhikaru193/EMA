@@ -112,7 +112,7 @@ class GDA:
             return best_heading
         else:
             return None # コーンが見つからなかった場合はNoneを返す
-                    best_heading = self.perform_360_degree_search()
+                    best_heading = self.perform_360_degree()
                     
                     if best_heading is not None:
                         print(f"赤コーンが見つかりました。追従モードに移行します。")
@@ -153,7 +153,7 @@ class GDA:
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
                     print("\n[状態: 探索] 赤コーンを探索します。")
-                    best_heading = self.perform_360_degree_search()
+                    best_heading = self.perform_360_degree()
                     
                     if best_heading is not None:
                         print(f"赤コーンが見つかりました。追従モードに移行します。")
