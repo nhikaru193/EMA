@@ -40,6 +40,7 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
+GPIO.setmode(GPIO.BCM)
 
 driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,    
