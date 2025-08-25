@@ -52,6 +52,7 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
+"""
 RELEASE = RD(bno)
 RELEASE.run()
 
@@ -65,6 +66,7 @@ time.sleep(1)
 
 AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
+"""
 
 GPS_StoE = GPS(bno, goal_location = Flag_location_a)
 GPS_StoE.run()
