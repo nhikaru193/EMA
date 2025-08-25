@@ -81,7 +81,7 @@ class GDA:
                 
                 time.sleep(0.05) # 制御を安定させるために少し待
 
-    def perform_360_degree(self, speed, ):
+    def perform_360_degree(self, target_heading, speed):
         best_percentage = 0.0
         search_speed = 60
         while True:
