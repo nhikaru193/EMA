@@ -82,7 +82,6 @@ class GDA:
                 time.sleep(0.05) # 制御を安定させるために少し待
 
     def perform_360_degree(self):
-        print("赤コーンを探索するため、360度回転を開始します。")
         best_percentage = 0.0
         search_speed = 60
         self.driver.petit_right(0, search_speed)
