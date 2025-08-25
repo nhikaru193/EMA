@@ -80,6 +80,7 @@ class GDA:
                     time.sleep(1.0)
                 
                 time.sleep(0.05) # 制御を安定させるために少し待機
+                
     def perform_360_degree_search(self):#360度回転するやつ
         print("赤コーンを探索するため、360度回転を開始します。")
         best_percentage = 0.0
