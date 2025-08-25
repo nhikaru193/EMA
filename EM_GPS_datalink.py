@@ -3,39 +3,40 @@ import time
 import pigpio
 
 # --- 設定 ---
-TX_PIN = 27
-RX_PIN = 17
-BAUD = 9600
+self.TX_PIN = 27
+self.RX_PIN = 17
+self.BAUD = 9600
 WIRELESS_PIN = 22  # ワイヤレスグラウンド制御用のGPIOピン番号。適宜変更してください。
 
 # --- pigpioの初期化 ---
-pi = pigpio.pi()
-if not pi.connected:
-    print("pigpio デーモンに接続できません。")
-    exit(1)
+self.pi = pigpio.pi()
+if not self.pi.connected:
+    raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
+err = self.pi.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+if err != 0:
+    self.pi.stop()
+    raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+
+print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
 
 # WIRELESS_PINを出力に設定し、初期状態をLOW（ワイヤレスグラウンドOFF）にする
-pi.set_mode(WIRELESS_PIN, pigpio.OUTPUT)
-pi.write(WIRELESS_PIN, 0)
+self.pi.set_mode(WIRELESS_PIN, pigpio.OUTPUT)
+self.pi.write(WIRELESS_PIN, 0)
 print(f"GPIO{WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
 
-# --- ソフトUART RXの設定 ---
-err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
-if err != 0:
-    print(f"ソフトUART RX の設定に失敗：GPIO={RX_PIN}, {BAUD}bps")
-    pi.stop()
-    exit(1)
 
 print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
 
 # --- 座標変換関数 ---
-def convert_to_decimal(coord, direction):
-    """
-    度分（ddmm.mmmm）形式を10進数に変換します。
-    """
-    degrees = int(coord[:2]) if direction in ['N', 'S'] else int(coord[:3])
-    minutes = float(coord[2:]) if direction in ['N', 'S'] else float(coord[3:])
-    decimal = degrees + minutes / 60
+def convert_to_decimal(self, coord, direction):
+    if not coord: return 0.0
+    if direction in ['N', 'S']:
+        degrees = int(coord[:2])
+        minutes = float(coord[2:])
+    else:
+        degrees = int(coord[:3])
+        minutes = float(coord[3:])
+    decimal = degrees + minutes / 60.0
     if direction in ['S', 'W']:
         decimal *= -1
     return decimal
@@ -68,7 +69,7 @@ try:
     time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
     while True:
-        (count, data) = pi.bb_serial_read(RX_PIN)
+        (count, data) = self.pi.bb_serial_read(RX_PIN)
         current_location = None
         
         if count and data:
