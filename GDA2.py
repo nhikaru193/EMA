@@ -123,7 +123,6 @@ class GDA:
                         self.driver.petit_petit(5)
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
-                         # ループを抜けて終了
     def rotate_search_red_ball(self):
         scan_data = []
         self.driver.petit_right(0, 60)
