@@ -69,8 +69,8 @@ class GDA:
             
             # 向きに応じて左右に回転
             if delta_heading > 0:
-                self.driver.petit_right(0, 60)
-                self.driver.petit_right(60, 0)
+                self.driver.petit_right(0, 90)
+                self.driver.petit_right(90, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             else:
