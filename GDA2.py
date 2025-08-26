@@ -49,87 +49,84 @@ class GDA:
 
     def turn_to_heading(self, target_heading, speed): #get_headingで現在の向きを取得してから目標方位に回転させるやつ
         print(f"目標方位: {target_heading:.2f}° に向かって調整開始")
-        try:
-            while True:
-                current_heading = self.bno.get_heading()
-                
-                # 角度差
-                delta_heading = target_heading - current_heading
-                if delta_heading > 180:
-                    delta_heading -= 360
-                elif delta_heading < -180:
-                    delta_heading += 360
-                
-                # 許容範囲内であれば停止
-                if abs(delta_heading) < 10: # 誤差10度以内
-                    print("目標方位に到達しました。")
-                    self.driver.motor_stop_brake()
-                    time.sleep(0.5)
-                    break
-                
-                # 向きに応じて左右に回転
-                if delta_heading > 0:
-                    self.driver.petit_right(0, 60)
-                    self.driver.petit_right(60, 0)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                else:
-                    self.driver.petit_left(0, 60)
-                    self.driver.petit_left(60, 0)
-                    self.driver.motor_stop_brake()
-                    time.sleep(1.0)
-                
-                time.sleep(0.05) # 制御を安定させるために少し待
-
-    def perform_360_degree(self):
-        try:
-            best_percentage = 0.0
-            search_speed = 60
-            while True:
-                current_heading = self.bno.get_heading()
-                angle_diff = (current_heading - start_heading + 360) % 360
-                if angle_diff >= 350:
-                    break
-                frame = self.picam2.capture_array()
-                current_percentage = self.get_percentage(frame)
-                if current_percentage > best_percentage:
-                    best_percentage = current_percentage
-                    best_heading = current_heading
-                    print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-                self.driver.petit_rigft(0, search_speed)
-                self.driver.petit_rigft(search_speed, 0)
+        while True:
+            current_heading = self.bno.get_heading()
+            
+            # 角度差
+            delta_heading = target_heading - current_heading
+            if delta_heading > 180:
+                delta_heading -= 360
+            elif delta_heading < -180:
+                delta_heading += 360
+            
+            # 許容範囲内であれば停止
+            if abs(delta_heading) < 10: # 誤差10度以内
+                print("目標方位に到達しました。")
+                self.driver.motor_stop_brake()
+                time.sleep(0.5)
+                break
+            
+            # 向きに応じて左右に回転
+            if delta_heading > 0:
+                self.driver.petit_right(0, 60)
+                self.driver.petit_right(60, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
-                start_heading = self.bno.get_heading()
-                start_heading = self.bno.get_heading()
-                print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
-                
-                if best_percentage > 1: # わずかでも検出できていれば方位を返す
-                    return best_heading
-                else:
-                    return None # コーンが見つからなかった場合はNoneを返す
+            else:
+                self.driver.petit_left(0, 60)
+                self.driver.petit_left(60, 0)
+                self.driver.motor_stop_brake()
+                time.sleep(1.0)
+            
+            time.sleep(0.05) # 制御を安定させるために少し待
+
+    def perform_360_degree(self):
+        best_percentage = 0.0
+        search_speed = 60
+        while True:
+            current_heading = self.bno.get_heading()
+            angle_diff = (current_heading - start_heading + 360) % 360
+            if angle_diff >= 350:
+                break
+            frame = self.picam2.capture_array()
+            current_percentage = self.get_percentage(frame)
+            if current_percentage > best_percentage:
+                best_percentage = current_percentage
+                best_heading = current_heading
+                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
+            self.driver.petit_rigft(0, search_speed)
+            self.driver.petit_rigft(search_speed, 0)
+            self.driver.motor_stop_brake()
+            time.sleep(1.0)
+            start_heading = self.bno.get_heading()
+            start_heading = self.bno.get_heading()
+            print(f"360度探索完了。最高赤割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}°")
+            
+            if best_percentage > 1: # わずかでも検出できていれば方位を返す
+                return best_heading
+            else:
+                return None # コーンが見つからなかった場合はNoneを返す
 
 
     
     def rotate_search_red_ball(self):
-        try:
-            scan_data = []
-            self.driver.petit_right(0, 60)
-            self.driver.petit_right(60, 0)
-            self.driver.motor_stop_brake()
-            time.sleep(1.0)
-            start_heading = self.bno.get_heading()
-            while True:
-                current_heading = self.bno.get_heading()
-                angle_diff = (current_heading - start_heading + 360) % 360
-                if angle_diff >= 350:
-                    break
-                frame = self.picam2.capture_array()
-                current_percentage_scan = self.get_percentage(frame)
-                current_heading_scan = self.bno.get_heading()
-                scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
-            self.driver.motor_stop_brake()
-            return scan_data
+        scan_data = []
+        self.driver.petit_right(0, 60)
+        self.driver.petit_right(60, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        start_heading = self.bno.get_heading()
+        while True:
+            current_heading = self.bno.get_heading()
+            angle_diff = (current_heading - start_heading + 360) % 360
+            if angle_diff >= 350:
+                break
+            frame = self.picam2.capture_array()
+            current_percentage_scan = self.get_percentage(frame)
+            current_heading_scan = self.bno.get_heading()
+            scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
+        self.driver.motor_stop_brake()
+        return scan_data
 
     
     def run(self):
