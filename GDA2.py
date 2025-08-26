@@ -172,7 +172,8 @@ class GDA:
     
                 elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
-                   scan_data =self.rotate_search_red_ball()
+                   self.rotate_search_red_ball()
+                   #self.perform_360_degree(
                    # 赤色の割合が5%から10%の間にあるコーンを探す
                    found_2nd_ball = None
                    for data in scan_data:
