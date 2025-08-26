@@ -171,7 +171,7 @@ class GDA:
                         self.driver.motor_stop_brake()
                     else:
                         print(f"コーンを追従中...現在の赤割合: {current_percentage:.2f}%")
-                        self.driver.petit_petit(5)
+                        self.driver.petit_petit(3)
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
     
