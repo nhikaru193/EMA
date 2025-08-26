@@ -180,17 +180,15 @@ class GDA:
                    #scan_data = self.rotate_search_red_ball()
                    self.perform_360_degree() # perform_360_degree() の引数がないため、引数を削除しました
                     # 赤色の割合が5%から10%の間にあるコーンを探す
-                    """
-                   found_2nd_ball = None
-                   for data in scan_data:
-                       if 5 <= data['percentage'] < 10:
-                           found_2nd_ball = data
-                           current_state = GOAL_CHECK
-                       else:
-                           print("コーンが見つかりませんでした。見つかるまで回転します。")
-                           self.perform_360_degree()
-                           time.sleep(0.2)# 最初のコーンを見つけたらループを抜ける
-                    """
+                   #found_2nd_ball = None
+                   #for data in scan_data:
+                       #if 5 <= data['percentage'] < 10:
+                           #found_2nd_ball = data
+                           #current_state = GOAL_CHECK
+                       #else:
+                           #print("コーンが見つかりませんでした。見つかるまで回転します。")
+                           #self.perform_360_degree()
+                           #time.sleep(0.2)# 最初のコーンを見つけたらループを抜ける
                            
                    if found_2nd_ball:
                        target_heading = found_2nd_ball['heading']
