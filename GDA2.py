@@ -100,10 +100,11 @@ class GDA:
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
             
-            if best_percentage > 1: # わずかでも検出できていれば方位を返す
-                return best_heading
-            else:
-                return None # コーンが見つからなかった場合はNoneを返す
+        if best_percentage > 1: # わずかでも検出できていれば方位を返
+            print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
+            return best_heading
+        else:
+            return None # コーンが見つからなかった場合はNoneを返す
 
         
 
@@ -123,15 +124,18 @@ class GDA:
                 break
             frame = self.picam2.capture_array()
             current_percentage_scan = self.get_percentage(frame)
-            if current_percentage > best_percentage:
-                best_percentage = current_percentage
-                best_heading = current_heading
-                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            
-            if 5 < best_percentage < 10: # わずかでも検出できていれば方位を返す
-                return best_heading
-            else:
-                return None # コーンが見つからなかった場合はNoneを返す
+            scan_data.append({
+                'percentage': current_percentage,
+                'heading': current_heading
+            })
+        found_balls = [data for data in scan_data if 2 <= data['percentage'] < 10]
+        if found_balls:
+            # 2つ目のボールを見つけた場合、最初のデータまたは最も良いデータを返す
+            print(f"2つ目のボールを検知しました。合計 {len(found_balls)} 個の候補が見つかりました。")
+            return found_balls
+        else:
+            print("2つ目のボールは見つかりませんでした。")
+            return []
 
     
     def run(self):
@@ -177,7 +181,7 @@ class GDA:
     
                 elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
-                   #scan_data = self.rotate_search_red_ball()
+                   scan_data = self.rotate_search_red_ball()
                    self.perform_360_degree() # perform_360_degree() の引数がないため、引数を削除しました
                     # 赤色の割合が5%から10%の間にあるコーンを探す
                    found_2nd_ball = None
@@ -214,9 +218,7 @@ class GDA:
                                self.driver.petit_petit(5)
                                self.driver.motor_stop_brake()
                                time.sleep(0.2)
-                   else:
-                       print("2つ目のボールが見つかりませんでした。探索モードに戻ります。")
-                       current_state = "SEARCH"
+                   
                         
     
                 elif current_state == "GOAL_CHECK":
