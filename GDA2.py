@@ -24,9 +24,9 @@ class GDA:
         self.picam2.start()
         time.sleep(1)
         self.counter_max = counter_max
-        self.lower_red1 = np.array([0, 100, 100])
-        self.upper_red1 = np.array([10, 255, 255])
-        self.lower_red2 = np.array([160, 100, 100])
+        self.lower_red1 = np.array([0, 150, 120])
+        self.upper_red1 = np.array([5, 255, 255])
+        self.lower_red2 = np.array([175, 150, 120])
         self.upper_red2 = np.array([180, 255, 255])
         self.pi = pigpio.pi()
         self.percentage = 0
