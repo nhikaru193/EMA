@@ -146,9 +146,8 @@ class GDA:
                         self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
                     else:
-                        print("コーンが見つかりませんでした。とりあえず前に進みます。")
-                        self.driver.petit_petit(2)
-                        self.driver.motor_stop_brake()
+                        print("コーンが見つかりませんでした。見つかるまで回転します。")
+                        self.perform_360_degree()
                         time.sleep(0.2)
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
