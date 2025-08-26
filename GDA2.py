@@ -80,7 +80,7 @@ class GDA:
                 time.sleep(1.0)
             
             time.sleep(0.05) # 制御を安定させるために少し待
-"""
+
     def perform_360_degree(self):
         self.driver.petit_right(0, 60)
         self.driver.petit_right(60, 0)
@@ -104,43 +104,8 @@ class GDA:
                     return best_heading
                 else:
                     return None # ボールが見つからなかった場合はNoneを返す
-"""
-    def perform_360_degree(self):
-        start_heading = self.bno.get_heading()
-        best_percentage = 0.0
-        best_heading = None
-        
-        # 0度から360度まで、少しずつ回転しながらスキャン
-        # 例: 36回（10度ずつ）に分割
-        for i in range(36):
-            # 1. わずかに回転させる
-            self.driver.petit_right(0, 60)
-            self.driver.petit_right(60, 0)
-            self.driver.motor_stop_brake()
-            time.sleep(1.0) # 完全に止まるのを待つ
-    
-            # 2. 静止した状態で1枚撮影
-            current_heading = self.bno.get_heading()
-            frame = self.picam2.capture_array()
-            current_percentage = self.get_percentage(frame)
-            
-            # 3. 最高の割合を更新
-            if current_percentage > best_percentage:
-                best_percentage = current_percentage
-                best_heading = current_heading
-                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-    
-        # ループ終了後、最終的な結果を判断する
-        if best_percentage > 1:
-            print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
-            return best_heading
-        else:
-            print("360度スキャン完了。ボールは検出できませんでした。")
-            return None
-        
+   
 
-
-    
     def rotate_search_red_ball(self):
         scan_data = []
         self.driver.petit_right(0, 60)
