@@ -25,7 +25,7 @@ from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 import Servo
 from C_excellent_GPS import GPS
-from C_GOAL_DETECTIVE_NOSHIRO import GDN
+from GDA2 import GDA
 
 #初期設定
 Flag_location_a = [40.1425710, 139.9874577]
@@ -88,17 +88,18 @@ GPS_StoE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location_b)
 GPS_StoF.run()
-"""
+
 
 FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
 
 Servo.release()
+"""
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
 
-GOAL = GDN(bno, 30)
+GOAL = GDA(bno, 30)
 GOAL.run()
 
 print("Mission Complete")
