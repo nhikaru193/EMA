@@ -9,6 +9,7 @@ from BNO055 import BNO055
 import math
 from collections import deque
 import pigpio
+import RPi.GPIO as GPIO
 
 class GDA:
     def __init__(self, bno: BNO055, counter_max: int=50):
