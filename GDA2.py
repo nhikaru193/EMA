@@ -13,7 +13,6 @@ import RPi.GPIO as GPIO
 
 class GDA:
     def __init__(self, bno: BNO055, counter_max: int=50):
-        self.GPIO.setmode(GPIO.BCM)
         self.driver = MotorDriver(
             PWMA=12, AIN1=23, AIN2=18,
             PWMB=19, BIN1=16, BIN2=26,
