@@ -88,7 +88,6 @@ class GDA:
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
         best_percentage = 0.0
-        search_speed = 60
         while True:
             current_heading = self.bno.get_heading()
             angle_diff = (current_heading - start_heading + 360) % 360
