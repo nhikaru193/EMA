@@ -100,12 +100,11 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            
-        if best_percentage > 1: # わずかでも検出できていれば方位を返
-            print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
-            return best_heading
-        else:
-            return None # コーンが見つからなかった場合はNoneを返す
+                if best_percentage > 1: # わずかでも検出できていれば方位を返
+                    print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
+                    return best_heading
+                else:
+                    return None # ボールが見つからなかった場合はNoneを返す
 
         
 
@@ -148,20 +147,20 @@ class GDA:
             while True:
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
-                    print("\n[状態: 探索] 赤コーンを探索します。")
+                    print("\n[状態: 探索] 赤ボールを探索します。")
                     best_heading = self.perform_360_degree()
                     
                     if best_heading is not None:
-                        print(f"赤コーンが見つかりました。追従モードに移行します。")
+                        print(f"赤ボールが見つかりました。追従モードに移行します。")
                         self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
                     else:
-                        print("コーンが見つかりませんでした。見つかるまで回転します。")
+                        print("ボールが見つかりませんでした。見つかるまで回転します。")
                         self.perform_360_degree()
                         time.sleep(0.2)
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
-                    print("\n[状態: 追従] 赤コーンに向かって前進します。")
+                    print("\n[状態: 追従] 赤ボールに向かって前進します。")
                     frame = self.picam2.capture_array()
                     current_percentage = self.get_percentage(frame)
                     
@@ -171,11 +170,11 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                     elif current_percentage < 1:
-                        print("コーンを見失いました。探索モードに戻ります。")
+                        print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "SEARCH"
                         self.driver.motor_stop_brake()
                     else:
-                        print(f"コーンを追従中...現在の赤割合: {current_percentage:.2f}%")
+                        print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
                         self.driver.petit_petit(3)
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
@@ -184,15 +183,15 @@ class GDA:
                    print("360度回転して2個目のボールを探して前進します。")
                    scan_data = self.rotate_search_red_ball()
                    self.perform_360_degree() # perform_360_degree() の引数がないため、引数を削除しました
-                    # 赤色の割合が5%から10%の間にあるコーンを探す
+                    # 赤色の割合が5%から10%の間にあるボールを探す
                    found_2nd_ball = None
                    for data in scan_data:
                        if 2 <= data['percentage'] < 10:
                            found_2nd_ball = data
                        else:
-                           print("コーンが見つかりませんでした。見つかるまで回転します。")
+                           print("ボールが見つかりませんでした。見つかるまで回転します。")
                            self.perform_360_degree()
-                           time.sleep(0.2)# 最初のコーンを見つけたらループを抜ける
+                           time.sleep(0.2)# 最初のボールを見つけたらループを抜ける
                            
                    if found_2nd_ball:
                        target_heading = found_2nd_ball['heading']
