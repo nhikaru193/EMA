@@ -207,7 +207,7 @@ class GDA:
                                print("2つ目のボールを見失いました。再度探索します。")
                                self.driver.motor_stop_brake()
                                time.sleep(0.5)
-                               current_state = "SEARCH"
+                               current_state = "2nd_ball"
                                break # 前進ループを抜けて、外側のwhileループに戻る
                            else:
                                # 前進を続ける
