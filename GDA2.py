@@ -123,10 +123,15 @@ class GDA:
                 break
             frame = self.picam2.capture_array()
             current_percentage_scan = self.get_percentage(frame)
-            current_heading_scan = self.bno.get_heading()
-            scan_data.append({'percentage': current_percentage_scan, 'heading': current_heading_scan})
-        self.driver.motor_stop_brake()
-        return scan_data
+            if current_percentage > best_percentage:
+                best_percentage = current_percentage
+                best_heading = current_heading
+                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
+            
+            if 5 < best_percentage < 10: # わずかでも検出できていれば方位を返す
+                return best_heading
+            else:
+                return None # コーンが見つからなかった場合はNoneを返す
 
     
     def run(self):
