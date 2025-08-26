@@ -115,9 +115,10 @@ class GDA:
         # 例: 36回（10度ずつ）に分割
         for i in range(36):
             # 1. わずかに回転させる
-            self.driver.petit_right(0, 5) # 例: 5度だけ回転
+            self.driver.petit_right(0, 60)
+            self.driver.petit_right(60, 0)
             self.driver.motor_stop_brake()
-            time.sleep(0.5) # 完全に止まるのを待つ
+            time.sleep(1.0) # 完全に止まるのを待つ
     
             # 2. 静止した状態で1枚撮影
             current_heading = self.bno.get_heading()
