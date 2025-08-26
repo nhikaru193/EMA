@@ -247,6 +247,6 @@ class GPS:
             self.driver.cleanup()
             self.pi.bb_serial_read_close(self.RX_PIN)
             self.pi.stop()
-            #f.close()
+            f.close()
             print("プログラムを終了しました。")
         
