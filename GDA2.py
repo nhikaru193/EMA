@@ -147,7 +147,7 @@ class GDA:
                         current_state = "FOLLOW"
                     else:
                         print("コーンが見つかりませんでした。とりあえず前に進みます。")
-                        self.driver.petit_petit(5)
+                        self.driver.petit_petit(2)
                         self.driver.motor_stop_brake()
                         time.sleep(0.2)
                 # --- フェーズ2: 追従 ---
