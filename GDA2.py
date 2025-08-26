@@ -105,7 +105,7 @@ class GDA:
                 else:
                     return None # ボールが見つからなかった場合はNoneを返す
 """
-    def perform_360_degree_stepwise(self):
+    def perform_360_degree(self):
     # 360度スキャンをステップバイステップで行う
         start_heading = self.bno.get_heading()
         best_percentage = 0.0
