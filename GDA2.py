@@ -81,8 +81,8 @@ class GDA:
             time.sleep(0.05) # 制御を安定させるために少し待
 
     def perform_360_degree(self):
-        self.driver.petit_right(0, search_speed)
-        self.driver.petit_right(search_speed, 0)
+        self.driver.petit_right(0, 60)
+        self.driver.petit_right(60, 0)
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
