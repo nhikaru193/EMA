@@ -82,8 +82,8 @@ class GDA:
             time.sleep(0.05) # 制御を安定させるために少し待
 
     def perform_360_degree(self):
-        self.driver.petit_right(0, 60)
-        self.driver.petit_right(60, 0)
+        self.driver.petit_right(0, 90)
+        self.driver.petit_right(90, 0)
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
@@ -106,8 +106,8 @@ class GDA:
                 return None # ボールが見つからなかった場合はNoneを返す
 
     def perform_360_degree2(self):
-        self.driver.petit_right(0, 60)
-        self.driver.petit_right(60, 0)
+        self.driver.petit_right(0, 90)
+        self.driver.petit_right(90, 0)
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
