@@ -123,7 +123,7 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if 1 < best_percentage < 20: # 1つ目を誤反応させないように範囲を決める
+            if 1 < best_percentage < 15: # 1つ目を誤反応させないように範囲を決める
                 print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
                 return best_heading
             else:
