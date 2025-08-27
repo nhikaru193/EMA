@@ -104,6 +104,30 @@ class GDA:
                 return best_heading
             else:
                 return None # ボールが見つからなかった場合はNoneを返す
+
+    def perform_360_degree2(self):
+        self.driver.petit_right(0, 60)
+        self.driver.petit_right(60, 0)
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        start_heading = self.bno.get_heading()
+        best_percentage = 0.0
+        while True:
+            current_heading = self.bno.get_heading()
+            angle_diff = (current_heading - start_heading + 360) % 360
+            if angle_diff >= 350:
+                break
+            frame = self.picam2.capture_array()
+            current_percentage = self.get_percentage(frame)
+            if current_percentage > best_percentage:
+                best_percentage = current_percentage
+                best_heading = current_heading
+                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
+            if 1 < best_percentage < 20: # 1つ目を誤反応させないように範囲を決める
+                print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
+                return best_heading
+            else:
+                return None # ボールが見つからなかった場合はNoneを返す
    
 
     def rotate_search_red_ball(self):
@@ -185,7 +209,7 @@ class GDA:
     
                 elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
-                   best_heading = self.perform_360_degree()
+                   best_heading = self.perform_360_degree2()
                     
                    if best_heading is not None:
                        print(f"赤ボールが見つかりました。追従モードに移行します。")
