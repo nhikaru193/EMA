@@ -133,19 +133,29 @@ class GDA:
     def rotate_search_red_ball(self):
         print("\n[360度スキャン開始] 赤いボールを探します。")
         scan_data = []
-        self.driver.petit_right(0, 90)
-        self.driver.petit_right(90, 0)
+        
+        # モーターを停止
         self.driver.motor_stop_brake()
         time.sleep(1.0)
+        
         start_heading = self.bno.get_heading()
         
         while True:
+            # モーターを少しずつ回転させる
+            self.driver.petit_left(0, 90)
+            self.driver.petit_left(90, 0)
+            #self.driver.motor_stop_brake()
+            time.sleep(1.0) # モーターが動くのを待つ
+            
             current_heading = self.bno.get_heading()
             angle_diff = (current_heading - start_heading + 360) % 360
+            
             if angle_diff >= 350:
                 break
+            
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
+            
             # 検出したデータをリストに追加
             scan_data.append({
                 'percentage': current_percentage,
