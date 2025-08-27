@@ -180,14 +180,14 @@ class GDA:
                    print("360度回転して2個目のボールを探して前進します。")
                    best_heading = self.perform_360_degree()
                     
-                    if best_heading is not None:
-                        print(f"赤ボールが見つかりました。追従モードに移行します。")
-                        self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
-                        current_state = "FOLLOW2"
-                    else:
-                        print("ボールが見つかりませんでした。見つかるまで回転します。")
-                        self.perform_360_degree()
-                        time.sleep(0.2)
+                   if best_heading is not None:
+                       print(f"赤ボールが見つかりました。追従モードに移行します。")
+                       self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
+                       current_state = "FOLLOW2"
+                   else:
+                       print("ボールが見つかりませんでした。見つかるまで回転します。")
+                       self.perform_360_degree()
+                       time.sleep(0.2)
 
                 elif current_state == "FOLLOW2":
                     print("\n[状態: 追従] 赤ボールに向かって前進します。")
