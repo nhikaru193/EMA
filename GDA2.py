@@ -272,7 +272,7 @@ class GDA:
                             if target_heading < 0: target_heading += 360
                             print(f"中間方位 ({target_heading:.2f}°) に向かって前進します。")
                             self.turn_to_heading(target_heading, 70)
-                            self.driver.petit_petit(2)
+                            self.driver.petit_petit(4)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             current_state = "GOAL_CHECK" # 再度ゴールチェック
