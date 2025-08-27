@@ -185,6 +185,13 @@ class MotorDriver():
             speed = before + i * delta_speed
             self.motor_forward(speed)
             time.sleep(0.02)
+
+    def petit_back(self, before, after):#ほたがついか
+        for i in range (1, 5):
+            delta_speed = (after - before) / 5
+            speed = before + i * delta_speed
+            self.motor_retreat(speed)
+            time.sleep(0.02)
             
     def petit_left(self, before, after):
         for i in range (1, 5):
@@ -205,3 +212,9 @@ class MotorDriver():
             self.petit_forward(0, 80)
             self.petit_forward(80, 0)
             time.sleep(0.2)
+
+    def petit_petit_retreat(self, count):#ほたが追加
+            for i in range (1, count):
+                self.petit_back(0, 80)
+                self.petit_back(80, 0)
+                time.sleep(0.2)
