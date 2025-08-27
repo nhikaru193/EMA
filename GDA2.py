@@ -242,7 +242,7 @@ class GDA:
                         time.sleep(1.0)
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
-                        self.driver.petit_petit(3)
+                        self.driver.petit_petit(2)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                    
