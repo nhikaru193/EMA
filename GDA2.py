@@ -202,7 +202,7 @@ class GDA:
                     current_percentage = self.get_percentage(frame)
                     time.sleep(1.0)
                     
-                    if current_percentage >= 10:
+                    if 10 < current_percentage <= 15:
                         print("赤割合が10%に達しました。ゴール検知に移るよ")
                         current_state = "GOAL_CHECK"
                         self.driver.motor_stop_brake()
@@ -211,6 +211,11 @@ class GDA:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
+                    elif current_percentage > 15:
+                        print("近づきすぎたので後退します")
+                        self.driver.petit_petit_retreat(3)
+                        self.driver.motor_stop_brake()
+                        time.sleep(1.0)
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
                         self.driver.petit_petit(3)
