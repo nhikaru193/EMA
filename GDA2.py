@@ -162,7 +162,7 @@ class GDA:
             print(f"[{i+1}/18] {target_relative_angle}度回転中...")
             
             # ここでモーターを動かす！
-            self.turn_to_heading(target_relative_angle, angle_tolerance_deg=5)
+            self.turn_to_heading(target_heading, speed=90)
             
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
