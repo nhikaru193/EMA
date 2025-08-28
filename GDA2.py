@@ -254,14 +254,14 @@ class GDA:
                         # 3つの領域での赤色ピクセル数を比較して方向を決定
                         if left_red_pixels > center_red_pixels and left_red_pixels > right_red_pixels:
                             print("ボールが左にあります。右に旋回します。")
-                            self.driver.petit_right(0, 90)
-                            self.driver.petit_right(90, 0)
+                            self.driver.petit_right(0, 70)
+                            self.driver.petit_right(70, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
                             print("ボールが右にあります。左に旋回します。")
-                            self.driver.petit_left(0, 90)
-                            self.driver.petit_left(90, 0)
+                            self.driver.petit_left(0, 70)
+                            self.driver.petit_left(70, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         else:
