@@ -151,10 +151,10 @@ class GDA:
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
         # 20度ずつ回転するためのループ
-        for i in range(18): # 360度 / 20度 = 18回
+        for i in range(12): # 360度 / 20度 = 18回
             # 目標となる相対的な回転角度を計算
-            target_heading = (start_heading + (i + 1) * 20) % 360
-            print(f"[{i+1}/18] 目標方位 {target_heading:.2f}° に向かって回転中...")
+            target_heading = (start_heading + (i + 1) * 30) % 360
+            print(f"[{i+1}/12] 目標方位 {target_heading:.2f}° に向かって回転中...")
             self.turn_to_heading(target_heading, speed=70)
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
