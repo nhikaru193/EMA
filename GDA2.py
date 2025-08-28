@@ -151,9 +151,9 @@ class GDA:
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
         # 20度ずつ回転するためのループ
-        for i in range(18): # 360度 / 20度 = 18回
+        for i in range(12): # 360度 / 20度 = 18回
             # 目標となる相対的な回転角度を計算
-            target_heading = (start_heading + (i + 1) * 20) % 360
+            target_heading = (start_heading + (i + 1) * 30) % 360
             print(f"[{i+1}/18] 目標方位 {target_heading:.2f}° に向かって回転中...")
             self.turn_to_heading(target_heading, speed=70)
             # カメラで撮影し、赤色の割合を取得
@@ -306,7 +306,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 5 < current_percentage <= 10:
+                    if 3 < current_percentage <= 10:
                         print("赤割合が10%に達しました。ゴール検知に移るよ")
                         current_state = "GOAL_CHECK"
                         self.driver.motor_stop_brake()
