@@ -344,20 +344,47 @@ class GDA:
     
                 elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
-                    
                     scan_data = self.rotate_search_red_ball()
-                    
                     high_red_count = len([d for d in scan_data if d['percentage'] > 15])
                     
                     if high_red_count >= 4:
-                        print("ゴール条件を満たしました！")
-                        self.driver.motor_stop_brake()
-                        time.sleep(2)
-                        break # ゴール確定でループ終了
+                        # 検出された方角のリストを作成
+                        high_headings = [d['heading'] for d in high_detections]
+                        
+                        # 角度差を計算
+                        max_angle_diff = 0
+                        if len(high_headings) > 1:
+                            for i in range(len(high_headings)):
+                                for j in range(i + 1, len(high_headings)):
+                                    # 2つの角度間の最小の差を計算（0〜180度）
+                                    diff = abs(high_headings[i] - high_headings[j])
+                                    angle_diff = min(diff, 360 - diff)
+                                    if angle_diff > max_angle_diff:
+                                        max_angle_diff = angle_diff
+                        
+                        # 条件判定
+                        if max_angle_diff >= 40:
+                            print("ゴール条件を満たしました！")
+                            print(f"検出数: {high_red_count}、最大角度差: {max_angle_diff:.2f}°")
+                            self.driver.motor_stop_brake()
+                            time.sleep(2)
+                            break # ゴール確定でループ終了
+                        else:
+                            print(f"検出数は満たしましたが、最大角度差が足りません ({max_angle_diff:.2f}°) 。")
+                            print("ボールの間に進む必要があります。")
+                            # 元の中間点計算ロジック
+                            high_detections.sort(key=lambda x: x['percentage'], reverse=True)
+                            if len(high_detections) >= 2:
+                                heading3 = high_detections[0]['heading']
+                                heading4 = high_detections[1]['heading']
+                                angle_diff = (heading4 - heading3 + 360) % 360
+                                target_heading = (heading3 + angle_diff / 2) % 360 if angle_diff <= 180 else (heading3 + (angle_diff - 360) / 2) % 360
+                                if target_heading < 0: target_heading += 360
+                                current_state = "GOAL_CHECK" # 再度ゴールチェック
                     elif high_red_count >= 2:
                         print("ボールの間に進む必要があります。")
                         # 中間点計算ロジック（元のコードから流用）
-                        high_detections_with_headings = [d for d in scan_data if d['percentage'] > 15]
+                        high_detections_with_headings = scan_data
                         high_detections_with_headings.sort(key=lambda x: x['percentage'], reverse=True)
                         if len(high_detections_with_headings) >= 2:
                             heading3 = high_detections_with_headings[0]['heading']
