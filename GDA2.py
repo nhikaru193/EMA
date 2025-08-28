@@ -205,7 +205,33 @@ class GDA:
                 elif current_state == "FOLLOW":
                     print("\n[状態: 追従] 赤ボールに向かって前進します。")
                     frame = self.picam2.capture_array()
-                    current_percentage = self.get_percentage(frame)
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                    
+                    # 画像を左・中央・右の3つの領域に分割
+                    height, width, _ = frame.shape
+                    center_start = int(width / 3)
+                    center_end = int(width * 2 / 3)
+                    
+                    # 各領域のHSVマスクを生成
+                    mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+                    mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
+                    full_mask = cv2.bitwise_or(mask1, mask2)
+                    
+                    left_mask = full_mask[:, :center_start]
+                    center_mask = full_mask[:, center_start:center_end]
+                    right_mask = full_mask[:, center_end:]
+                    
+                    # 各領域での赤色のピクセル数をカウント
+                    left_red_pixels = np.count_nonzero(left_mask)
+                    center_red_pixels = np.count_nonzero(center_mask)
+                    right_red_pixels = np.count_nonzero(right_mask)
+                    
+                    # 赤いピクセルの総数を計算して割合を判断
+                    total_red_pixels = np.count_nonzero(full_mask)
+                    current_percentage = (total_red_pixels / (width * height)) * 100
+                    
                     time.sleep(1.0)
                     
                     if 15 <= current_percentage <= 20:
@@ -226,10 +252,26 @@ class GDA:
                         
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
-                        self.driver.petit_petit(3)
+        
+                        # 3つの領域での赤色ピクセル数を比較して方向を決定
+                        if left_red_pixels > center_red_pixels and left_red_pixels > right_red_pixels:
+                            print("ボールが左にあります。左に旋回します。")
+                            self.driver.petit_left(0, 90)
+                            self.driver.petit_left(90, 0)
+                            self.driver.motor_stop_brake()
+                            time.sleep(1.0)
+                        elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
+                            print("ボールが右にあります。右に旋回します。")
+                            self.driver.petit_right(0, 90)
+                            self.driver.petit_right(90, 0)
+                            self.driver.motor_stop_brake()
+                            time.sleep(1.0)
+                        else:
+                            print("ボールは中央です。前進します。")
+                            self.driver.petit_petit(3)
+                
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-    
                 elif current_state == "2ndBall":
                    print("360度回転して2個目のボールを探して前進します。")
                    best_heading = self.perform_360_degree2()
