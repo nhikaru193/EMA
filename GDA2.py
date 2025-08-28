@@ -123,7 +123,7 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if 1 < best_percentage < 15: # 1つ目を誤反応させないように範囲を決める
+            if 1 < best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
                 print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
                 return best_heading
             else:
@@ -306,7 +306,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 10 < current_percentage <= 15:
+                    if 5 < current_percentage <= 10:
                         print("赤割合が10%に達しました。ゴール検知に移るよ")
                         current_state = "GOAL_CHECK"
                         self.driver.motor_stop_brake()
@@ -315,7 +315,7 @@ class GDA:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
-                    elif current_percentage > 15:
+                    elif current_percentage > 10:
                         print("近づきすぎたので後退します")
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
@@ -345,7 +345,7 @@ class GDA:
                 elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
                     scan_data = self.rotate_search_red_ball()
-                    high_detections = [d for d in scan_data if d['percentage'] > 15]
+                    high_detections = [d for d in scan_data if d['percentage'] > 30]
                     high_red_count = len(high_detections)
                     if high_red_count >= 4:
                         # 検出された方角のリストを作成
