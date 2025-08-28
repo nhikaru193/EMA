@@ -128,6 +128,20 @@ class GDA:
                 return best_heading
             else:
                 return None # ボールが見つからなかった場合はNoneを返す
+
+    def left_20_degree_rotation(self):
+        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+        target_heading = (before_heading - 20) % 360
+        while True:
+            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
+            if abs(delta_heading) <= 3:
+                break
+            elif delta_heading < -3:
+                self.driver.petit_left(0, 90)
+                self.driver.motor_stop_brake()
+            elif delta_heading > 3:
+                self.turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
    
 
     def rotate_search_red_ball(self):
