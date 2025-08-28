@@ -162,7 +162,7 @@ class GDA:
             print(f"[{i+1}/18] {target_relative_angle}度回転中...")
             
             # ここでモーターを動かす！
-            self.turn_to_relative_angle(target_relative_angle, turn_speed=90, angle_tolerance_deg=5)
+            self.turn_to_heading(target_relative_angle, turn_speed=90, angle_tolerance_deg=5)
             
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
@@ -232,7 +232,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 15 <= current_percentage <= 20:
+                    if 20 <= current_percentage <= 25:
                         print("赤割合が15%に達しました。2個目のボール探索に移行します。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
@@ -242,7 +242,7 @@ class GDA:
                         current_state = "SEARCH"
                         self.driver.motor_stop_brake()
 
-                    elif current_percentage > 20:
+                    elif current_percentage > 30:
                         print("近づきすぎたので後退します")
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
@@ -286,7 +286,33 @@ class GDA:
                 elif current_state == "FOLLOW2":
                     print("\n[状態: 追従] 赤ボールに向かって前進します。")
                     frame = self.picam2.capture_array()
-                    current_percentage = self.get_percentage(frame)
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                    
+                    # 画像を左・中央・右の3つの領域に分割
+                    height, width, _ = frame.shape
+                    center_start = int(width / 3)
+                    center_end = int(width * 2 / 3)
+                    
+                    # 各領域のHSVマスクを生成
+                    mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
+                    mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
+                    full_mask = cv2.bitwise_or(mask1, mask2)
+                    
+                    left_mask = full_mask[:, :center_start]
+                    center_mask = full_mask[:, center_start:center_end]
+                    right_mask = full_mask[:, center_end:]
+                    
+                    # 各領域での赤色のピクセル数をカウント
+                    left_red_pixels = np.count_nonzero(left_mask)
+                    center_red_pixels = np.count_nonzero(center_mask)
+                    right_red_pixels = np.count_nonzero(right_mask)
+                    
+                    # 赤いピクセルの総数を計算して割合を判断
+                    total_red_pixels = np.count_nonzero(full_mask)
+                    current_percentage = (total_red_pixels / (width * height)) * 100
+                    
                     time.sleep(1.0)
                     
                     if 10 < current_percentage <= 15:
@@ -305,10 +331,24 @@ class GDA:
                         time.sleep(1.0)
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
-                        self.driver.petit_petit(2)
+                        if left_red_pixels > center_red_pixels and left_red_pixels > right_red_pixels:
+                            print("ボールが左にあります。左に旋回します。")
+                            self.driver.petit_left(0, 90)
+                            self.driver.petit_left(90, 0)
+                            self.driver.motor_stop_brake()
+                            time.sleep(1.0)
+                        elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
+                            print("ボールが右にあります。右に旋回します。")
+                            self.driver.petit_right(0, 90)
+                            self.driver.petit_right(90, 0)
+                            self.driver.motor_stop_brake()
+                            time.sleep(1.0)
+                        else:
+                            print("ボールは中央です。前進します。")
+                            self.driver.petit_petit(3)
+                
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                   
                         
     
                 elif current_state == "GOAL_CHECK":
