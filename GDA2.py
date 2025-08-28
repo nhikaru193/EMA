@@ -74,8 +74,8 @@ class GDA:
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             else:
-                self.driver.petit_left(0, 60)
-                self.driver.petit_left(60, 0)
+                self.driver.petit_left(0, 90)
+                self.driver.petit_left(90, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             
@@ -162,7 +162,7 @@ class GDA:
             print(f"[{i+1}/18] {target_relative_angle}度回転中...")
             
             # ここでモーターを動かす！
-            self.turn_to_heading(target_relative_angle, turn_speed=90, angle_tolerance_deg=5)
+            self.turn_to_heading(target_relative_angle, angle_tolerance_deg=5)
             
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
@@ -332,15 +332,15 @@ class GDA:
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
                         if left_red_pixels > center_red_pixels and left_red_pixels > right_red_pixels:
-                            print("ボールが左にあります。右に旋回します。")
-                            self.driver.petit_right(0, 90)
-                            self.driver.petit_right(90, 0)
+                            print("ボールが左にあります。左に旋回します。")
+                            self.driver.petit_left(0, 90)
+                            self.driver.petit_left(90, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
-                            print("ボールが右にあります。左に旋回します。")
-                            self.driver.petit_left(0, 90)
-                            self.driver.petit_left(90, 0)
+                            print("ボールが右にあります。右に旋回します。")
+                            self.driver.petit_right(0, 90)
+                            self.driver.petit_right(90, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
                         else:
