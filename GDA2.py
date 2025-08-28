@@ -224,7 +224,7 @@ class GDA:
                     time.sleep(1.0)
                     
                     if 20 <= current_percentage <= 25:
-                        print("赤割合が15%に達しました。2個目のボール探索に移行します。")
+                        print("赤割合が20%に達しました。2個目のボール探索に移行します。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
@@ -306,8 +306,8 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 2 < current_percentage <= 10:
-                        print("赤割合が10%に達しました。ゴール検知に移るよ")
+                    if 2 < current_percentage <= 15:
+                        print("赤割合が15%に達しました。ゴール検知に移るよ")
                         current_state = "GOAL_CHECK"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
@@ -315,7 +315,7 @@ class GDA:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
-                    elif current_percentage > 10:
+                    elif current_percentage > 20:
                         print("近づきすぎたので後退します")
                         self.driver.petit_petit_retreat(5)
                         self.driver.motor_stop_brake()
