@@ -345,8 +345,8 @@ class GDA:
                 elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
                     scan_data = self.rotate_search_red_ball()
-                    high_red_count = len([d for d in scan_data if d['percentage'] > 15])
-                    
+                    high_detections = [d for d in scan_data if d['percentage'] > 15]
+                    high_red_count = len(high_detections)
                     if high_red_count >= 4:
                         # 検出された方角のリストを作成
                         high_headings = [d['heading'] for d in high_detections]
@@ -381,14 +381,13 @@ class GDA:
                                 target_heading = (heading3 + angle_diff / 2) % 360 if angle_diff <= 180 else (heading3 + (angle_diff - 360) / 2) % 360
                                 if target_heading < 0: target_heading += 360
                                 current_state = "GOAL_CHECK" # 再度ゴールチェック
-                    elif high_red_count >= 2:
+                    elif len(scan_data) >= 2:
                         print("ボールの間に進む必要があります。")
                         # 中間点計算ロジック（元のコードから流用）
-                        high_detections_with_headings = scan_data
-                        high_detections_with_headings.sort(key=lambda x: x['percentage'], reverse=True)
-                        if len(high_detections_with_headings) >= 2:
-                            heading3 = high_detections_with_headings[0]['heading']
-                            heading4 = high_detections_with_headings[1]['heading']
+                        scan_data.sort(key=lambda x: x['percentage'], reverse=True)
+                        if len(scan_data) >= 2:
+                            heading3 = scan_data[0]['heading']
+                            heading4 = scan_data[1]['heading']
                             angle_diff = (heading4 - heading3 + 360) % 360
                             target_heading = (heading3 + angle_diff / 2) % 360 if angle_diff <= 180 else (heading3 + (angle_diff - 360) / 2) % 360
                             if target_heading < 0: target_heading += 360
