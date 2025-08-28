@@ -147,37 +147,36 @@ class GDA:
     def rotate_search_red_ball(self):
         print("\n[360度スキャン開始] 赤いボールを探します。")
         scan_data = []
-        
+
         # モーターを停止
         self.driver.motor_stop_brake()
         time.sleep(1.0)
-        
+
+        # 現在の方位を記憶
         start_heading = self.bno.get_heading()
-        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-        target_heading = (before_heading - 20) % 360
-        while True:
-            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
-            if abs(delta_heading) <= 3:
-                break
-            elif delta_heading < -3:
-                self.driver.petit_left(0, 90)
-                self.driver.motor_stop_brake()
-            elif delta_heading > 3:
-                self.turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
+        
+        # 20度ずつ回転するためのループ
+        for i in range(18): # 360度 / 20度 = 18回
+            # 目標となる相対的な回転角度を計算
+            target_relative_angle = (i + 1) * 20
+            print(f"[{i+1}/18] {target_relative_angle}度回転中...")
             
+            # ここでモーターを動かす！
+            self.turn_to_relative_angle(target_relative_angle, turn_speed=90, angle_tolerance_deg=5)
+            
+            # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
             
             # 検出したデータをリストに追加
             scan_data.append({
                 'percentage': current_percentage,
-                'heading': current_heading
+                'heading': self.bno.get_heading()
             })
-    
+            
         self.driver.motor_stop_brake()
         print("[360度スキャン終了] データ収集完了。")
-        
+
         return scan_data
     
     def run(self):
