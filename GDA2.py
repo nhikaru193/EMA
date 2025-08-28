@@ -69,13 +69,13 @@ class GDA:
             
             # 向きに応じて左右に回転
             if delta_heading > 0:
-                self.driver.petit_right(0, 90)
-                self.driver.petit_right(90, 0)
+                self.driver.petit_right(0, 70)
+                self.driver.petit_right(70, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             else:
-                self.driver.petit_left(0, 90)
-                self.driver.petit_left(90, 0)
+                self.driver.petit_left(0, 70)
+                self.driver.petit_left(70, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             
@@ -155,7 +155,7 @@ class GDA:
             # 目標となる相対的な回転角度を計算
             target_heading = (start_heading + (i + 1) * 20) % 360
             print(f"[{i+1}/18] 目標方位 {target_heading:.2f}° に向かって回転中...")
-            self.turn_to_heading(target_heading, speed=90)
+            self.turn_to_heading(target_heading, speed=70)
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
@@ -393,7 +393,7 @@ class GDA:
                             if target_heading < 0: target_heading += 360
                             print(f"中間方位 ({target_heading:.2f}°) に向かって前進します。")
                             self.turn_to_heading(target_heading, 70)
-                            self.driver.petit_petit(4)
+                            self.driver.petit_petit(15)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             current_state = "GOAL_CHECK" # 再度ゴールチェック
