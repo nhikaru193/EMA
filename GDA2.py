@@ -156,18 +156,18 @@ class GDA:
         return scan_data
 
     def half_rotate_search_red_ball(self):
-        print("\n[180度スキャン開始] 赤いボールを探します。")
+        print("\n[360度スキャン開始] 赤いボールを探します。")
         scan_data = []
         # モーターを停止
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         # 現在の方位を記憶
         start_heading = self.bno.get_heading()
-        # 30度ずつ回転するためのループ (360度 / 30度 = 6回)
+        # 30度ずつ回転するためのループ (360度 / 30度 = 12回)
         for i in range(12): 
             # 目標となる絶対方位を計算
             target_heading = (start_heading + (i + 1) * 30) % 360
-            print(f"[{i+1}/6] 目標方位 {target_heading:.2f}° に向かって回転中...")
+            print(f"[{i+1}/12] 目標方位 {target_heading:.2f}° に向かって回転中...")
             # turn_to_heading メソッドを呼び出して回転
             self.turn_to_heading(target_heading, speed=70)
             # カメラで撮影し、赤色の割合を取得
@@ -179,7 +179,7 @@ class GDA:
                 'heading': self.bno.get_heading()
             })
         self.driver.motor_stop_brake()
-        print("[180度スキャン終了] データ収集完了。")
+        print("[360度スキャン終了] データ収集完了。")
         return scan_data
     
     def run(self):
@@ -354,7 +354,7 @@ class GDA:
                         time.sleep(1.0)
 
                 elif current_state == "Assault_Double_Ball":
-                    print("\n[状態: ゴール判定] 最終判定のための180度スキャンを開始します。")
+                    print("\n[状態: ゴール判定] 最終判定のための度スキャンを開始します。")
                     scan_data = self.half_rotate_search_red_ball()
                     max_percentage = 0
                     if scan_data:
@@ -363,6 +363,9 @@ class GDA:
                     # 修正：赤色の割合が30%を超えた場合の処理を追加
                     if max_percentage > 30:
                         print(f"最大赤割合が30%を超えました ({max_percentage:.2f}%)。ゴールに近づきすぎたため後退します。")
+                        target_heading = max_detection['heading']
+                        print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                        self.turn_to_heading(target_heading, 70)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
