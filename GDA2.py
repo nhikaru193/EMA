@@ -291,7 +291,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 10 < current_percentage <= 15:
+                    if 10 < current_percentage <= 20:
                         print("赤割合が15%に達しました。ゴール検知に移るよ")
                         current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
@@ -327,7 +327,7 @@ class GDA:
                         time.sleep(1.0)
 
                 elif current_state == "Assault_Double_Ball":
-                    print("\n[状態: ゴール判定] 最終判定のための度スキャンを開始します。")
+                    print("\n[状態: 突撃] 2つのボールの間に突撃します。")
                     scan_data = self.rotate_search_red_ball()
                     max_percentage = 0
                     if scan_data:
@@ -376,7 +376,7 @@ class GDA:
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
-                        print("ゴールと判断できませんでした。追従モードに戻ります。")
+                        print("突撃できませんでした再度突撃を試みます。")
                         current_state = "Assault_Double_Ball"
                             
     
@@ -467,13 +467,13 @@ class GDA:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         self.turn_to_heading(target_heading, 70)
-                        self.driver.petit_petit(6)
+                        self.driver.petit_petit(3)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
-                        print("ゴールと判断できませんでした。追従モードに戻ります。")
-                        current_state = "GOAL_CHECK" # 追従に戻る
+                        print("ゴールと判断できませんでした。突撃に戻ります。")
+                        current_state = "Assault_Double_Ball" # 突撃に戻る
                         
         finally:
             self.picam2.close()
