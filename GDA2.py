@@ -161,14 +161,10 @@ class GDA:
         # モーターを停止
         self.driver.motor_stop_brake()
         time.sleep(1.0)
-        print("左に90度回転します。")
-        start_heading = self.bno.get_heading()
-        target_heading = (start_heading - 90) % 360 # 90度左回転（方角がプラス方向）
-        self.turn_to_heading(target_heading, speed=70)
         # 現在の方位を記憶
         start_heading = self.bno.get_heading()
-        # 30度ずつ回転するためのループ (180度 / 30度 = 6回)
-        for i in range(6): 
+        # 30度ずつ回転するためのループ (360度 / 30度 = 6回)
+        for i in range(12): 
             # 目標となる絶対方位を計算
             target_heading = (start_heading + (i + 1) * 30) % 360
             print(f"[{i+1}/6] 目標方位 {target_heading:.2f}° に向かって回転中...")
@@ -417,7 +413,7 @@ class GDA:
                             
                             print(f"最も角度が離れたボール ({heading1:.2f}°と{heading2:.2f}°) の中間 ({target_heading:.2f}°) に向かって前進します。")
                             self.turn_to_heading(target_heading, 70)
-                            self.driver.petit_petit(8)
+                            self.driver.petit_petit(6)
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             current_state = "GOAL_CHECK" # ゴールチェック
