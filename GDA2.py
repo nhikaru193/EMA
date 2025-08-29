@@ -333,9 +333,62 @@ class GDA:
                     if scan_data:
                         max_percentage = max(d['percentage'] for d in scan_data)
                 
-                    # 修正：赤色の割合が30%を超えた場合の処理を追加
-                    if max_percentage > 30:
-                        print(f"最大赤割合が30%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                    # 修正：赤色の割合が45%を超えた場合の処理を追加
+                    if max_percentage > 45:
+                        print(f"最大赤割合が45%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                        max_detection = None
+                        if scan_data:
+                            max_percentage = max(d['percentage'] for d in scan_data)
+                            # 最も高い割合のデータを特定
+                            for d in scan_data:
+                                if d['percentage'] == max_percentage:
+                                    max_detection = d
+                                    break
+                        if max_detection:
+                            target_heading = max_detection['heading']
+                            print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                            self.turn_to_heading(target_heading, 70)
+                        self.turn_to_heading(target_heading, 70)
+                        self.driver.petit_petit_retreat(3)
+                        self.driver.motor_stop_brake()
+                        time.sleep(1.0)
+                        current_state = "Assault_Double_Ball" # 後退後に再度ゴールチェック
+                        continue # ループの先頭に戻る
+                    high_detections = [d for d in scan_data if d['percentage'] > 3]
+                    high_red_count = len(high_detections)
+                    if high_red_count >= 2:
+                        print("ボールの間に向かって前進します。")
+                        # 複数のボールの平均的な中間方向を計算
+                        sum_sin = 0
+                        sum_cos = 0
+                        for d in high_detections:
+                            heading_rad = math.radians(d['heading'])
+                            sum_sin += math.sin(heading_rad)
+                            sum_cos += math.cos(heading_rad)
+                        avg_heading_rad = math.atan2(sum_sin, sum_cos)
+                        target_heading = math.degrees(avg_heading_rad)
+                        if target_heading < 0:
+                            target_heading += 360
+                        print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
+                        self.turn_to_heading(target_heading, 70)
+                        self.driver.petit_petit(8)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.5)
+                        current_state = "Assault_Double_Ball2" # 突撃2に移行
+                    else:
+                        print("突撃できませんでした再度突撃を試みます。")
+                        current_state = "Assault_Double_Ball"
+
+                elif current_state == "Assault_Double_Ball2":
+                    print("\n[状態: 突撃] 2つのボールの間に再度突撃します。")
+                    scan_data = self.rotate_search_red_ball()
+                    max_percentage = 0
+                    if scan_data:
+                        max_percentage = max(d['percentage'] for d in scan_data)
+                
+                    # 修正：赤色の割合が45%を超えた場合の処理を追加
+                    if max_percentage > 45:
+                        print(f"最大赤割合が45%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
                         max_detection = None
                         if scan_data:
                             max_percentage = max(d['percentage'] for d in scan_data)
@@ -473,7 +526,7 @@ class GDA:
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
                         print("ゴールと判断できませんでした。突撃に戻ります。")
-                        current_state = "Assault_Double_Ball" # 突撃に戻る
+                        current_state = "Assault_Double_Ball2" # 突撃に戻る
                         
         finally:
             self.picam2.close()
