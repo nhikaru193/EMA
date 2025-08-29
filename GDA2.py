@@ -128,22 +128,7 @@ class GDA:
                 return best_heading
             else:
                 return None # ボールが見つからなかった場合はNoneを返す
-
-    def left_20_degree_rotation(self):
-        before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-        target_heading = (before_heading - 20) % 360
-        while True:
-            current_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-            delta_heading = ((target_heading - current_heading + 180) % 360) - 180
-            if abs(delta_heading) <= 3:
-                break
-            elif delta_heading < -3:
-                self.driver.petit_left(0, 90)
-                self.driver.motor_stop_brake()
-            elif delta_heading > 3:
-                self.turn_to_relative_angle(turn_angle_step, turn_speed=90, angle_tolerance_deg=15)
    
-
     def rotate_search_red_ball(self):
         print("\n[360度スキャン開始] 赤いボールを探します。")
         scan_data = []
@@ -254,7 +239,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 20 <= current_percentage <= 25:
+                    if 15 <= current_percentage <= 20:
                         print("赤割合が20%に達しました。2個目のボール探索に移行します。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
@@ -337,7 +322,7 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 2 < current_percentage <= 15:
+                    if 10 < current_percentage <= 15:
                         print("赤割合が15%に達しました。ゴール検知に移るよ")
                         current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
@@ -346,7 +331,7 @@ class GDA:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
-                    elif current_percentage > 20:
+                    elif current_percentage > 30:
                         print("近づきすぎたので後退します")
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
@@ -435,7 +420,7 @@ class GDA:
                                 self.driver.petit_petit(8)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
-                                current_state = "GOAL_CHECK" # 再度ゴールチェック
+                                current_state = "GOAL_CHECK" # ゴールチェック
                             
     
                 elif current_state == "GOAL_CHECK":
