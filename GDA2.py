@@ -319,7 +319,7 @@ class GDA:
                     time.sleep(1.0)
                     
                     if 10 <= current_percentage <= 20:
-                        print("赤割合が15%に達しました。ゴール検知に移るよ")
+                        print("赤割合が15%に達しました。突撃に移るよ")
                         current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
