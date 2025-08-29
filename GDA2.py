@@ -123,7 +123,7 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if 3 < best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
+            if best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
                 print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
                 return best_heading
             else:
@@ -154,6 +154,33 @@ class GDA:
         print("[360度スキャン終了] データ収集完了。")
 
         return scan_data
+
+    def rotate_search_red_ball2(self):
+        print("\n[360度スキャン開始] 赤いボールを探します。")
+        scan_data = []
+        self.driver.motor_stop_brake()
+        time.sleep(1.0)
+        start_heading = self.bno.get_heading()
+        # 20度ずつ回転するためのループ
+        for i in range(18): # 360度 / 20度 = 18回
+            # 目標となる相対的な回転角度を計算
+            target_heading = (start_heading + (i + 1) * 20) % 360
+            print(f"[{i+1}/18] 目標方位 {target_heading:.2f}° に向かって回転中...")
+            self.turn_to_heading(target_heading, speed=90)
+            # カメラで撮影し、赤色の割合を取得
+            frame = self.picam2.capture_array()
+            current_percentage = self.get_percentage(frame)
+            # 検出したデータをリストに追加
+            scan_data.append({
+                'percentage': current_percentage,
+                'heading': self.bno.get_heading()
+            })
+            
+        self.driver.motor_stop_brake()
+        print("[360度スキャン終了] データ収集完了。")
+
+        return scan_data
+
 
     def run(self):
         try:
@@ -435,7 +462,7 @@ class GDA:
     
                 elif current_state == "GOAL_CHECK":
                     print("\n[状態: ゴール判定] 最終判定のための360度スキャンを開始します。")
-                    scan_data = self.rotate_search_red_ball()
+                    scan_data = self.rotate_search_red_ball2()
                     max_percentage = 0
                     if scan_data:
                         max_percentage = max(d['percentage'] for d in scan_data)
