@@ -140,7 +140,7 @@ class GDA:
             # 目標となる相対的な回転角度を計算
             target_heading = (start_heading + (i + 1) * 30) % 360
             print(f"[{i+1}/12] 目標方位 {target_heading:.2f}° に向かって回転中...")
-            self.turn_to_heading(target_heading, speed=70)
+            self.turn_to_heading(target_heading, speed=90)
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
@@ -168,8 +168,8 @@ class GDA:
                     best_heading = self.perform_360_degree()
                     
                     if best_heading is not None:
-                        print(f"赤ボールが見つかりました。追従モードに移行します。")
-                        self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
+                        print(f"赤ボールが見つかりました。追従モード2に移行します。")
+                        self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
                     else:
                         print("ボールが見つかりませんでした。見つかるまで回転します。")
@@ -213,7 +213,7 @@ class GDA:
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                    elif current_percentage < 1:
+                    elif current_percentage < 0.2:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "SEARCH"
                         self.driver.motor_stop_brake()
@@ -252,11 +252,11 @@ class GDA:
                     
                    if best_heading is not None:
                        print(f"赤ボールが見つかりました。追従モードに移行します。")
-                       self.turn_to_heading(best_heading, 70) # 見つけた方向へ向きを調整
+                       self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
                        current_state = "FOLLOW2"
                    else:
                        print("ボールが見つかりませんでした。見つかるまで回転します。")
-                       self.perform_360_degree()
+                       self.perform_360_degree2()
                        time.sleep(0.2)
 
                 elif current_state == "FOLLOW2":
@@ -291,16 +291,16 @@ class GDA:
                     
                     time.sleep(1.0)
                     
-                    if 10 < current_percentage <= 20:
+                    if 10 <= current_percentage <= 20:
                         print("赤割合が15%に達しました。ゴール検知に移るよ")
                         current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                    elif current_percentage < 1:
+                    elif current_percentage < 0.5:
                         print("ボールを見失いました。探索モードに戻ります。")
                         current_state = "2ndBall"
                         self.driver.motor_stop_brake()
-                    elif current_percentage > 30:
+                    elif current_percentage > 20:
                         print("近づきすぎたので後退します")
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
@@ -347,12 +347,12 @@ class GDA:
                         if max_detection:
                             target_heading = max_detection['heading']
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
-                            self.turn_to_heading(target_heading, 70)
-                        self.turn_to_heading(target_heading, 70)
+                            self.turn_to_heading(target_heading, 90)
+                        self.turn_to_heading(target_heading, 90)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                        current_state = "Assault_Double_Ball" # 後退後に再度ゴールチェック
+                        current_state = "Assault_Double_Ball" # 後退後に再度突撃
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 3]
                     high_red_count = len(high_detections)
@@ -370,7 +370,7 @@ class GDA:
                         if target_heading < 0:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
-                        self.turn_to_heading(target_heading, 70)
+                        self.turn_to_heading(target_heading, 90)
                         self.driver.petit_petit(8)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
@@ -380,7 +380,7 @@ class GDA:
                         current_state = "Assault_Double_Ball"
 
                 elif current_state == "Assault_Double_Ball2":
-                    print("\n[状態: 突撃] 2つのボールの間に再度突撃します。")
+                    print("\n[状態: 突撃2] 2つのボールの間に突撃2します。")
                     scan_data = self.rotate_search_red_ball()
                     max_percentage = 0
                     if scan_data:
@@ -400,12 +400,12 @@ class GDA:
                         if max_detection:
                             target_heading = max_detection['heading']
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
-                            self.turn_to_heading(target_heading, 70)
-                        self.turn_to_heading(target_heading, 70)
+                            self.turn_to_heading(target_heading, 90)
+                        self.turn_to_heading(target_heading, 90)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                        current_state = "Assault_Double_Ball" # 後退後に再度ゴールチェック
+                        current_state = "Assault_Double_Ball2" # 後退後に再度突撃2
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 3]
                     high_red_count = len(high_detections)
@@ -423,14 +423,14 @@ class GDA:
                         if target_heading < 0:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
-                        self.turn_to_heading(target_heading, 70)
+                        self.turn_to_heading(target_heading, 90)
                         self.driver.petit_petit(8)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
-                        print("突撃できませんでした再度突撃を試みます。")
-                        current_state = "Assault_Double_Ball"
+                        print("突撃できませんでした再度突撃2を試みます。")
+                        current_state = "Assault_Double_Ball2"
                             
     
                 elif current_state == "GOAL_CHECK":
@@ -440,9 +440,9 @@ class GDA:
                     if scan_data:
                         max_percentage = max(d['percentage'] for d in scan_data)
                 
-                    # 修正：赤色の割合が50%を超えた場合の処理を追加
-                    if max_percentage > 50:
-                        print(f"最大赤割合が50%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                    # 修正：赤色の割合が45%を超えた場合の処理を追加
+                    if max_percentage > 45:
+                        print(f"最大赤割合が45%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
                         max_detection = None
                         if scan_data:
                             max_percentage = max(d['percentage'] for d in scan_data)
@@ -454,12 +454,12 @@ class GDA:
                         if max_detection:
                             target_heading = max_detection['heading']
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
-                            self.turn_to_heading(target_heading, 70)
-                        self.turn_to_heading(target_heading, 70)
+                            self.turn_to_heading(target_heading, 90)
+                        self.turn_to_heading(target_heading, 90)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                        current_state = "Assault_Double_Ball" # 後退後に再度ゴールチェック
+                        current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 30]
                     high_red_count = len(high_detections)
@@ -487,43 +487,22 @@ class GDA:
                             break # ゴール確定でループ終了
                         else:
                             print(f"検出数は満たしましたが、最大角度差が足りません ({max_angle_diff:.2f}°) 。")
-                            print("ボールの間に向かって前進します。")
-                        # 複数のボールの平均的な中間方向を計算
-                            sum_sin = 0
-                            sum_cos = 0
-                            for d in high_detections:
-                                heading_rad = math.radians(d['heading'])
-                                sum_sin += math.sin(heading_rad)
-                                sum_cos += math.cos(heading_rad)
-                            avg_heading_rad = math.atan2(sum_sin, sum_cos)
-                            target_heading = math.degrees(avg_heading_rad)
-                            if target_heading < 0:
-                                target_heading += 360
-                            print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
-                            self.turn_to_heading(target_heading, 70)
-                            self.driver.petit_petit(2)
-                            self.driver.motor_stop_brake()
-                            time.sleep(0.5)
-                            current_state = "GOAL_CHECK" # 再度ゴールチェック
-                    elif len(high_detections) >= 2: # high_detectionsを使用
-                        print("ボールの間に向かって前進します。")
-                        # 複数のボールの平均的な中間方向を計算
-                        sum_sin = 0
-                        sum_cos = 0
-                        for d in high_detections:
-                            heading_rad = math.radians(d['heading'])
-                            sum_sin += math.sin(heading_rad)
-                            sum_cos += math.cos(heading_rad)
-                        avg_heading_rad = math.atan2(sum_sin, sum_cos)
-                        target_heading = math.degrees(avg_heading_rad)
-                        if target_heading < 0:
-                            target_heading += 360
-                        print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
-                        self.turn_to_heading(target_heading, 70)
-                        self.driver.petit_petit(3)
-                        self.driver.motor_stop_brake()
-                        time.sleep(0.5)
-                        current_state = "GOAL_CHECK" # 再度ゴールチェック
+                            max_detection = None
+                            if high_detections:
+                                max_percentage = max(d['percentage'] for d in high_detections)
+                                for d in high_detections:
+                                    if d['percentage'] == max_percentage:
+                                        max_detection = d
+                                        break
+                            # 最も赤の割合が高かった方向に向いて後退
+                            if max_detection:
+                                target_heading = max_detection['heading']
+                                print(f"最も高い割合 ({max_percentage:.2f}%) を検知した方位 ({target_heading:.2f}°) に向いて後退します。")
+                                self.turn_to_heading(target_heading, 90)
+                                self.driver.petit_petit_retreat(3)
+                                self.driver.motor_stop_brake()
+                                time.sleep(0.5)
+                                current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
                         print("ゴールと判断できませんでした。突撃に戻ります。")
                         current_state = "Assault_Double_Ball2" # 突撃に戻る
