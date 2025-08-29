@@ -8,6 +8,11 @@ from motor import MotorDriver
 import os
 import csv
 
+#------GPSデータ送信(ARLISSで追加)ここから------#
+import pigpio
+import serial
+#------GPSデータ送信(ARLISSで追加)ここまで------#
+
 class LD:
     def __init__(self, bno: BNO055, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.50, h_threshold = 0.10):
         self.driver = MotorDriver(
@@ -22,6 +27,8 @@ class LD:
         self.p_threshold = p_threshold
         self.h_threshold = h_threshold
         self.start_time = time.time()
+        self.pi = pigpio.pi()
+        self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
         
     def run(self):
         try:
@@ -39,6 +46,28 @@ class LD:
                 writer = csv.writer(f)
                 writer.writerow(["heading", "delta_heading"])
                 while True:
+                    #------GPSデータ送信のコード(ARLISSで追加)ここから------#
+                    (count, data) = pi.bb_serial_read(RX_PIN)
+                    if count and data:
+                        try:
+                            text = data.decode("ascii", errors="ignore")
+                            if "$GNRMC" in text:
+                                lines = text.split("\n")
+                                for line in lines:
+                                    if "$GNRMC" in line:
+                                        parts = line.strip().split(",")
+                                        if len(parts) > 6 and parts[2] == "A":
+                                            lat = convert_to_decimal(parts[3], parts[4])
+                                            lon = convert_to_decimal(parts[5], parts[6])
+                                            #print("緯度と経度 (10進数):", [lat, lon])
+                                            data = f'{lat, lon}'
+                                            msg = f'TXDA 0003,{data}\r'
+                                            self.im920.write(msg.encode())
+                                            print(f"送信: {msg.strip()}")
+                                            time.sleep(1)
+                            else:
+                                print("GPS情報を取得できませんでした。リトライします")
+                    #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
                     before_heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
@@ -124,3 +153,4 @@ class LD:
             print("着地判定+溶断回路動作の終了です or 強制終了です")
             time.sleep(5)
             self.driver.cleanup()
+            self.pi.stop()
