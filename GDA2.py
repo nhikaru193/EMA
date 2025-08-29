@@ -163,7 +163,7 @@ class GDA:
         time.sleep(1.0)
         print("左に90度回転します。")
         start_heading = self.bno.get_heading()
-        target_heading = (start_heading + 90) % 360 # 90度左回転（方角がプラス方向）
+        target_heading = (start_heading - 90) % 360 # 90度左回転（方角がプラス方向）
         self.turn_to_heading(target_heading, speed=70)
         # 現在の方位を記憶
         start_heading = self.bno.get_heading()
