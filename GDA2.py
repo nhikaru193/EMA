@@ -452,7 +452,7 @@ class GDA:
                             self.driver.motor_stop_brake()
                             time.sleep(0.5)
                             current_state = "GOAL_CHECK" # 再度ゴールチェック
-                    elif len(scan_data) >= 2:
+                    elif len(high_detections) >= 2: # high_detectionsを使用
                         print("ボールの間に向かって前進します。")
                         # 複数のボールの平均的な中間方向を計算
                         sum_sin = 0
@@ -467,7 +467,7 @@ class GDA:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         self.turn_to_heading(target_heading, 70)
-                        self.driver.petit_petit(3)
+                        self.driver.petit_petit(6)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
