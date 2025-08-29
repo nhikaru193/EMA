@@ -123,7 +123,7 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if 1 < best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
+            if 3 < best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
                 print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
                 return best_heading
             else:
@@ -336,7 +336,14 @@ class GDA:
                     # 修正：赤色の割合が30%を超えた場合の処理を追加
                     if max_percentage > 30:
                         print(f"最大赤割合が30%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
-                        max_detection = next((d for d in scan_data if d['percentage'] == max_percentage), None)
+                        max_detection = None
+                        if scan_data:
+                            max_percentage = max(d['percentage'] for d in scan_data)
+                            # 最も高い割合のデータを特定
+                            for d in scan_data:
+                                if d['percentage'] == max_percentage:
+                                    max_detection = d
+                                    break
                         if max_detection:
                             target_heading = max_detection['heading']
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
@@ -382,14 +389,24 @@ class GDA:
                 
                     # 修正：赤色の割合が50%を超えた場合の処理を追加
                     if max_percentage > 50:
-                        print(f"最大赤割合が50%を超えました ({max_percentage:.2f}%)。ゴールに近づきすぎたため後退します。")
-                        target_heading = max_detection['heading']
-                        print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                        print(f"最大赤割合が50%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                        max_detection = None
+                        if scan_data:
+                            max_percentage = max(d['percentage'] for d in scan_data)
+                            # 最も高い割合のデータを特定
+                            for d in scan_data:
+                                if d['percentage'] == max_percentage:
+                                    max_detection = d
+                                    break
+                        if max_detection:
+                            target_heading = max_detection['heading']
+                            print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                            self.turn_to_heading(target_heading, 70)
                         self.turn_to_heading(target_heading, 70)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                        current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
+                        current_state = "Assault_Double_Ball" # 後退後に再度ゴールチェック
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 30]
                     high_red_count = len(high_detections)
