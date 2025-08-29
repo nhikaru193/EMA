@@ -433,7 +433,10 @@ class GDA:
                     # 修正：赤色の割合が50%を超えた場合の処理を追加
                     if max_percentage > 50:
                         print(f"最大赤割合が50%を超えました ({max_percentage:.2f}%)。ゴールに近づきすぎたため後退します。")
-                        self.driver.petit_petit_retreat(5)
+                        target_heading = max_detection['heading']
+                        print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                        self.turn_to_heading(target_heading, 70)
+                        self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
