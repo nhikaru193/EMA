@@ -440,9 +440,9 @@ class GDA:
                     if scan_data:
                         max_percentage = max(d['percentage'] for d in scan_data)
                 
-                    # 修正：赤色の割合が45%を超えた場合の処理を追加
-                    if max_percentage > 45:
-                        print(f"最大赤割合が45%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                    # 修正：赤色の割合が40%を超えた場合の処理を追加
+                    if max_percentage > 40:
+                        print(f"最大赤割合が40%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
                         max_detection = None
                         if scan_data:
                             max_percentage = max(d['percentage'] for d in scan_data)
@@ -461,7 +461,7 @@ class GDA:
                         time.sleep(1.0)
                         current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
                         continue # ループの先頭に戻る
-                    high_detections = [d for d in scan_data if d['percentage'] > 30]
+                    high_detections = [d for d in scan_data if d['percentage'] > 15]
                     high_red_count = len(high_detections)
                     if high_red_count >= 4:
                         # 検出された方角のリストを作成
