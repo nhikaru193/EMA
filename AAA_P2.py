@@ -19,7 +19,7 @@ from Flag_Detector3 import FlagDetector
 
 #ミッション部分
 from C_RELEASE import RD
-from C_Landing_Detective import LD
+#from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 #from C_Servo import SM
