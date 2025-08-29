@@ -136,7 +136,7 @@ class GDA:
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
         # 20度ずつ回転するためのループ
-        for i in range(12): # 360度 / 20度 = 18回
+        for i in range(12): # 360度 / 30度 = 12回
             # 目標となる相対的な回転角度を計算
             target_heading = (start_heading + (i + 1) * 30) % 360
             print(f"[{i+1}/12] 目標方位 {target_heading:.2f}° に向かって回転中...")
@@ -155,33 +155,6 @@ class GDA:
 
         return scan_data
 
-    def half_rotate_search_red_ball(self):
-        print("\n[360度スキャン開始] 赤いボールを探します。")
-        scan_data = []
-        # モーターを停止
-        self.driver.motor_stop_brake()
-        time.sleep(1.0)
-        # 現在の方位を記憶
-        start_heading = self.bno.get_heading()
-        # 30度ずつ回転するためのループ (360度 / 30度 = 12回)
-        for i in range(12): 
-            # 目標となる絶対方位を計算
-            target_heading = (start_heading + (i + 1) * 30) % 360
-            print(f"[{i+1}/12] 目標方位 {target_heading:.2f}° に向かって回転中...")
-            # turn_to_heading メソッドを呼び出して回転
-            self.turn_to_heading(target_heading, speed=70)
-            # カメラで撮影し、赤色の割合を取得
-            frame = self.picam2.capture_array()
-            current_percentage = self.get_percentage(frame)
-            # 検出したデータをリストに追加
-            scan_data.append({
-                'percentage': current_percentage,
-                'heading': self.bno.get_heading()
-            })
-        self.driver.motor_stop_brake()
-        print("[360度スキャン終了] データ収集完了。")
-        return scan_data
-    
     def run(self):
         try:
             current_state = "SEARCH"
@@ -355,16 +328,19 @@ class GDA:
 
                 elif current_state == "Assault_Double_Ball":
                     print("\n[状態: ゴール判定] 最終判定のための度スキャンを開始します。")
-                    scan_data = self.half_rotate_search_red_ball()
+                    scan_data = self.rotate_search_red_ball()
                     max_percentage = 0
                     if scan_data:
                         max_percentage = max(d['percentage'] for d in scan_data)
                 
                     # 修正：赤色の割合が30%を超えた場合の処理を追加
                     if max_percentage > 30:
-                        print(f"最大赤割合が30%を超えました ({max_percentage:.2f}%)。ゴールに近づきすぎたため後退します。")
-                        target_heading = max_detection['heading']
-                        print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                        print(f"最大赤割合が30%を超えました ({max_percentage:.2f}%)。ボールに近づきすぎたため後退します。")
+                        max_detection = next((d for d in scan_data if d['percentage'] == max_percentage), None)
+                        if max_detection:
+                            target_heading = max_detection['heading']
+                            print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
+                            self.turn_to_heading(target_heading, 70)
                         self.turn_to_heading(target_heading, 70)
                         self.driver.petit_petit_retreat(3)
                         self.driver.motor_stop_brake()
@@ -374,53 +350,24 @@ class GDA:
                     high_detections = [d for d in scan_data if d['percentage'] > 3]
                     high_red_count = len(high_detections)
                     if high_red_count >= 2:
-                        # 検出された方角のリストを作成
-                        high_headings = [d['heading'] for d in high_detections]
-                        
-                        # 角度差を計算
-                        max_angle_diff = 0
-                        if len(high_headings) > 1:
-                            for i in range(len(high_headings)):
-                                for j in range(i + 1, len(high_headings)):
-                                    # 2つの角度間の最小の差を計算（0〜180度）
-                                    diff = abs(high_headings[i] - high_headings[j])
-                                    angle_diff = min(diff, 360 - diff)
-                                    if angle_diff > max_angle_diff:
-                                        max_angle_diff = angle_diff
-
-                        print("最も角度が離れている2つのボールの間に進む必要があります。")
-                        # 360度スキャンで取得した全データを方角順にソート
-                        scan_data.sort(key=lambda x: x['heading'])
-                        # 最も角度が離れている2つのボールを見つける
-                        max_angle_diff = 0
-                        start_index = -1
-                        # 最初のデータと最後のデータの角度差を計算
-                        diff_last_first = (scan_data[0]['heading'] - scan_data[-1]['heading'] + 360) % 360
-                        if diff_last_first > max_angle_diff:
-                            max_angle_diff = diff_last_first
-                            start_index = 0
-                        # 隣り合うデータ間の角度差を計算
-                        for i in range(len(scan_data) - 1):
-                            diff = (scan_data[i+1]['heading'] - scan_data[i]['heading'] + 360) % 360
-                            if diff > max_angle_diff:
-                                max_angle_diff = diff
-                                start_index = i + 1
-                        # 最も角度が離れている2つのボールのヘディングを取得
-                        if start_index != -1:
-                            heading1 = scan_data[start_index]['heading']
-                            heading2 = scan_data[(start_index - 1 + len(scan_data)) % len(scan_data)]['heading']
-                    
-                            # 中間点を計算
-                            angle_diff = (heading1 - heading2 + 360) % 360
-                            target_heading = (heading2 + angle_diff / 2) % 360
-                            
-                            print(f"最も角度が離れたボール ({heading1:.2f}°と{heading2:.2f}°) の中間 ({target_heading:.2f}°) に向かって前進します。")
-                            self.turn_to_heading(target_heading, 70)
-                            self.driver.petit_petit(6)
-                            self.driver.motor_stop_brake()
-                            time.sleep(0.5)
-                            current_state = "GOAL_CHECK" # ゴールチェック
-
+                        print("ボールの間に向かって前進します。")
+                        # 複数のボールの平均的な中間方向を計算
+                        sum_sin = 0
+                        sum_cos = 0
+                        for d in high_detections:
+                            heading_rad = math.radians(d['heading'])
+                            sum_sin += math.sin(heading_rad)
+                            sum_cos += math.cos(heading_rad)
+                        avg_heading_rad = math.atan2(sum_sin, sum_cos)
+                        target_heading = math.degrees(avg_heading_rad)
+                        if target_heading < 0:
+                            target_heading += 360
+                        print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
+                        self.turn_to_heading(target_heading, 70)
+                        self.driver.petit_petit(6)
+                        self.driver.motor_stop_brake()
+                        time.sleep(0.5)
+                        current_state = "GOAL_CHECK" # 再度ゴールチェック
                     else:
                         print("ゴールと判断できませんでした。追従モードに戻ります。")
                         current_state = "Assault_Double_Ball"
