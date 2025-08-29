@@ -424,7 +424,7 @@ class GDA:
 
                     else:
                         print("ゴールと判断できませんでした。追従モードに戻ります。")
-                        current_state = "Assault_Double_Ball":
+                        current_state = "Assault_Double_Ball"
                             
     
                 elif current_state == "GOAL_CHECK":
