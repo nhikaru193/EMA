@@ -421,6 +421,10 @@ class GDA:
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
                                 current_state = "GOAL_CHECK" # ゴールチェック
+
+                    else:
+                        print("ゴールと判断できませんでした。追従モードに戻ります。")
+                        current_state = "Assault_Double_Ball":
                             
     
                 elif current_state == "GOAL_CHECK":
