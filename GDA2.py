@@ -161,12 +161,12 @@ class GDA:
         self.driver.motor_stop_brake()
         time.sleep(1.0)
         start_heading = self.bno.get_heading()
-        # 20度ずつ回転するためのループ
-        for i in range(18): # 360度 / 20度 = 18回
+        # 15度ずつ回転するためのループ
+        for i in range(24): # 360度 / 15度 = 18回
             # 目標となる相対的な回転角度を計算
-            target_heading = (start_heading + (i + 1) * 20) % 360
-            print(f"[{i+1}/18] 目標方位 {target_heading:.2f}° に向かって回転中...")
-            self.turn_to_heading(target_heading, speed=90)
+            target_heading = (start_heading + (i + 1) * 15) % 360
+            print(f"[{i+1}/24] 目標方位 {target_heading:.2f}° に向かって回転中...")
+            self.turn_to_heading(target_heading, speed=70)
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
