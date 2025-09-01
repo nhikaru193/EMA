@@ -7,6 +7,8 @@ import struct
 from motor import MotorDriver
 import os
 import csv
+import math
+import struct
 
 #------GPSデータ送信(ARLISSで追加)ここから------#
 import pigpio
@@ -21,6 +23,8 @@ class LD:
             STBY=21                     
         )
         self.bno = bno
+        self.RX_PIN = 17
+        self.BAUD = 9600
         self.p_counter = p_counter
         self.h_counter = h_counter
         self.timeout = timeout
@@ -29,6 +33,19 @@ class LD:
         self.start_time = time.time()
         self.pi = pigpio.pi()
         self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
+
+    def convert_to_decimal(self, coord, direction):
+        if not coord: return 0.0
+        if direction in ['N', 'S']:
+            degrees = int(coord[:2])
+            minutes = float(coord[2:])
+        else:
+            degrees = int(coord[:3])
+            minutes = float(coord[3:])
+        decimal = degrees + minutes / 60.0
+        if direction in ['S', 'W']:
+            decimal *= -1
+        return decimal
         
     def run(self):
         try:
@@ -57,8 +74,8 @@ class LD:
                                     if "$GNRMC" in line:
                                         parts = line.strip().split(",")
                                         if len(parts) > 6 and parts[2] == "A":
-                                            lat = convert_to_decimal(parts[3], parts[4])
-                                            lon = convert_to_decimal(parts[5], parts[6])
+                                            lat = self.convert_to_decimal(parts[3], parts[4])
+                                            lon = self.convert_to_decimal(parts[5], parts[6])
                                             #print("緯度と経度 (10進数):", [lat, lon])
                                             data = f'{lat, lon}'
                                             msg = f'TXDA 0003,{data}\r'
@@ -67,6 +84,9 @@ class LD:
                                             time.sleep(1)
                             else:
                                 print("GPS情報を取得できませんでした。リトライします")
+                        except Exception as e:
+                            print("エラー！！")
+                            
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
