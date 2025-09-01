@@ -269,7 +269,7 @@ class GDA:
                             time.sleep(1.0)
                         else:
                             print("ボールは中央です。前進します。")
-                            self.driver.petit_petit(3)
+                            self.driver.petit_petit(5)
                 
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
@@ -348,7 +348,7 @@ class GDA:
                             time.sleep(1.0)
                         else:
                             print("ボールは中央です。前進します。")
-                            self.driver.petit_petit(3)
+                            self.driver.petit_petit(5)
                 
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
