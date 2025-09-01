@@ -20,7 +20,7 @@ from Flag_B import Flag_B
 
 #ミッション部分
 from C_RELEASE import RD
-from C_Landing_Detective import LD
+#from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 import Servo
@@ -30,7 +30,7 @@ from GDA2 import GDA
 #初期設定
 Flag_location_a = [40.1425710, 139.9874577]
 Flag_location_b = [40.1426574, 139.9875167]
-Goal_location = [35.9241702, 139.9112796]
+Goal_location = [35.9242297, 139.9113946]
 t = 1
 
 #BNO055の初期設定
