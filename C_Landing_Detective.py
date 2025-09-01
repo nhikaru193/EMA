@@ -86,7 +86,8 @@ class LD:
                                 print("GPS情報を取得できませんでした。リトライします")
                         except Exception as e:
                             print("エラー！！")
-                            
+                        finally:
+                            print("gps情報の取得中")
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
