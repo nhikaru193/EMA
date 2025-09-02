@@ -64,6 +64,7 @@ class LD:
                 writer.writerow(["heading", "delta_heading"])
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
+                    """
                     (count, data) = pi.bb_serial_read(RX_PIN)
                     if count and data:
                         try:
@@ -88,6 +89,7 @@ class LD:
                             print("エラー！！")
                         finally:
                             print("gps情報の取得中")
+                    """
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
