@@ -28,8 +28,8 @@ from C_excellent_GPS import GPS
 from GDA2 import GDA
 
 #初期設定
-Flag_location_a = [40.1425710, 139.9874577]
-Flag_location_b = [40.1426574, 139.9875167]
+Flag_location_a = [35.9240470, 139.9112806]
+Flag_location_b = [35.9239984, 139.9113634]
 Goal_location = [35.9242251, 139.9114449]
 t = 1
 
@@ -54,7 +54,7 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
-"""
+
 RELEASE = RD(bno)
 RELEASE.run()
 
@@ -80,7 +80,7 @@ FLAG = FN(bno, flag_location = Flag_location_b)
 FLAG.run()
 
 Servo.release()
-"""
+
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
