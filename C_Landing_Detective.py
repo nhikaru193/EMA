@@ -23,8 +23,10 @@ class LD:
             STBY=21                     
         )
         self.bno = bno
+        self.TX_PIN = 27
         self.RX_PIN = 17
         self.BAUD = 9600
+        self.WIRELESS_PIN = 22
         self.p_counter = p_counter
         self.h_counter = h_counter
         self.timeout = timeout
@@ -59,6 +61,9 @@ class LD:
             filename = f"land_heading_data_{current_time_str}.csv"
             path_to = "/home/EM/_csv"
             filename = os.path.join(path_to, filename)
+            pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+            print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+            time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
             with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
                 writer = csv.writer(f)
@@ -66,25 +71,27 @@ class LD:
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
                     (count, data) = self.pi.bb_serial_read(self.RX_PIN)
+                    current_location = None
                     if count and data:
                         try:
                             text = data.decode("ascii", errors="ignore")
                             if "$GNRMC" in text:
                                 lines = text.split("\n")
                                 for line in lines:
-                                    if "$GNRMC" in line:
+                                    if line.startswith("$GNRMC"):
                                         parts = line.strip().split(",")
                                         if len(parts) > 6 and parts[2] == "A":
-                                            lat = self.convert_to_decimal(parts[3], parts[4])
-                                            lon = self.convert_to_decimal(parts[5], parts[6])
-                                            #print("緯度と経度 (10進数):", [lat, lon])
-                                            data = f'{lat, lon}'
-                                            msg = f'TXDA 0003,{data}\r'
-                                            self.im920.write(msg.encode())
-                                            print(f"送信: {msg.strip()}")
-                                            time.sleep(1)
+                                            lat = convert_to_decimal(parts[3], parts[4])
+                                            lon = convert_to_decimal(parts[5], parts[6])
+                                            current_location = [lat, lon]
+                                            # GPSデータをユニキャストメッセージとして送信
+                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
+                                            send_TXDU("0003", gps_payload)
+                                            
+                                            time.sleep(2)  # GPSデータ送信後の遅延
                             else:
                                 print("GPS情報を取得できませんでした。リトライします")
+                                
                         except Exception as e:
                             print("エラー！！")
                         finally:
