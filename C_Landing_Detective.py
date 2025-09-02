@@ -65,7 +65,7 @@ class LD:
                 writer.writerow(["heading", "delta_heading"])
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
-                    (count, data) = pi.bb_serial_read(RX_PIN)
+                    (count, data) = self.pi.bb_serial_read(RX_PIN)
                     if count and data:
                         try:
                             text = data.decode("ascii", errors="ignore")
