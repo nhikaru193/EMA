@@ -26,7 +26,7 @@ class LD:
         self.TX_PIN = 27
         self.RX_PIN = 17
         self.BAUD = 9600
-        self.WIRELESS_PIN = 22
+        WIRELESS_PIN = 22
         self.p_counter = p_counter
         self.h_counter = h_counter
         self.timeout = timeout
@@ -49,6 +49,19 @@ class LD:
         if direction in ['S', 'W']:
             decimal *= -1
         return decimal
+
+    def send_TXDU(node_id, payload):
+        # メッセージの準備と送信
+        cmd = f'TXDU {node_id},{payload}\r\n'
+        
+        try:
+            im920.write(cmd.encode())
+            print(f"送信: {cmd.strip()}")
+        except serial.SerialException as e:
+            print(f"シリアル送信エラー: {e}")
+        
+        time.sleep(0.1)  # 送信後の短い遅延
+
         
     def run(self):
         try:
