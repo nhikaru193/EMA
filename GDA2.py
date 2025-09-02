@@ -69,13 +69,13 @@ class GDA:
             
             # 向きに応じて左右に回転
             if delta_heading > 0:
-                self.driver.petit_right(0, 70)
-                self.driver.petit_right(70, 0)
+                self.driver.petit_right(0, 90)
+                self.driver.petit_right(90, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             else:
-                self.driver.petit_left(0, 70)
-                self.driver.petit_left(70, 0)
+                self.driver.petit_left(0, 90)
+                self.driver.petit_left(90, 0)
                 self.driver.motor_stop_brake()
                 time.sleep(1.0)
             
@@ -105,30 +105,6 @@ class GDA:
             else:
                 return None # ボールが見つからなかった場合はNoneを返す
 
-    def perform_360_degree2(self):
-        self.driver.petit_right(0, 90)
-        self.driver.petit_right(90, 0)
-        self.driver.motor_stop_brake()
-        time.sleep(1.0)
-        start_heading = self.bno.get_heading()
-        best_percentage = 0.0
-        best_heading = start_heading
-        while True:
-            current_heading = self.bno.get_heading()
-            angle_diff = (current_heading - start_heading + 360) % 360
-            if angle_diff >= 350:
-                break
-            frame = self.picam2.capture_array()
-            current_percentage = self.get_percentage(frame)
-            if current_percentage > best_percentage:
-                best_percentage = current_percentage
-                best_heading = current_heading
-                print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if best_percentage < 10: # 1つ目を誤反応させないように範囲を決める
-                print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
-                return best_heading
-            else:
-                return None # ボールが見つからなかった場合はNoneを返す
    
     def rotate_search_red_ball(self):
         print("\n[360度スキャン開始] 赤いボールを探します。")
@@ -167,7 +143,7 @@ class GDA:
             # 目標となる相対的な回転角度を計算
             target_heading = (start_heading + (i + 1) * 15) % 360
             print(f"[{i+1}/24] 目標方位 {target_heading:.2f}° に向かって回転中...")
-            self.turn_to_heading(target_heading, speed=70)
+            self.turn_to_heading(target_heading, speed=90)
             # カメラで撮影し、赤色の割合を取得
             frame = self.picam2.capture_array()
             current_percentage = self.get_percentage(frame)
@@ -238,7 +214,7 @@ class GDA:
                     
                     if 15 <= current_percentage <= 20:
                         print("赤割合が20%に達しました。2個目のボール探索に移行します。")
-                        current_state = "2ndBall"
+                        current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                     elif current_percentage < 0.2:
@@ -274,85 +250,7 @@ class GDA:
                 
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                elif current_state == "2ndBall":
-                   print("360度回転して2個目のボールを探して前進します。")
-                   best_heading = self.perform_360_degree2()
-                    
-                   if best_heading is not None:
-                       print(f"赤ボールが見つかりました。追従モードに移行します。")
-                       self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
-                       current_state = "FOLLOW2"
-                   else:
-                       print("ボールが見つかりませんでした。見つかるまで回転します。")
-                       self.perform_360_degree2()
-                       time.sleep(0.2)
-
-                elif current_state == "FOLLOW2":
-                    print("\n[状態: 追従] 赤ボールに向かって前進します。")
-                    frame = self.picam2.capture_array()
-                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                    
-                    # 画像を左・中央・右の3つの領域に分割
-                    height, width, _ = frame.shape
-                    center_start = int(width / 3)
-                    center_end = int(width * 2 / 3)
-                    
-                    # 各領域のHSVマスクを生成
-                    mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
-                    mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
-                    full_mask = cv2.bitwise_or(mask1, mask2)
-                    
-                    left_mask = full_mask[:, :center_start]
-                    center_mask = full_mask[:, center_start:center_end]
-                    right_mask = full_mask[:, center_end:]
-                    
-                    # 各領域での赤色のピクセル数をカウント
-                    left_red_pixels = np.count_nonzero(left_mask)
-                    center_red_pixels = np.count_nonzero(center_mask)
-                    right_red_pixels = np.count_nonzero(right_mask)
-                    
-                    # 赤いピクセルの総数を計算して割合を判断
-                    total_red_pixels = np.count_nonzero(full_mask)
-                    current_percentage = (total_red_pixels / (width * height)) * 100
-                    
-                    time.sleep(1.0)
-                    
-                    if 10 <= current_percentage <= 20:
-                        print("赤割合が15%に達しました。突撃に移るよ")
-                        current_state = "Assault_Double_Ball"
-                        self.driver.motor_stop_brake()
-                        time.sleep(1.0)
-                    elif current_percentage < 0.5:
-                        print("ボールを見失いました。探索モードに戻ります。")
-                        current_state = "2ndBall"
-                        self.driver.motor_stop_brake()
-                    elif current_percentage > 20:
-                        print("近づきすぎたので後退します")
-                        self.driver.petit_petit_retreat(3)
-                        self.driver.motor_stop_brake()
-                        time.sleep(1.0)
-                    else:
-                        print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
-                        if left_red_pixels > center_red_pixels and left_red_pixels > right_red_pixels:
-                            print("ボールが左にあります。左に旋回します。")
-                            self.driver.petit_left(0, 70)
-                            self.driver.petit_left(70, 0)
-                            self.driver.motor_stop_brake()
-                            time.sleep(1.0)
-                        elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
-                            print("ボールが右にあります。右に旋回します。")
-                            self.driver.petit_right(0, 70)
-                            self.driver.petit_right(70, 0)
-                            self.driver.motor_stop_brake()
-                            time.sleep(1.0)
-                        else:
-                            print("ボールは中央です。前進します。")
-                            self.driver.petit_petit(5)
                 
-                        self.driver.motor_stop_brake()
-                        time.sleep(1.0)
 
                 elif current_state == "Assault_Double_Ball":
                     print("\n[状態: 突撃] 2つのボールの間に突撃します。")
@@ -399,7 +297,7 @@ class GDA:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit(8)
+                        self.driver.petit_petit(13)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "Assault_Double_Ball2" # 突撃2に移行
@@ -452,7 +350,7 @@ class GDA:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit(8)
+                        self.driver.petit_petit(7)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
@@ -484,7 +382,7 @@ class GDA:
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
                             self.turn_to_heading(target_heading, 90)
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit_retreat(3)
+                        self.driver.petit_petit_retreat(5)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
@@ -527,7 +425,7 @@ class GDA:
                                 target_heading = max_detection['heading']
                                 print(f"最も高い割合 ({max_percentage:.2f}%) を検知した方位 ({target_heading:.2f}°) に向いて後退します。")
                                 self.turn_to_heading(target_heading, 90)
-                                self.driver.petit_petit_retreat(3)
+                                self.driver.petit_petit_retreat(5)
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
                                 current_state = "GOAL_CHECK" # 再度ゴールチェック
