@@ -32,7 +32,7 @@ class LD:
         self.h_threshold = h_threshold
         self.start_time = time.time()
         self.pi = pigpio.pi()
-        self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
+        #self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
 
     def convert_to_decimal(self, coord, direction):
         if not coord: return 0.0
