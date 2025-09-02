@@ -115,8 +115,8 @@ class LD:
                                     if line.startswith("$GNRMC"):
                                         parts = line.strip().split(",")
                                         if len(parts) > 6 and parts[2] == "A":
-                                            lat = convert_to_decimal(parts[3], parts[4])
-                                            lon = convert_to_decimal(parts[5], parts[6])
+                                            lat = self.convert_to_decimal(parts[3], parts[4])
+                                            lon = self.convert_to_decimal(parts[5], parts[6])
                                             current_location = [lat, lon]
                                             # GPSデータをユニキャストメッセージとして送信
                                             gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
