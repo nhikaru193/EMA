@@ -107,7 +107,7 @@ class GDA:
 
    
     def rotate_search_red_ball(self):
-        print("\n[360度スキャン開始] 赤いボールを探します。")
+        print("\n[360度スキャン開始] 突撃のための赤いボールを探します。")
         scan_data = []
         self.driver.motor_stop_brake()
         time.sleep(1.0)
@@ -133,7 +133,7 @@ class GDA:
         return scan_data
 
     def rotate_search_red_ball2(self):
-        print("\n[360度スキャン開始] 赤いボールを探します。")
+        print("\n[360度スキャン開始] ゴールのための赤いボールを探します。")
         scan_data = []
         self.driver.motor_stop_brake()
         time.sleep(1.0)
@@ -172,7 +172,7 @@ class GDA:
                     best_heading = self.perform_360_degree()
                     
                     if best_heading is not None:
-                        print(f"赤ボールが見つかりました。追従モード2に移行します。")
+                        print(f"赤ボールが見つかりました。FOLLOWに移行します。")
                         self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
                     else:
@@ -213,12 +213,12 @@ class GDA:
                     time.sleep(1.0)
                     
                     if 15 <= current_percentage <= 20:
-                        print("赤割合が20%に達しました。2個目のボール探索に移行します。")
+                        print("赤割合が20%に達しました。突撃に移行します。")
                         current_state = "Assault_Double_Ball"
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                     elif current_percentage < 0.2:
-                        print("ボールを見失いました。探索モードに戻ります。")
+                        print("ボールを見失いました。SEARCHに戻ります。")
                         current_state = "SEARCH"
                         self.driver.motor_stop_brake()
 
