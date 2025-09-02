@@ -71,12 +71,12 @@ class LD:
             decimal *= -1
         return decimal
 
-    def send_TXDU(node_id, payload):
+    def send_TXDU(self, node_id, payload):
         # メッセージの準備と送信
         cmd = f'TXDU {node_id},{payload}\r\n'
         
         try:
-            im920.write(cmd.encode())
+            self.im920.write(cmd.encode())
             print(f"送信: {cmd.strip()}")
         except serial.SerialException as e:
             print(f"シリアル送信エラー: {e}")
@@ -120,7 +120,7 @@ class LD:
                                             current_location = [lat, lon]
                                             # GPSデータをユニキャストメッセージとして送信
                                             gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                            send_TXDU("0003", gps_payload)
+                                            self.send_TXDU("0003", gps_payload)
                                             
                                             time.sleep(2)  # GPSデータ送信後の遅延
                             else:
