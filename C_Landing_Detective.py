@@ -26,7 +26,7 @@ class LD:
         self.TX_PIN = 27
         self.RX_PIN = 17
         self.BAUD = 9600
-        WIRELESS_PIN = 22
+        self.WIRELESS_PIN = 22
         self.p_counter = p_counter
         self.h_counter = h_counter
         self.timeout = timeout
@@ -74,8 +74,8 @@ class LD:
             filename = f"land_heading_data_{current_time_str}.csv"
             path_to = "/home/EM/_csv"
             filename = os.path.join(path_to, filename)
-            self.pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
-            print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+            self.pi.write(self.WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+            print(f"GPIO{self.WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
             time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
             with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
