@@ -20,7 +20,7 @@ from Flag_B import Flag_B
 
 #ミッション部分
 from C_RELEASE import RD
-#from C_Landing_Detective import LD
+from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
 from Flag_Navi import FN
 import Servo
