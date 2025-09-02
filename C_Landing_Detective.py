@@ -61,7 +61,7 @@ class LD:
             filename = f"land_heading_data_{current_time_str}.csv"
             path_to = "/home/EM/_csv"
             filename = os.path.join(path_to, filename)
-            pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+            self.pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
             print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
             time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
