@@ -224,7 +224,7 @@ class GDA:
 
                     elif current_percentage > 30:
                         print("近づきすぎたので後退します")
-                        self.driver.petit_petit_retreat(3)
+                        self.driver.petit_petit_retreat(4)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         
