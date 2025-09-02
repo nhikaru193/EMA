@@ -34,6 +34,7 @@ class LD:
         self.pi = pigpio.pi()
         #self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
 
+    """
     def convert_to_decimal(self, coord, direction):
         if not coord: return 0.0
         if direction in ['N', 'S']:
@@ -46,6 +47,7 @@ class LD:
         if direction in ['S', 'W']:
             decimal *= -1
         return decimal
+    """
         
     def run(self):
         try:
