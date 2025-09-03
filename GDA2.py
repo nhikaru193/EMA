@@ -297,10 +297,10 @@ class GDA:
                             target_heading += 360
                         print(f"全てのボールの中間方位 ({target_heading:.2f}°) に向かって前進します。")
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit(13)
+                        self.driver.petit_petit(15)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
-                        current_state = "Assault_Double_Ball2" # 突撃2に移行
+                        current_state = "GOAL_CHECK" # 突撃2に移行
                     else:
                         print("突撃できませんでした再度突撃を試みます。")
                         current_state = "Assault_Double_Ball"
