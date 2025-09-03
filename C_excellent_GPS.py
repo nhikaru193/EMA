@@ -119,10 +119,9 @@ class GPS:
             data_count = 0
             print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
             while data_count < 10:
-                print(f"GPSデータ送信中... ({i+1}/10回目)")
+                print(f"GPSデータ送信中... ({data_count + 1}/10回目)")
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
-                i = 0
                 if count and data:
                     try:
                         text = data.decode("ascii", errors="ignore")
@@ -143,17 +142,13 @@ class GPS:
                                         break
                             else:
                                 print("GPS情報を取得できませんでした。リトライします")
-
                         else: # if "$GNRMC" in text: に対応
-                            print("GPS情報が見つかりませんでした。")
-                                    
+                            print("GPS情報が見つかりませんでした。")                       
                     except Exception as e:
-                        print("エラー！！")
-    
+                        print(f"エラー！！: {e}")
                 else:
-                    print("データがありませんでした。")
-                        
-                time.sleep(2) # 次の送信までの間隔
+                    print("データがありませんでした。")   
+                    time.sleep(2) # 次の送信までの間隔
             print("GPSデータ送信シーケンスを終了しました。")
             # 1. 状態把握
             while True:
