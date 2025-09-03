@@ -130,6 +130,10 @@ class LD:
                             print("エラー！！")
                         finally:
                             print("gps情報の取得中")
+                            self.pi.bb_serial_read_close(self.RX_PIN)
+                            self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
+                            self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
+                            self.im920.close()
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
