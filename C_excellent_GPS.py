@@ -122,6 +122,7 @@ class GPS:
                 print(f"GPSデータ送信中... ({i+1}/10回目)")
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
+                i = 0
                 if count and data:
                     try:
                         text = data.decode("ascii", errors="ignore")
