@@ -93,7 +93,7 @@ class LD:
             #heading着地判定
             current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
             filename = f"land_heading_data_{current_time_str}.csv"
-            path_to = "/home/EM/_csv"
+            path_to = "/home/EMA/_csv"
             filename = os.path.join(path_to, filename)
             self.pi.write(self.WIRELESS_PIN, 1)  # GPIOをHIGHに設定
             print(f"GPIO{self.WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
@@ -177,7 +177,7 @@ class LD:
 
             current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
             filename = f"land_pressure_data_{current_time_str}.csv"
-            path_to = "/home/EM/_csv"
+            path_to = "/home/EMA/_csv"
             filename = os.path.join(path_to, filename)
             
             #気圧着地判定
