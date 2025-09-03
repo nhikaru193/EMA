@@ -28,9 +28,9 @@ from C_excellent_GPS import GPS
 from GDA2 import GDA
 
 #初期設定
-Flag_location_a = [35.9240470, 139.9112806]
-Flag_location_b = [35.9239984, 139.9113634]
-Goal_location = [35.9242251, 139.9114449]
+Flag_location_a = [35.9230342, 139.9103757]
+Flag_location_b = [35.9230345, 139.9104263]
+Goal_location = [35.9231534, 139.9103482]
 t = 1
 
 #BNO055の初期設定
