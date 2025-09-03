@@ -139,14 +139,14 @@ class GPS:
                                         self.send_TXDU("0003", gps_payload)
                                         time.sleep(2)  # GPSデータ送信後の遅延
                                         break
-                                else:
-                                    print("GPS情報を取得できませんでした。リトライします")
-                                    
-                            except Exception as e:
-                                print("エラー！！")
-        
                         else:
-                            print("データがありませんでした。")
+                            print("GPS情報を取得できませんでした。リトライします")
+                                    
+                    except Exception as e:
+                        print("エラー！！")
+
+                else:
+                    print("データがありませんでした。")
                     
                     time.sleep(2) # 次の送信までの間隔
                 print("GPSデータ送信シーケンスを終了しました。")
