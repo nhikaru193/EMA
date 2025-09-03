@@ -51,7 +51,6 @@ class GPS:
             print(f"GPIO{self.WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
         except Exception as e:
         # 初期化中にエラーが発生した場合、pigpioを停止して再スロー
-        self.pi.stop()
         raise e
         
         
