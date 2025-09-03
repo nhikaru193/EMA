@@ -15,7 +15,7 @@ class RD:
     def run(self):
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
         filename = f"bme280_data_{current_time_str}.csv"
-        path_to = "/home/EM/_csv"
+        path_to = "/home/EMA/_csv"
         filename = os.path.join(path_to, filename)
 
         try:
