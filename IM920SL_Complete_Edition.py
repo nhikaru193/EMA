@@ -3,32 +3,37 @@ import time
 import pigpio
 
 # --- 設定 ---
-TX_PIN = 27
-RX_PIN = 17
-BAUD = 9600
-WIRELESS_PIN = 22  # ワイヤレスグラウンド制御用のGPIOピン番号。適宜変更してください。
+self.TX_PIN = 27
+self.RX_PIN = 17
+self.BAUD = 9600
+self.WIRELESS_PIN = 22# ワイヤレスグラウンド制御用のGPIOピン番号。適宜変更してください。
 
 # --- pigpioの初期化 ---
-pi = pigpio.pi()
-if not pi.connected:
+self.pi = pigpio.pi()
+if not self.pi.connected:
     raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
-err = pi.bb_serial_read_open(RX_PIN, BAUD, 8)
-if err != 0:
-    pi.stop()
-    raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={RX_PIN}, {BAUD}bps")
 
-print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
+try:
+    err = self.pi.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+    if err != 0:
+        raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+    
+    print(f"▶ ソフトUART RX を開始：GPIO={self.RX_PIN}, {self.BAUD}bps")
+    
+    # WIRELESS_PINの設定
+    self.pi.set_mode(self.WIRELESS_PIN, pigpio.OUTPUT)
+    self.pi.write(self.WIRELESS_PIN, 0)
+    print(f"GPIO{self.WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
+    
+    # 初期化が成功した場合、ここで終了
 
-# WIRELESS_PINを出力に設定し、初期状態をLOW（ワイヤレスグラウンドOFF）にする
-pi.set_mode(WIRELESS_PIN, pigpio.OUTPUT)
-pi.write(WIRELESS_PIN, 0)
-print(f"GPIO{WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
+except Exception as e:
+    # 初期化中にエラーが発生した場合、pigpioを停止して再スロー
+    self.pi.stop()
+    raise e
 
-
-print(f"▶ ソフトUART RX を開始：GPIO={RX_PIN}, {BAUD}bps")
-
-# --- 座標変換関数 ---
-def convert_to_decimal(coord, direction):
+    
+def convert_to_decimal(self, coord, direction):
     if not coord: return 0.0
     if direction in ['N', 'S']:
         degrees = int(coord[:2])
@@ -41,37 +46,29 @@ def convert_to_decimal(coord, direction):
         decimal *= -1
     return decimal
 
-# --- IM920シリアル通信の設定 ---
-im920 = serial.Serial('/dev/serial0', 19200, timeout=1)
-
-# --- IM920ユニキャスト送信関数（ワイヤレスグラウンド制御付き） ---
-def send_TXDU(node_id, payload):
+def send_TXDU(self, node_id, payload):
     # メッセージの準備と送信
     cmd = f'TXDU {node_id},{payload}\r\n'
     
     try:
-        im920.write(cmd.encode())
+        self.im920.write(cmd.encode())
         print(f"送信: {cmd.strip()}")
     except serial.SerialException as e:
         print(f"シリアル送信エラー: {e}")
     
     time.sleep(0.1)  # 送信後の短い遅延
 
-    # ワイヤレスグラウンドOFF
-    #pi.write(WIRELESS_PIN, 0)  # GPIOをLOWに設定
-    #print(f"GPIO{WIRELESS_PIN} をLOWに設定（ワイヤレスグラウンドOFF）")
-    #time.sleep(0.1)  # OFF後の短い遅延
-
 # --- メインループ ---
 try:
-    pi.write(WIRELESS_PIN, 1)  # GPIOをHIGHに設定
-    print(f"GPIO{WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+    self.pi.write(self.WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+    print(f"GPIO{self.WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
     time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
 
+
     while True:
-        (count, data) = pi.bb_serial_read(RX_PIN)
+        #------GPSデータ送信のコード(ARLISSで追加)ここから------#
+        (count, data) = self.pi.bb_serial_read(self.RX_PIN)
         current_location = None
-        
         if count and data:
             try:
                 text = data.decode("ascii", errors="ignore")
@@ -81,25 +78,21 @@ try:
                         if line.startswith("$GNRMC"):
                             parts = line.strip().split(",")
                             if len(parts) > 6 and parts[2] == "A":
-                                lat = convert_to_decimal(parts[3], parts[4])
-                                lon = convert_to_decimal(parts[5], parts[6])
+                                lat = self.convert_to_decimal(parts[3], parts[4])
+                                lon = self.convert_to_decimal(parts[5], parts[6])
                                 current_location = [lat, lon]
                                 # GPSデータをユニキャストメッセージとして送信
                                 gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                send_TXDU("0003", gps_payload)
+                                self.send_TXDU("0003", gps_payload)
                                 
                                 time.sleep(2)  # GPSデータ送信後の遅延
+                else:
+                    print("GPS情報を取得できませんでした。リトライします")
+                    
             except Exception as e:
-                print(f"デコードエラー: {e}")
-                
-        if not current_location:
-            print("[WARN] GPS位置情報を取得できません。リトライします...")
-            time.sleep(1)
-            continue
-        
-
-except KeyboardInterrupt:
-    print("\nユーザー割り込みで終了します。")
+                print("エラー！！")
+            finally:
+                print("gps情報の取得中")
 
 finally:
     # --- クリーンアップ ---
