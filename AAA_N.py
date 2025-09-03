@@ -75,7 +75,7 @@ GPS_StoE.run()
 GPS_StoF = GPS(bno, goal_location = Flag_location_b)
 GPS_StoF.run()
 
-
+"""
 FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
 
@@ -87,5 +87,5 @@ GPS_FtoG.run()
 
 GOAL = GDA(bno, 30)
 GOAL.run()
-
+"""
 print("Mission Complete")
