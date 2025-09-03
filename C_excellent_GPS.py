@@ -29,16 +29,30 @@ class GPS:
             STBY=21
         )
         self.bno = bno
+        self.TX_PIN = 27
         self.RX_PIN = 17
         self.BAUD = 9600
+        self.WIRELESS_PIN = 22
+        self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
         self.turn_speed = 95
         self.pi = pigpio.pi()
         if not self.pi.connected:
             raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
-        err = self.pi.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
-        if err != 0:
-            self.pi.stop()
-            raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+        try:
+            err = self.pi.bb_serial_read_open(self.RX_PIN, self.BAUD, 8)
+            if err != 0:
+                raise RuntimeError(f"ソフトUART RX 設定失敗: GPIO={self.RX_PIN}, {self.BAUD}bps")
+            
+            print(f"▶ ソフトUART RX を開始：GPIO={self.RX_PIN}, {self.BAUD}bps")
+            
+            # WIRELESS_PINの設定
+            self.pi.set_mode(self.WIRELESS_PIN, pigpio.OUTPUT)
+            self.pi.write(self.WIRELESS_PIN, 0)
+            print(f"GPIO{self.WIRELESS_PIN} をOUTPUTに設定し、LOWに初期化しました。")
+        except Exception as e:
+        # 初期化中にエラーが発生した場合、pigpioを停止して再スロー
+        self.pi.stop()
+        raise e
         
         
         
@@ -54,6 +68,18 @@ class GPS:
         if direction in ['S', 'W']:
             decimal *= -1
         return decimal
+
+    def send_TXDU(self, node_id, payload):
+        # メッセージの準備と送信
+        cmd = f'TXDU {node_id},{payload}\r\n'
+        
+        try:
+            self.im920.write(cmd.encode())
+            print(f"送信: {cmd.strip()}")
+        except serial.SerialException as e:
+            print(f"シリアル送信エラー: {e}")
+        
+        time.sleep(0.1)  # 送信後の短い遅延
 
     def get_bearing_to_goal(self, current, goal):
         if current is None or goal is None: return None
@@ -86,7 +112,46 @@ class GPS:
             writer = csv.writer(f)
             writer.writerow(["latitude", "longitude", "heading"])
             heading_list = deque(maxlen=5)
+            self.pi.write(self.WIRELESS_PIN, 1)  # GPIOをHIGHに設定
+            print(f"GPIO{self.WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
+            time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
             while True:
+                print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
+                for i in range(10):
+                    print(f"GPSデータ送信中... ({i+1}/10回目)")
+                    (count, data) = self.pi.bb_serial_read(self.RX_PIN)
+                    current_location = None
+                    if count and data:
+                        try:
+                            text = data.decode("ascii", errors="ignore")
+                            if "$GNRMC" in text:
+                                lines = text.split("\n")
+                                for line in lines:
+                                    if line.startswith("$GNRMC"):
+                                        parts = line.strip().split(",")
+                                        if len(parts) > 6 and parts[2] == "A":
+                                            lat = self.convert_to_decimal(parts[3], parts[4])
+                                            lon = self.convert_to_decimal(parts[5], parts[6])
+                                            current_location = [lat, lon]
+                                            # GPSデータをユニキャストメッセージとして送信
+                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
+                                            self.send_TXDU("0003", gps_payload)
+                                            
+                                            time.sleep(2)  # GPSデータ送信後の遅延
+                            else:
+                                print("GPS情報を取得できませんでした。リトライします")
+                                
+                        except Exception as e:
+                            print("エラー！！")
+
+                    else:
+                        print("データがありませんでした。")
+                    
+                    time.sleep(2) # 次の送信までの間隔
+                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
+                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
+                self.im920.close()
+                print("GPSデータ送信シーケンスを終了しました。")
                 # 1. 状態把握
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
@@ -237,7 +302,44 @@ class GPS:
                 #------csvファイルの書き込み------#
                 writer.writerow([lat, lon, heading])
                 f.flush()
-        
+                #------再度GPS情報の送信------#
+                print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
+                for i in range(10):
+                    print(f"GPSデータ送信中... ({i+1}/10回目)")
+                    (count, data) = self.pi.bb_serial_read(self.RX_PIN)
+                    current_location = None
+                    if count and data:
+                        try:
+                            text = data.decode("ascii", errors="ignore")
+                            if "$GNRMC" in text:
+                                lines = text.split("\n")
+                                for line in lines:
+                                    if line.startswith("$GNRMC"):
+                                        parts = line.strip().split(",")
+                                        if len(parts) > 6 and parts[2] == "A":
+                                            lat = self.convert_to_decimal(parts[3], parts[4])
+                                            lon = self.convert_to_decimal(parts[5], parts[6])
+                                            current_location = [lat, lon]
+                                            # GPSデータをユニキャストメッセージとして送信
+                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
+                                            self.send_TXDU("0003", gps_payload)
+                                            
+                                            time.sleep(2)  # GPSデータ送信後の遅延
+                            else:
+                                print("GPS情報を取得できませんでした。リトライします")
+                                
+                        except Exception as e:
+                            print("エラー！！")
+
+                    else:
+                        print("データがありませんでした。")
+                    
+                    time.sleep(2) # 次の送信までの間隔
+                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
+                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
+                self.im920.close()
+                print("GPSデータ送信シーケンスを終了しました。")
+                #------ここまで------#
         except KeyboardInterrupt:
             print("\n[STOP] 手動で停止されました。")
         except Exception as e:
