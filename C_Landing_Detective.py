@@ -104,36 +104,43 @@ class LD:
                 writer.writerow(["heading", "delta_heading"])
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
-                    (count, data) = self.pi.bb_serial_read(self.RX_PIN)
-                    current_location = None
-                    if count and data:
-                        try:
-                            text = data.decode("ascii", errors="ignore")
-                            if "$GNRMC" in text:
-                                lines = text.split("\n")
-                                for line in lines:
-                                    if line.startswith("$GNRMC"):
-                                        parts = line.strip().split(",")
-                                        if len(parts) > 6 and parts[2] == "A":
-                                            lat = self.convert_to_decimal(parts[3], parts[4])
-                                            lon = self.convert_to_decimal(parts[5], parts[6])
-                                            current_location = [lat, lon]
-                                            # GPSデータをユニキャストメッセージとして送信
-                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                            self.send_TXDU("0003", gps_payload)
-                                            
-                                            time.sleep(2)  # GPSデータ送信後の遅延
-                            else:
-                                print("GPS情報を取得できませんでした。リトライします")
-                                
-                        except Exception as e:
-                            print("エラー！！")
-                        finally:
-                            print("gps情報の取得中")
-                            self.pi.bb_serial_read_close(self.RX_PIN)
-                            self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
-                            self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
-                            self.im920.close()
+                    print("GPSデータ送信シーケンスを開始します。GPS情報を5回送信します。")
+                    for i in range(10):
+                        print(f"GPSデータ送信中... ({i+1}/5回目)")
+                        (count, data) = self.pi.bb_serial_read(self.RX_PIN)
+                        current_location = None
+                        if count and data:
+                            try:
+                                text = data.decode("ascii", errors="ignore")
+                                if "$GNRMC" in text:
+                                    lines = text.split("\n")
+                                    for line in lines:
+                                        if line.startswith("$GNRMC"):
+                                            parts = line.strip().split(",")
+                                            if len(parts) > 6 and parts[2] == "A":
+                                                lat = self.convert_to_decimal(parts[3], parts[4])
+                                                lon = self.convert_to_decimal(parts[5], parts[6])
+                                                current_location = [lat, lon]
+                                                # GPSデータをユニキャストメッセージとして送信
+                                                gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
+                                                self.send_TXDU("0003", gps_payload)
+                                                
+                                                time.sleep(2)  # GPSデータ送信後の遅延
+                                else:
+                                    print("GPS情報を取得できませんでした。リトライします")
+                                    
+                            except Exception as e:
+                                print("エラー！！")
+
+                        else:
+                            print("データがありませんでした。")
+                        
+                        time.sleep(2) # 次の送信までの間隔
+                    self.pi.bb_serial_read_close(self.RX_PIN)
+                    self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
+                    self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
+                    self.im920.close()
+                    print("GPSデータ送信シーケンスを終了しました。")
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
