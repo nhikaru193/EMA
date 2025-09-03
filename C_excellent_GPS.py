@@ -116,47 +116,12 @@ class GPS:
             self.pi.write(self.WIRELESS_PIN, 1)  # GPIOをHIGHに設定
             print(f"GPIO{self.WIRELESS_PIN} をHIGHに設定（ワイヤレスグラウンドON）")
             time.sleep(0.5)  # ワイヤレスグラウンドが安定するまで待機
-            while True:
-                print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
-                for i in range(10):
-                    print(f"GPSデータ送信中... ({i+1}/10回目)")
-                    (count, data) = self.pi.bb_serial_read(self.RX_PIN)
-                    current_location = None
-                    if count and data:
-                        try:
-                            text = data.decode("ascii", errors="ignore")
-                            if "$GNRMC" in text:
-                                lines = text.split("\n")
-                                for line in lines:
-                                    if line.startswith("$GNRMC"):
-                                        parts = line.strip().split(",")
-                                        if len(parts) > 6 and parts[2] == "A":
-                                            lat = self.convert_to_decimal(parts[3], parts[4])
-                                            lon = self.convert_to_decimal(parts[5], parts[6])
-                                            current_location = [lat, lon]
-                                            # GPSデータをユニキャストメッセージとして送信
-                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                            self.send_TXDU("0003", gps_payload)
-                                            
-                                            time.sleep(2)  # GPSデータ送信後の遅延
-                            else:
-                                print("GPS情報を取得できませんでした。リトライします")
-                                
-                        except Exception as e:
-                            print("エラー！！")
-
-                    else:
-                        print("データがありませんでした。")
-                    
-                    time.sleep(2) # 次の送信までの間隔
-                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
-                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
-                self.im920.close()
-                print("GPSデータ送信シーケンスを終了しました。")
-                # 1. 状態把握
+            
+            print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
+            for i in range(10):
+                print(f"GPSデータ送信中... ({i+1}/10回目)")
                 (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                 current_location = None
-                
                 if count and data:
                     try:
                         text = data.decode("ascii", errors="ignore")
@@ -169,146 +134,30 @@ class GPS:
                                         lat = self.convert_to_decimal(parts[3], parts[4])
                                         lon = self.convert_to_decimal(parts[5], parts[6])
                                         current_location = [lat, lon]
+                                        # GPSデータをユニキャストメッセージとして送信
+                                        gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
+                                        self.send_TXDU("0003", gps_payload)
+                                        time.sleep(2)  # GPSデータ送信後の遅延
                                         break
+                        else:
+                            print("GPS情報を取得できませんでした。リトライします")
+                            
                     except Exception as e:
-                        print(f"GPSデコードエラー: {e}")
-                
-                if not current_location:
-                    print("[WARN] GPS位置情報を取得できません。リトライします...")
-                    self.driver.motor_stop_brake()
-                    time.sleep(1)
-                    continue
-    
-                heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                if heading is None:
-                    print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                    self.driver.motor_stop_brake()
-                    time.sleep(1)
-                    continue
-    
-                # 2. 計算
-                dist_to_goal = self.get_distance_to_goal(current_location, self.GOAL_LOCATION)
-                bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
-                angle_error = (bearing_to_goal - heading + 360) % 360
-    
-                print(f"[INFO] 距離:{dist_to_goal: >6.1f}m | 目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
-    
-                # 3. ゴール判定
-                if dist_to_goal <= self.GOAL_THRESHOLD_M:
-                    print(f"[GOAL] 目標地点に到達しました！ (距離: {dist_to_goal:.2f}m)")
-                    self.driver.motor_stop_free()
-                    break
-    
-                # 4. 方向調整フェーズ
-                if angle_error > self.ANGLE_THRESHOLD_DEG and angle_error < (360 - self.ANGLE_THRESHOLD_DEG):
-            
-                    if angle_error > 180: # 反時計回り（左）に回る方が近い
-                        print(f"[TURN] 左に回頭します ")
-                        self.driver.petit_left(0, 95) 
-                        self.driver.petit_left(95, 0) 
-                        self.driver.motor_stop_brake()
-                        time.sleep(0.3)
-                        #------簡単なスタック判定の追加-------#
-                        heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                        heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
-                        if heading is None:
-                            print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                            self.driver.motor_stop_brake()
-                            time.sleep(1)
-                            continue
-                        if len(heading_list) == 5:
-                            print("スタック判定を行います")
-                            a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
-                            b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                            c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                            if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
-                                print("スタック判定です")
-                                print("スタック離脱を行います")
-                                self.driver.changing_right(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_right(90, 0)
-                                time.sleep(0.5)
-                                self.driver.changing_left(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_left(90, 0)
-                                time.sleep(0.5)
-                                self.driver.changing_forward(0, 90)
-                                time.sleep(1)
-                                self.driver.changing_forward(90, 0)
-                                time.sleep(0.5)
-                                print("スタック離脱を終了します")
-                                heading_list.clear()
-                            else:
-                                print("長時間のスタックはしていないため、GPS誘導を継続します")
-                        #----------------------------#
-                        
-                    else: # 時計回り（右）に回る方が近い
-                        print(f"[TURN] 右に回頭します")
-                        self.driver.petit_right(0, 95) 
-                        self.driver.petit_right(90, 0)
-                        self.driver.motor_stop_brake()
-                        time.sleep(0.3)
-                        #------簡単なスタック判定の追加-------#
-                        heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
-                        heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
-                        if heading is None:
-                            print("[WARN] BNO055から方位角を取得できません。リトライします...")
-                            self.driver.motor_stop_brake()
-                            time.sleep(1)
-                            continue
-                        if len(heading_list) == 5:
-                            print("スタック判定を行います")
-                            a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
-                            b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
-                            c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
-                            if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
-                                print("スタック判定です")
-                                print("スタック離脱を行います")
-                                self.driver.changing_right(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_right(90, 0)
-                                time.sleep(0.5)
-                                self.driver.changing_left(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_left(90, 0)
-                                time.sleep(0.5)
-                                self.driver.changing_forward(0, 90)
-                                time.sleep(1)
-                                self.driver.changing_forward(90, 0)
-                                time.sleep(0.5)
-                                print("スタック離脱を終了します")
-                                heading_list.clear()
-                            else:
-                                print("長時間のスタックはしていないため、GPS誘導を継続します")
-                        #----------------------------#
-                    
-                    self.driver.motor_stop_free() # 確実な停止
-                    time.sleep(0.5) # 回転後の安定待ち
-                    continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
-    
-                if dist_to_goal > 100:
-                    # 5. 前進フェーズ (PD制御による直進維持)
-                    print(f"[MOVE] 方向OK。PD制御で前進します。")
-                    following.follow_forward(self.driver, self.bno, 95, 60)
+                        print("エラー！！")
 
-                elif dist_to_goal > 50:
-                    print(f"[MOVE] 方向OK。PD制御で前進します。")
-                    following.follow_forward(self.driver, self.bno, 95, 15)
-                    
                 else:
-                    # 5. 前進フェーズ (PD制御による直進維持)
-                    print(f"[MOVE] 方向OK。PD制御で前進します。")
-                    following.follow_forward(self.driver, self.bno, 70, 5)
-
-                #------csvファイルの書き込み------#
-                writer.writerow([lat, lon, heading])
-                f.flush()
-                #------再度GPS情報の送信------#
-                print("GPSデータ送信シーケンスを開始します。GPS情報を10回送信します。")
-                for i in range(10):
-                    print(f"GPSデータ送信中... ({i+1}/10回目)")
+                    print("データがありませんでした。")
+                    
+                    time.sleep(2) # 次の送信までの間隔
+                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
+                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
+                self.im920.close()
+                print("GPSデータ送信シーケンスを終了しました。")
+                # 1. 状態把握
+                while True:
                     (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                     current_location = None
+                    
                     if count and data:
                         try:
                             text = data.decode("ascii", errors="ignore")
@@ -321,26 +170,140 @@ class GPS:
                                             lat = self.convert_to_decimal(parts[3], parts[4])
                                             lon = self.convert_to_decimal(parts[5], parts[6])
                                             current_location = [lat, lon]
-                                            # GPSデータをユニキャストメッセージとして送信
-                                            gps_payload = f'{lat:.6f},{lon:.6f}'  # ペイロードのフォーマット
-                                            self.send_TXDU("0003", gps_payload)
-                                            
-                                            time.sleep(2)  # GPSデータ送信後の遅延
-                            else:
-                                print("GPS情報を取得できませんでした。リトライします")
-                                
+                                            break
                         except Exception as e:
-                            print("エラー！！")
-
-                    else:
-                        print("データがありませんでした。")
+                            print(f"GPSデコードエラー: {e}")
                     
-                    time.sleep(2) # 次の送信までの間隔
-                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
-                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
-                self.im920.close()
-                print("GPSデータ送信シーケンスを終了しました。")
-                #------ここまで------#
+                    if not current_location:
+                        print("[WARN] GPS位置情報を取得できません。リトライします...")
+                        self.driver.motor_stop_brake()
+                        time.sleep(1)
+                        continue
+        
+                    heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                    if heading is None:
+                        print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                        self.driver.motor_stop_brake()
+                        time.sleep(1)
+                        continue
+        
+                    # 2. 計算
+                    dist_to_goal = self.get_distance_to_goal(current_location, self.GOAL_LOCATION)
+                    bearing_to_goal = self.get_bearing_to_goal(current_location, self.GOAL_LOCATION)
+                    angle_error = (bearing_to_goal - heading + 360) % 360
+        
+                    print(f"[INFO] 距離:{dist_to_goal: >6.1f}m | 目標方位:{bearing_to_goal: >5.1f}° | 現在方位:{heading: >5.1f}°")
+        
+                    # 3. ゴール判定
+                    if dist_to_goal <= self.GOAL_THRESHOLD_M:
+                        print(f"[GOAL] 目標地点に到達しました！ (距離: {dist_to_goal:.2f}m)")
+                        self.driver.motor_stop_free()
+                        break
+        
+                    # 4. 方向調整フェーズ
+                    if angle_error > self.ANGLE_THRESHOLD_DEG and angle_error < (360 - self.ANGLE_THRESHOLD_DEG):
+                
+                        if angle_error > 180: # 反時計回り（左）に回る方が近い
+                            print(f"[TURN] 左に回頭します ")
+                            self.driver.petit_left(0, 95) 
+                            self.driver.petit_left(95, 0) 
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.3)
+                            #------簡単なスタック判定の追加-------#
+                            heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                            heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
+                            if heading is None:
+                                print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                                self.driver.motor_stop_brake()
+                                time.sleep(1)
+                                continue
+                            if len(heading_list) == 5:
+                                print("スタック判定を行います")
+                                a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
+                                b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
+                                c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                                if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
+                                    print("スタック判定です")
+                                    print("スタック離脱を行います")
+                                    self.driver.changing_right(0, 90)
+                                    time.sleep(3)
+                                    self.driver.changing_right(90, 0)
+                                    time.sleep(0.5)
+                                    self.driver.changing_left(0, 90)
+                                    time.sleep(3)
+                                    self.driver.changing_left(90, 0)
+                                    time.sleep(0.5)
+                                    self.driver.changing_forward(0, 90)
+                                    time.sleep(1)
+                                    self.driver.changing_forward(90, 0)
+                                    time.sleep(0.5)
+                                    print("スタック離脱を終了します")
+                                    heading_list.clear()
+                                else:
+                                    print("長時間のスタックはしていないため、GPS誘導を継続します")
+                            #----------------------------#
+                            
+                        else: # 時計回り（右）に回る方が近い
+                            print(f"[TURN] 右に回頭します")
+                            self.driver.petit_right(0, 95) 
+                            self.driver.petit_right(90, 0)
+                            self.driver.motor_stop_brake()
+                            time.sleep(0.3)
+                            #------簡単なスタック判定の追加-------#
+                            heading = self.bno.getVector(BNO055.VECTOR_EULER)[0]
+                            heading_list.append(heading) #listの末尾にタプル形式でデータ蓄積　最終項を呼び出すときは[-1]
+                            if heading is None:
+                                print("[WARN] BNO055から方位角を取得できません。リトライします...")
+                                self.driver.motor_stop_brake()
+                                time.sleep(1)
+                                continue
+                            if len(heading_list) == 5:
+                                print("スタック判定を行います")
+                                a_delta = abs((heading_list[2] - heading_list[3] + 180) % 360 - 180)
+                                b_delta = abs((heading_list[3] - heading_list[4] + 180) % 360 - 180)
+                                c_delta = abs((heading_list[1] - heading_list[2] + 180) % 360 - 180)
+                                if a_delta < 1.5 and b_delta < 1.5 and c_delta < 1.5:
+                                    print("スタック判定です")
+                                    print("スタック離脱を行います")
+                                    self.driver.changing_right(0, 90)
+                                    time.sleep(3)
+                                    self.driver.changing_right(90, 0)
+                                    time.sleep(0.5)
+                                    self.driver.changing_left(0, 90)
+                                    time.sleep(3)
+                                    self.driver.changing_left(90, 0)
+                                    time.sleep(0.5)
+                                    self.driver.changing_forward(0, 90)
+                                    time.sleep(1)
+                                    self.driver.changing_forward(90, 0)
+                                    time.sleep(0.5)
+                                    print("スタック離脱を終了します")
+                                    heading_list.clear()
+                                else:
+                                    print("長時間のスタックはしていないため、GPS誘導を継続します")
+                            #----------------------------#
+                        
+                        self.driver.motor_stop_free() # 確実な停止
+                        time.sleep(0.5) # 回転後の安定待ち
+                        continue # 方向調整が終わったら、次のループで再度GPSと方位を確認
+        
+                    if dist_to_goal > 100:
+                        # 5. 前進フェーズ (PD制御による直進維持)
+                        print(f"[MOVE] 方向OK。PD制御で前進します。")
+                        following.follow_forward(self.driver, self.bno, 95, 60)
+    
+                    elif dist_to_goal > 50:
+                        print(f"[MOVE] 方向OK。PD制御で前進します。")
+                        following.follow_forward(self.driver, self.bno, 95, 15)
+                        
+                    else:
+                        # 5. 前進フェーズ (PD制御による直進維持)
+                        print(f"[MOVE] 方向OK。PD制御で前進します。")
+                        following.follow_forward(self.driver, self.bno, 70, 5)
+    
+                    #------csvファイルの書き込み------#
+                    writer.writerow([lat, lon, heading])
+                    f.flush()
         except KeyboardInterrupt:
             print("\n[STOP] 手動で停止されました。")
         except Exception as e:
@@ -349,6 +312,10 @@ class GPS:
             print("クリーンアップ処理を実行します。")
             self.driver.cleanup()
             self.pi.bb_serial_read_close(self.RX_PIN)
+            self.pi.write(self.WIRELESS_PIN, 0)
+            self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT) # ピンを安全のため入力に戻す
+            if self.im920.is_open:
+                self.im920.close()
             self.pi.stop()
             #f.close()
             print("プログラムを終了しました。")
