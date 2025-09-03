@@ -139,19 +139,16 @@ class GPS:
                                         self.send_TXDU("0003", gps_payload)
                                         time.sleep(2)  # GPSデータ送信後の遅延
                                         break
+                                else:
+                                    print("GPS情報を取得できませんでした。リトライします")
+                                    
+                            except Exception as e:
+                                print("エラー！！")
+        
                         else:
-                            print("GPS情報を取得できませんでした。リトライします")
-                            
-                    except Exception as e:
-                        print("エラー！！")
-
-                else:
-                    print("データがありませんでした。")
+                            print("データがありませんでした。")
                     
                     time.sleep(2) # 次の送信までの間隔
-                self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
-                self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
-                self.im920.close()
                 print("GPSデータ送信シーケンスを終了しました。")
                 # 1. 状態把握
                 while True:
