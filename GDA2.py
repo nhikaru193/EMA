@@ -160,7 +160,7 @@ class GDA:
         return scan_data
 
 
-    def run(self, timeout_seconds=20):
+    def run(self, timeout_seconds=1200):
         try:
             current_state = "SEARCH"
             best_heading = None
