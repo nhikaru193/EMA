@@ -158,6 +158,17 @@ class GDA:
 
         return scan_data
 
+    def beyblade(self):
+        print("スタック判定を行います")
+        self.driver.changing_right(0, 90)
+        time.sleep(3)
+        self.driver.changing_right(90, 0)
+        time.sleep(0.5)
+        self.driver.changing_left(0, 90)
+        time.sleep(3)
+        self.driver.changing_left(90, 0)
+        time.sleep(0.5)
+        print("スタック離脱を終了します")
 
     def run(self, timeout_seconds=1200):
         try:
@@ -165,12 +176,56 @@ class GDA:
             best_heading = None
             scan_data = []
             program_start_time = time.time()
+            # 各状態のタイムアウト時間を設定（秒）
+            timeout_search = 10
+            timeout_follow = 10
+            timeout_assault = 10
+            timeout_goal_check = 10
+            
+            state_start_time = time.time()
             
             while True:
                 #タイムアウト20分
                 if time.time() - program_start_time > timeout_seconds:
                     print(f"\n[終了] 全体のタイムアウト ({timeout_seconds}秒) に達しました。プログラムを終了します。")
                     break
+
+                current_time_in_state = time.time() - state_start_time
+                if current_state == "SEARCH" and current_time_in_state > timeout_search:
+                    print(f"\n[タイムアウト] SEARCH状態が{timeout_search}秒を超えました。スタック離脱に入るよ。")
+                    self.beyblade()
+                    current_state = "SEARCH"
+                    state_start_time = time.time() # 新しい状態の開始時間をリセット
+                    self.driver.motor_stop_brake()
+                    continue
+                elif current_state == "FOLLOW" and current_time_in_state > timeout_follow:
+                    print(f"\n[タイムアウト] FOLLOW状態が{timeout_follow}秒を超えました。スタック離脱に入るよ。")
+                    self.beyblade()
+                    current_state = "FOLLOW"
+                    state_start_time = time.time() # 新しい状態の開始時間をリセット
+                    self.driver.motor_stop_brake()
+                    continue
+                elif current_state == "Assault_Double_Ball" and current_time_in_state > timeout_assault:
+                    print(f"\n[タイムアウト] Assault_Double_Ball状態が{timeout_assault}秒を超えました。スタック離脱に入るよ。")
+                    self.beyblade()
+                    current_state = "Assault_Double_Ball"
+                    state_start_time = time.time() # 新しい状態の開始時間をリセット
+                    self.driver.motor_stop_brake()
+                    continue
+                elif current_state == "Assault_Double_Ball2" and current_time_in_state > timeout_assault:
+                    print(f"\n[タイムアウト] Assault_Double_Ball2状態が{timeout_assault}秒を超えました。スタック離脱に入るよ。")
+                    self.beyblade()
+                    current_state = "Assault_Double_Ball2"
+                    state_start_time = time.time() # 新しい状態の開始時間をリセット
+                    self.driver.motor_stop_brake()
+                    continue
+                elif current_state == "GOAL_CHECK" and current_time_in_state > timeout_goal_check:
+                    print(f"\n[タイムアウト] GOAL_CHECK状態が{timeout_goal_check}秒を超えました。スタック離脱に入るよ。")
+                    self.beyblade()
+                    current_state = "GOAL_CHECK"
+                    state_start_time = time.time() # 新しい状態の開始時間をリセット
+                    self.driver.motor_stop_brake()
+                    continue
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
                     print("\n[状態: 探索] 赤ボールを探索します。")
@@ -180,6 +235,7 @@ class GDA:
                         print(f"赤ボールが見つかりました。FOLLOWに移行します。")
                         self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
                         current_state = "FOLLOW"
+                        state_start_time = time.time()
                     else:
                         print("ボールが見つかりませんでした。見つかるまで回転します。")
                         self.perform_360_degree()
@@ -221,6 +277,7 @@ class GDA:
                     if 15 <= current_percentage <= 20:
                         print("赤割合が20%に達しました。突撃に移行します。")
                         current_state = "Assault_Double_Ball"
+                        state_start_time = time.time()
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                     elif current_percentage < 0.2:
@@ -285,6 +342,7 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "Assault_Double_Ball" # 後退後に再度突撃
+                        state_start_time = time.time()
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 3]
                     high_red_count = len(high_detections)
@@ -306,10 +364,12 @@ class GDA:
                         self.driver.petit_petit(15)
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
-                        current_state = "GOAL_CHECK" # 突撃2に移行
+                        current_state = "GOAL_CHECK" # ゴールチェック行くよ
+                        state_start_time = time.time()
                     else:
                         print("突撃できませんでした再度突撃を試みます。")
                         current_state = "Assault_Double_Ball"
+                        state_start_time = time.time()
 
                 elif current_state == "Assault_Double_Ball2":
                     print("\n[状態: 突撃2] 2つのボールの間に突撃2します。")
@@ -338,6 +398,7 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "Assault_Double_Ball2" # 後退後に再度突撃2
+                        state_start_time = time.time()
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 3]
                     high_red_count = len(high_detections)
@@ -360,9 +421,11 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(0.5)
                         current_state = "GOAL_CHECK" # 再度ゴールチェック
+                        state_start_time = time.time()
                     else:
                         print("突撃できませんでした再度突撃2を試みます。")
                         current_state = "Assault_Double_Ball2"
+                        state_start_time = time.time()
                             
     
                 elif current_state == "GOAL_CHECK":
@@ -392,6 +455,7 @@ class GDA:
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
+                        state_start_time = time.time()
                         continue # ループの先頭に戻る
                     high_detections = [d for d in scan_data if d['percentage'] > 15]
                     high_red_count = len(high_detections)
@@ -435,9 +499,11 @@ class GDA:
                                 self.driver.motor_stop_brake()
                                 time.sleep(0.5)
                                 current_state = "GOAL_CHECK" # 再度ゴールチェック
+                                state_start_time = time.time()
                     else:
                         print("ゴールと判断できませんでした。突撃に戻ります。")
                         current_state = "Assault_Double_Ball2" # 突撃に戻る
+                        state_start_time = time.time()
                         
         finally:
             self.picam2.close()
