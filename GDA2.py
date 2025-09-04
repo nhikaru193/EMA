@@ -170,16 +170,16 @@ class GDA:
         time.sleep(0.5)
         print("スタック離脱を終了します")
 
-    def run(self, timeout_seconds=1200):
+    def run(self, timeout_seconds=1500):
         try:
             current_state = "SEARCH"
             best_heading = None
             scan_data = []
             program_start_time = time.time()
             # 各状態のタイムアウト時間を設定（秒）
-            timeout_search = 60
-            timeout_follow = 200
-            timeout_assault = 100
+            timeout_search = 90
+            timeout_follow = 240
+            timeout_assault = 120
             timeout_goal_check = 120
             
             state_start_time = time.time()
