@@ -10,7 +10,6 @@ import math
 from collections import deque
 import pigpio
 import RPi.GPIO as GPIO
-from collections import deque
 
 class GDA:
     def __init__(self, bno: BNO055, counter_max: int=50):
@@ -166,7 +165,6 @@ class GDA:
             best_heading = None
             scan_data = []
             program_start_time = time.time()
-            heading_list = deque(maxlen=5)
             
             while True:
                 #タイムアウト20分
@@ -181,31 +179,12 @@ class GDA:
                     if best_heading is not None:
                         print(f"赤ボールが見つかりました。FOLLOWに移行します。")
                         self.turn_to_heading(best_heading, 90) # 見つけた方向へ向きを調整
-                        heading_list.clear()
                         current_state = "FOLLOW"
                     else:
                         print("ボールが見つかりませんでした。見つかるまで回転します。")
                         self.perform_360_degree()
                         time.sleep(0.2)
 
-                    if len(heading_list) == 5:
-                        print("スタック判定を行います")
-                        a = abs((heading_list[4] - heading_list[3] + 180) % 360 - 180)
-                        b = abs((heading_list[3] - heading_list[2] + 180) % 360 - 180)
-                        c = abs((heading_list[2] - heading_list[1] + 180) % 360 - 180)
-                        if a < 1.5 and b < 1.5 and c < 1.5:
-                            print("スタック判定です")
-                            print("スタック離脱を行います")
-                            self.driver.changing_right(0, 90)
-                            time.sleep(3)
-                            self.driver.changing_right(90, 0)
-                            time.sleep(0.5)
-                            self.driver.changing_left(0, 90)
-                            time.sleep(3)
-                            self.driver.changing_left(90, 0)
-                            time.sleep(0.5)
-                            print("スタック離脱を終了します")
-                            heading_list.clear()
                 # --- フェーズ2: 追従 ---
                 elif current_state == "FOLLOW":
                     print("\n[状態: 追従] 赤ボールに向かって前進します。")
@@ -254,7 +233,6 @@ class GDA:
                         self.driver.petit_petit_retreat(4)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                        heading_list.clear()
                         
                     else:
                         print(f"ボールを追従中...現在の赤割合: {current_percentage:.2f}%")
@@ -266,38 +244,16 @@ class GDA:
                             self.driver.petit_left(70, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
-                            heading_list.clear()
                         elif right_red_pixels > center_red_pixels and right_red_pixels > left_red_pixels:
                             print("ボールが右にあります。右に旋回します。")
                             self.driver.petit_right(0, 70)
                             self.driver.petit_right(70, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(1.0)
-                            heading_list.clear()
                         else:
                             print("ボールは中央です。前進します。")
                             self.driver.petit_petit(5)
-                            heading_list.clear()
 
-                        if len(heading_list) == 5:
-                            print("スタック判定を行います")
-                            a = abs((heading_list[4] - heading_list[3] + 180) % 360 - 180)
-                            b = abs((heading_list[3] - heading_list[2] + 180) % 360 - 180)
-                            c = abs((heading_list[2] - heading_list[1] + 180) % 360 - 180)
-                            if a < 1.5 and b < 1.5 and c < 1.5:
-                                print("スタック判定です")
-                                print("スタック離脱を行います")
-                                self.driver.changing_right(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_right(90, 0)
-                                time.sleep(0.5)
-                                self.driver.changing_left(0, 90)
-                                time.sleep(3)
-                                self.driver.changing_left(90, 0)
-                                time.sleep(0.5)
-                                print("スタック離脱を終了します")
-                                heading_list.clear()
-                
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                 
