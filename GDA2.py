@@ -177,10 +177,10 @@ class GDA:
             scan_data = []
             program_start_time = time.time()
             # 各状態のタイムアウト時間を設定（秒）
-            timeout_search = 10
-            timeout_follow = 10
-            timeout_assault = 10
-            timeout_goal_check = 10
+            timeout_search = 60
+            timeout_follow = 200
+            timeout_assault = 100
+            timeout_goal_check = 120
             
             state_start_time = time.time()
             
