@@ -159,13 +159,18 @@ class GDA:
         return scan_data
 
 
-    def run(self):
+    def run(self, timeout_seconds=1200):
         try:
             current_state = "SEARCH"
             best_heading = None
             scan_data = []
-    
+            program_start_time = time.time()
+            
             while True:
+                #タイムアウト20分
+                if time.time() - program_start_time > timeout_seconds:
+                    print(f"\n[終了] 全体のタイムアウト ({timeout_seconds}秒) に達しました。プログラムを終了します。")
+                    break
                 # --- フェーズ1: 探索 ---
                 if current_state == "SEARCH":
                     print("\n[状態: 探索] 赤ボールを探索します。")
