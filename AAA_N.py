@@ -28,8 +28,8 @@ from C_excellent_GPS import GPS
 from GDA2 import GDA
 
 #初期設定
-Flag_location_a = [35.9239009, 139.9125483]
-Flag_location_b = [35.9240070, 139.9126552]
+Flag_location_a = [40.879698, -119.114899]
+Flag_location_b = [40.879774, -119.114969]
 Goal_location = [35.9239850, 139.9124749]
 t = 1
 
@@ -68,6 +68,7 @@ time.sleep(1)
 
 AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
+""""
 
 GPS_StoE = GPS(bno, goal_location = Flag_location_a)
 GPS_StoE.run()
@@ -84,7 +85,7 @@ Servo.release()
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
-"""
+
 GOAL = GDA(bno, 30)
 GOAL.run()
 
