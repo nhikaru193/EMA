@@ -176,10 +176,10 @@ class GDA:
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
         path_to = "/home/EMA/_csv"
         filename = os.path.join(path_to, f"GDA_{current_time_str}.csv")
-        try:
-            with open(filename, "w", newline='') as f: # newline='' はCSV書き込みのベストプラクティス #withでファイルを安全に開く
-                writer = csv.writer(f)
-                writer.writerow(["current_state", "max_angle_diff", "max_percentage"])
+        with open(filename, "w", newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["current_state", "max_angle_diff", "max_percentage"])
+            try:
                 current_state = "SEARCH"
                 best_heading = None
                 scan_data = []
@@ -488,6 +488,8 @@ class GDA:
                                 print(f"検出数: {high_red_count}、最大角度差: {max_angle_diff:.2f}°")
                                 self.driver.motor_stop_brake()
                                 time.sleep(2)
+                                writer.writerow([current_state, max_angle_diff, max_percentage])
+                                f.flush()
                                 break # ゴール確定でループ終了
                             else:
                                 print(f"検出数は満たしましたが、最大角度差が足りません ({max_angle_diff:.2f}°) 。")
@@ -513,8 +515,6 @@ class GDA:
                             current_state = "Assault_Double_Ball2" # 突撃に戻る
                             state_start_time = time.time()
                             
-                        writer.writerow([current_state, max_angle_diff, max_percentage])
-                        f.flush()
                         
         finally:
             self.picam2.close()
