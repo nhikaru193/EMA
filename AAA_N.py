@@ -22,7 +22,7 @@ from Flag_B import Flag_B
 from C_RELEASE import RD
 from C_Landing_Detective import LD
 from C_PARACHUTE_AVOIDANCE import PA
-from Flag_Navi import FN
+from Flag import FN
 import Servo
 from C_excellent_GPS import GPS
 from GDA2 import GDA
