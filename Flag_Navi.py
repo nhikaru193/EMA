@@ -126,18 +126,17 @@ class FN:
                         rotation_count = 0
                         while target_flag is None and rotation_count < 22:
                             
-                            """
                             self.driver.petit_right(0, 95)
                             self.driver.petit_right(95, 0)
                             self.driver.motor_stop_brake()
                             time.sleep(0.3)
-                            """
                             
+                            """
                             self.driver.changing_right(0, 70)
                             time.sleep(1)
                             self.driver.changing_right(70, 0)
                             time.sleep(0.5)
-                            
+                            """
                             
                             detected_data = self.detector.detect()
                             target_flag = self.find_target_flag(detected_data, target_name)
