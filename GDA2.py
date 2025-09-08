@@ -287,7 +287,7 @@ class GDA:
 
                     elif current_percentage > 30:
                         print("近づきすぎたので後退します")
-                        self.driver.petit_petit_retreat(4)
+                        self.driver.petit_petit_retreat(6)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         
@@ -338,7 +338,7 @@ class GDA:
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
                             self.turn_to_heading(target_heading, 90)
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit_retreat(3)
+                        self.driver.petit_petit_retreat(6)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "Assault_Double_Ball" # 後退後に再度突撃
@@ -451,7 +451,7 @@ class GDA:
                             print(f"最も高い割合を検知した方位 ({target_heading:.2f}°) に向いてから後退します。")
                             self.turn_to_heading(target_heading, 90)
                         self.turn_to_heading(target_heading, 90)
-                        self.driver.petit_petit_retreat(5)
+                        self.driver.petit_petit_retreat(6)
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
                         current_state = "GOAL_CHECK" # 後退後に再度ゴールチェック
