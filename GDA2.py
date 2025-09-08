@@ -192,6 +192,8 @@ class GDA:
             timeout_goal_check = 120
             
             state_start_time = time.time()
+            max_percentage = 0  # 初期値を設定
+            max_angle_diff = 0
             
             while True:
                 #タイムアウト20分
