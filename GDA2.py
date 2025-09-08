@@ -99,7 +99,7 @@ class GDA:
                 best_percentage = current_percentage
                 best_heading = current_heading
                 print(f"[探索中] 新しい最高の割合: {best_percentage:.2f}% @ 方位: {best_heading:.2f}")
-            if best_percentage > 0.2: # わずかでも検出できていれば方位を返
+            if best_percentage > 0.1: # わずかでも検出できていれば方位を返
                 print(f"360度スキャン完了。最も高い割合 ({best_percentage:.2f}%) を検出した方位を返します。")
                 return best_heading
             else:
@@ -178,7 +178,7 @@ class GDA:
             program_start_time = time.time()
             # 各状態のタイムアウト時間を設定（秒）
             timeout_search = 90
-            timeout_follow = 240
+            timeout_follow = 360
             timeout_assault = 120
             timeout_goal_check = 120
             
@@ -280,7 +280,7 @@ class GDA:
                         state_start_time = time.time()
                         self.driver.motor_stop_brake()
                         time.sleep(1.0)
-                    elif current_percentage < 0.2:
+                    elif current_percentage < 0.1:
                         print("ボールを見失いました。SEARCHに戻ります。")
                         current_state = "SEARCH"
                         self.driver.motor_stop_brake()
