@@ -179,7 +179,7 @@ class GDA:
         try:
             f = open(filename, "w", newline='')
             writer = csv.writer(f)
-            writer.writerow(["latitude", "longitude", "heading"])
+            writer.writerow(["current_state", "max_angle_diff", "max_percentage"])
             current_state = "SEARCH"
             best_heading = None
             scan_data = []
@@ -513,7 +513,7 @@ class GDA:
                         current_state = "Assault_Double_Ball2" # 突撃に戻る
                         state_start_time = time.time()
                         
-                    writer.writerow([lat, lon, heading])
+                    writer.writerow([current_state, max_angle_diff, max_percentage])
                     f.flush()
                         
         finally:
