@@ -29,8 +29,8 @@ from C_excellent_GPS import GPS
 from GDA2 import GDA
 
 #初期設定
-Flag_location_a = [35.9239009, 139.9125483]
-Flag_location_b = [35.9240070, 139.9126552]
+Flag_location_a = [40.879698, -119.114899]
+Flag_location_b = [40.879774, -119.114969]
 Goal_location = [40.8841111, -119.1182222]
 t = 1
 
