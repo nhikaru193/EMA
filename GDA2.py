@@ -175,7 +175,7 @@ class GDA:
     def run(self, timeout_seconds=1500):
         current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
         path_to = "/home/EMA/_csv"
-        filename = os.path.join(path_to, f"GDA"_{current_time_str}.csv")
+        filename = os.path.join(path_to, f"GDA_{current_time_str}.csv")
         try:
             f = open(filename, "w", newline='')
             writer = csv.writer(f)
