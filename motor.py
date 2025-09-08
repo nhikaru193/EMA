@@ -215,6 +215,6 @@ class MotorDriver():
 
     def petit_petit_retreat(self, count):#ほたが追加
             for i in range (1, count):
-                self.petit_back(0, 70)
-                self.petit_back(70, 0)
+                self.petit_back(0, 80)
+                self.petit_back(80, 0)
                 time.sleep(0.2)
