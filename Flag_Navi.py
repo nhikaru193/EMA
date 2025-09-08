@@ -2,6 +2,7 @@ import time
 import smbus
 import struct
 import os #save fileのときに使用
+import csv
 import cv2
 import math
 import numpy as np
@@ -75,10 +76,15 @@ class FN:
         """
         全てのターゲットフラッグを探索し、接近するメインのタスクを実行
         """
+        current_time_str = time.strftime("%m%d-%H%M%S") #現在時刻をファイル名に含める
+        path_to = "/home/EMA/_csv"
+        filename = os.path.join(path_to, f"Flag_NAVIGATE_{current_time_str}.csv")
         # --- 全てのターゲットに対してループ ---
         for target_name in self.TARGET_SHAPES:
             print(f"\n---====== 新しい目標: [{target_name}] の探索を開始します ======---")
-            
+            f = open(filename, "w", newline='')
+            writer = csv.writer(f)
+            writer.writerow(["detected_data", "target_name", ])
             task_completed = False
             # スタック判定のために方位角を保存するdeque
             heading_history = deque(maxlen=4) # 直近3回の回転後の方位を記録
@@ -234,6 +240,8 @@ class FN:
 
         print("\n---====== 全ての目標の探索が完了しました ======---")
         print("--- 制御を終了します ---")
+        writer.writerow([target_name, area_percent])
+        f.flush()
         self.driver.cleanup()
         self.detector.close()
         GPIO.cleanup()
