@@ -6,7 +6,7 @@ import csv
 import os
 
 class RD:
-    def __init__(self, bno: BNO055, p_counter = 5, p_threshold = 0.15, timeout = 30): #能代:p_threshold = 0.12　ARLISSは高高度からの投下であるため終端速度まで達することができると仮定し、ロケット内での誤検出を防ぐため、pthreshold, p_counterは厳しめに設定した
+    def __init__(self, bno: BNO055, p_counter = 5, p_threshold = 0.15, timeout = 5400): #能代:p_threshold = 0.12　ARLISSは高高度からの投下であるため終端速度まで達することができると仮定し、ロケット内での誤検出を防ぐため、pthreshold, p_counterは厳しめに設定した
         self.bno = bno
         self.p_counter = p_counter
         self.p_threshold = p_threshold
