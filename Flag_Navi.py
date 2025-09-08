@@ -113,7 +113,7 @@ class FN:
                     """ 
                         
                     while target_flag is None and search_count < 10:
-                        self.driver.petit_petit(2)
+                        self.driver.petit_petit(5)
                         self.driver.petit_left(0, self.turn_speed)
                         self.driver.petit_left(self.turn_speed, 0)
                         self.driver.motor_stop_brake()
@@ -216,7 +216,7 @@ class FN:
                                 break # 追跡ループを抜ける
                             else:
                                 # しきい値未満なら、前進
-                                self.driver.petit_petit(2)
+                                self.driver.petit_petit(3)
                         
                         else:
                             # 'contour' がないという予期せぬ事態に対応
