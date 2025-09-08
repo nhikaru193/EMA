@@ -73,7 +73,7 @@ GPS_StoE.run()
 
 GPS_StoF = GPS(bno, goal_location = Flag_location_b)
 GPS_StoF.run()
-"""
+
 
 FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
@@ -83,7 +83,7 @@ Servo.release()
 
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
-
+"""
 GOAL = GDA(bno, 30)
 GOAL.run()
 
