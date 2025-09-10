@@ -15,7 +15,7 @@ import fusing
 import BME280
 #import following
 from BNO055 import BNO055
-#from motor import MotorDriver
+from motor2 import MotorDriver
 #from Flag_B import Flag_B
 
 #ミッション部分
