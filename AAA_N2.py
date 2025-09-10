@@ -57,13 +57,13 @@ time.sleep(t)
 """
 RELEASE = RD(bno)
 RELEASE.run()
-
+"""
 LAND = LD(bno) 
 LAND.run()
-"""
+
 
 time.sleep(3)
-
+"""
 print("パラシュート回避を始めます")
 time.sleep(1)
 
@@ -88,5 +88,5 @@ GPS_FtoG.run()
 
 GOAL = GDA(bno, 30)
 GOAL.run()
-
+"""
 print("Mission Complete")
