@@ -6,7 +6,7 @@ import camera
 import smbus
 from picamera2 import Picamera2
 import struct
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 import math
 import pigpio
 
@@ -40,7 +40,7 @@ time.sleep(1)
 bno.setMode(BNO055.OPERATION_MODE_NDOF)
 time.sleep(1)
 bno.setExternalCrystalUse(True)
-GPIO.setmode(GPIO.BCM)
+#GPIO.setmode(GPIO.BCM)
 
 pi = pigpio.pi() #変更
 
