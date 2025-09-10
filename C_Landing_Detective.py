@@ -2,7 +2,7 @@ from BNO055 import BNO055
 import BME280
 import time
 import fusing
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 import struct
 from motor import MotorDriver
 import os
