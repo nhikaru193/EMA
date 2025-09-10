@@ -62,14 +62,14 @@ gps_transmitter = GPS_Transmitter(pi)
 try:
     RELEASE = RD(bno)
     RELEASE.run()
-    print("放出が完了しました。GPS送信を開始します。")
-    gps_transmitter.start()
-
 
     LAND = LD(bno) 
     LAND.run()
-    
     time.sleep(3)
+    
+    print("着地が完了しました。GPS送信を開始します。")
+    gps_transmitter.start()
+
     
     print("パラシュート回避を始めます")
     time.sleep(1)
