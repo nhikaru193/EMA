@@ -66,6 +66,7 @@ time.sleep(3)
 print("パラシュート回避を始めます")
 time.sleep(1)
 
+GPIO.cleanup()
 AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
 
