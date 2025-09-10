@@ -42,6 +42,14 @@ time.sleep(1)
 bno.setExternalCrystalUse(True)
 #GPIO.setmode(GPIO.BCM)
 
+AIN1 = 5
+AIN2 = 6
+PWMA = 13
+BIN1 = 19
+BIN2 = 26
+PWMB = 20
+STBY = 21
+
 pi = pigpio.pi() #変更
 
 while True:
@@ -60,7 +68,7 @@ time.sleep(t)
 RELEASE = RD(bno)
 RELEASE.run()
 """
-LAND = LD(bno, pi) 
+LAND = LD(bno, pi, AIN1, AIN2, PWMA, BIN1, BIN2, PWMB, STBY) 
 LAND.run()
 
 
