@@ -4,7 +4,7 @@ import time
 import fusing
 #import RPi.GPIO as GPIO
 import struct
-from motor import MotorDriver
+from motor2 import MotorDriver
 import os
 import csv
 import math
