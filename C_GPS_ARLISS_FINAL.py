@@ -3,7 +3,7 @@ import serial
 import pigpio
 import threading
 
-class GPS:
+class GPS_SENDING:
     def __init__(self, pi):
         self.TX_PIN = 27
         self.RX_PIN = 17
