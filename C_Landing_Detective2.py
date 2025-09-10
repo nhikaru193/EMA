@@ -30,7 +30,7 @@ class LD:
         self.h_threshold = h_threshold
         self.start_time = time.time()
         self.im920 = serial.Serial('/dev/serial0', 19200, timeout=5)
-        self.pi = pigpio.pi()
+        self.pi = pi
         if not self.pi.connected:
             raise RuntimeError("pigpio デーモンに接続できません。sudo pigpiod を起動してください。")
 
