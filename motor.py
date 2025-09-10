@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 import time
 import BNO055
 import smbus
@@ -12,7 +12,7 @@ class MotorDriver():
                  freq = 1000):
         
         # GPIO初期化
-        GPIO.setmode(GPIO.BCM)
+        #GPIO.setmode(GPIO.BCM)
         # すべてのpinの出力を開始(使えるようになる)
         GPIO.setup([AIN1, AIN2, PWMA, BIN1, BIN2, PWMB, STBY], GPIO.OUT)
         
