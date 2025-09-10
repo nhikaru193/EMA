@@ -28,7 +28,7 @@ from Flag_Navi import FN
 import Servo
 from C_excellent_GPS import GPS
 from GDA2 import GDA
-from gps_transmitter import GPS_ARLISS_FINAL
+from GPS_ARLISS_FINAL import GPS_SENDING
 
 #初期設定
 Flag_location_a = [40.879698, -119.114899]
