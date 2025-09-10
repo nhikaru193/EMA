@@ -16,7 +16,7 @@ import serial
 #------GPSデータ送信(ARLISSで追加)ここまで------#
 
 class LD:
-    def __init__(self, bno: BNO055, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.50, h_threshold = 0.10, pi):
+    def __init__(self, bno: BNO055, pi, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.50, h_threshold = 0.10):
         self.driver = MotorDriver(sel.pi)
         self.bno = bno
         self.TX_PIN = 27
