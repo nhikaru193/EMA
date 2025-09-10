@@ -10,6 +10,7 @@ import struct
 import RPi.GPIO as GPIO
 import math
 import pigpio
+import sys
 
 #作成ファイルのインポート
 import fusing
@@ -27,6 +28,7 @@ from Flag_Navi import FN
 import Servo
 from C_excellent_GPS import GPS
 from GDA2 import GDA
+from gps_transmitter import GPS_ARLISS_FINAL
 
 #初期設定
 Flag_location_a = [40.879698, -119.114899]
@@ -55,39 +57,49 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
-"""
-RELEASE = RD(bno)
-RELEASE.run()
 
-LAND = LD(bno) 
-LAND.run()
-
-time.sleep(3)
-
-print("パラシュート回避を始めます")
-time.sleep(1)
-
-AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
-AVOIDANCE.run()
-"""
-
-GPS_StoE = GPS(bno, goal_location = Flag_location_a)
-GPS_StoE.run()
-
-GPS_StoF = GPS(bno, goal_location = Flag_location_b)
-GPS_StoF.run()
+gps_transmitter = GPS_Transmitter(pi)
+try:
+    RELEASE = RD(bno)
+    RELEASE.run()
+    print("放出が完了しました。GPS送信を開始します。")
+    gps_transmitter.start()
 
 
-FLAG = FN(bno, flag_location = Flag_location_b) 
-FLAG.run()
+    LAND = LD(bno) 
+    LAND.run()
+    
+    time.sleep(3)
+    
+    print("パラシュート回避を始めます")
+    time.sleep(1)
+    
+    AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
+    AVOIDANCE.run()
+    
+    
+    GPS_StoE = GPS(bno, goal_location = Flag_location_a)
+    GPS_StoE.run()
+    
+    GPS_StoF = GPS(bno, goal_location = Flag_location_b)
+    GPS_StoF.run()
+    
+    
+    FLAG = FN(bno, flag_location = Flag_location_b) 
+    FLAG.run()
+    
+    Servo.release()
+    
+    
+    GPS_FtoG = GPS(bno, goal_location = Goal_location)
+    GPS_FtoG.run()
+    
+    GOAL = GDA(bno, 30)
+    GOAL.run()
 
-Servo.release()
+    print("Mission Complete")
 
-
-GPS_FtoG = GPS(bno, goal_location = Goal_location)
-GPS_FtoG.run()
-
-GOAL = GDA(bno, 30)
-GOAL.run()
-
-print("Mission Complete")
+finally:
+    # プログラム終了時に必ず呼び出すクリーンアップ処理
+    print("クリーンアップ処理を開始します。")
+    gps_transmitter.stop()  # GPS送信スレッドを停止
