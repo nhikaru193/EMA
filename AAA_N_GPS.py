@@ -68,7 +68,7 @@ try:
     time.sleep(3)
     
     print("着地が完了しました。GPS送信を開始します。")
-    gps_transmitter.start()
+    GPS_ARLISS_FINAL.start()
 
     
     print("パラシュート回避を始めます")
@@ -102,4 +102,4 @@ try:
 finally:
     # プログラム終了時に必ず呼び出すクリーンアップ処理
     print("クリーンアップ処理を開始します。")
-    gps_transmitter.stop()  # GPS送信スレッドを停止
+    GPS_ARLISS_FINAL.stop()  # GPS送信スレッドを停止
