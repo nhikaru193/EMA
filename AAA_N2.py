@@ -42,6 +42,8 @@ time.sleep(1)
 bno.setExternalCrystalUse(True)
 GPIO.setmode(GPIO.BCM)
 
+pi = pigpio.pi() #変更
+
 while True:
     sys, gyro, accel, mag = bno.getCalibration()
     print(f"gyro:{gyro}, mag:{mag}")
@@ -89,4 +91,5 @@ GPS_FtoG.run()
 GOAL = GDA(bno, 30)
 GOAL.run()
 """
+pi.stop() #変更
 print("Mission Complete")
