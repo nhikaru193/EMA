@@ -17,7 +17,7 @@ import serial
 
 class LD:
     def __init__(self, bno: BNO055, pi, p_counter = 3, h_counter = 3, timeout = 40, p_threshold = 0.50, h_threshold = 0.10):
-        self.driver = MotorDriver(sel.pi)
+        self.driver = MotorDriver(self.pi)
         self.bno = bno
         self.TX_PIN = 27
         self.RX_PIN = 17
