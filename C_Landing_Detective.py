@@ -105,8 +105,8 @@ class LD:
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
                     print("GPSデータ送信シーケンスを開始します。GPS情報を5回送信します。")
-                    for i in range(10):
-                        print(f"GPSデータ送信中... ({i+1}/5回目)")
+                    for i in range(1):
+                        print(f"GPSデータ送信中... ({i+1}/10回目)")
                         (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                         current_location = None
                         if count and data:
