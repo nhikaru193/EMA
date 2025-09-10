@@ -141,10 +141,13 @@ class PA:
                     print("脱出を終了します")
                     break
                 else:
-                    print("前方にパラシュートが検知できたので、回頭を行います")
+                    print("前方にパラシュートが検知できたので、3秒待ちます")
+                    time.sleep(3)
+                    """
                     self.driver.petit_left(0, 90) 
                     time.sleep(0.3)
                     self.driver.motor_stop_brake()
+                    """
 
             #過去方位データ蓄積用
             heading_list = deque(maxlen=5)
