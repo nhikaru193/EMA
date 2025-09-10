@@ -11,7 +11,7 @@ import math
 import pigpio
 
 #作成ファイルのインポート
-#import fusing
+import fusing
 import BME280
 #import following
 from BNO055 import BNO055
