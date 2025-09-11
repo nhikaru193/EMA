@@ -105,7 +105,7 @@ class LD:
                 while True:
                     #------GPSデータ送信のコード(ARLISSで追加)ここから------#
                     print("GPSデータ送信シーケンスを開始します。GPS情報を5回送信します。")
-                    for i in range(1):
+                    for i in range(10):
                         print(f"GPSデータ送信中... ({i+1}/10回目)")
                         (count, data) = self.pi.bb_serial_read(self.RX_PIN)
                         current_location = None
@@ -136,13 +136,13 @@ class LD:
                             print("データがありませんでした。")
                         
                         time.sleep(2) # 次の送信までの間隔
-                        """
+                        
                     self.pi.bb_serial_read_close(self.RX_PIN)
                     self.pi.write(self.WIRELESS_PIN, 0)  # 終了時にワイヤレスグラウンドがOFFになるようにする
                     self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
                     self.im920.close()
                     print("GPSデータ送信シーケンスを終了しました。")
-                    """
+                    
                     #------GPSデータ送信のコード(ARLISSで追加)ここまで------#
                     current_time = time.time()
                     delta_time = current_time - self.start_time
@@ -228,6 +228,7 @@ class LD:
             print("割り込みにより、着地判定をスキップします")
             """
         finally:
+            """
             print("着地判定+溶断回路動作の終了です or 強制終了です")
             time.sleep(5)
             self.pi.bb_serial_read_close(self.RX_PIN)
@@ -235,5 +236,6 @@ class LD:
             self.pi.set_mode(self.WIRELESS_PIN, pigpio.INPUT)  # ピンを安全のため入力に戻す
             self.im920.close()
             print("GPSデータ送信シーケンスを終了しました。")
+            """
             self.driver.cleanup()
             self.pi.stop()
