@@ -54,13 +54,13 @@ while True:
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
 
-"""
+
 RELEASE = RD(bno)
 RELEASE.run()
 
 LAND = LD(bno) 
 LAND.run()
-"""
+
 
 time.sleep(3)
 
