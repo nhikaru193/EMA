@@ -210,7 +210,7 @@ class LD:
                         break
         
             #溶断回路作動
-            """
+            
             print("着地判定正常終了。テグス溶断シーケンスに入ります")
             time.sleep(3)
             fusing.circuit()
@@ -226,7 +226,7 @@ class LD:
                 print("テグス溶断の再起動を終了しました")
         except KeyboardInterrupt:
             print("割り込みにより、着地判定をスキップします")
-            """
+            
         finally:
             """
             print("着地判定+溶断回路動作の終了です or 強制終了です")
