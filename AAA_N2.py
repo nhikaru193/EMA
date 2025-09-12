@@ -23,7 +23,7 @@ from motor2 import MotorDriver
 from C_Landing_Detective2 import LD
 #from C_PARACHUTE_AVOIDANCE import PA
 #from Flag import FN
-#import Servo
+import Servo
 #from C_excellent_GPS import GPS
 #from GDA2 import GDA
 
