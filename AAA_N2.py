@@ -67,13 +67,13 @@ time.sleep(t)
 """
 RELEASE = RD(bno)
 RELEASE.run()
-"""
+
 LAND = LD(bno, pi, AIN1, AIN2, PWMA, BIN1, BIN2, PWMB, STBY) 
 LAND.run()
 
 
 time.sleep(3)
-"""
+
 print("パラシュート回避を始めます")
 time.sleep(1)
 
@@ -89,10 +89,11 @@ GPS_StoF.run()
 
 FLAG = FN(bno, flag_location = Flag_location_b) 
 FLAG.run()
+"""
 
 Servo.release()
 
-
+"""
 GPS_FtoG = GPS(bno, goal_location = Goal_location)
 GPS_FtoG.run()
 
