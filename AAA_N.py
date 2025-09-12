@@ -28,9 +28,9 @@ from C_excellent_GPS import GPS
 from GDA2 import GDA
 
 #初期設定
-Flag_location_a = [39.5908982, -119.2345484]
-Flag_location_b = [39.5908552, -119.2344582]
-Goal_location = [39.5908452, -119.2344096]
+Flag_location_a = [40.8788032, -119.1144639]
+Flag_location_b = [40.8788428, -119.1144947]
+Goal_location = [40.8841111, -119.1182222]
 t = 1
 
 #BNO055の初期設定
@@ -53,7 +53,7 @@ while True:
 
 #ここのタイムスリープは収納待ちのタイムスリープ
 time.sleep(t)
-"""
+
 RELEASE = RD(bno)
 RELEASE.run()
 
@@ -68,7 +68,7 @@ time.sleep(1)
 
 AVOIDANCE = PA(bno, goal_location = Flag_location_a) #ok
 AVOIDANCE.run()
-"""
+
 
 GPS_StoE = GPS(bno, goal_location = Flag_location_a)
 GPS_StoE.run()
